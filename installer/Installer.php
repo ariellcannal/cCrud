@@ -1,6 +1,6 @@
 <?php
 
-namespace CANNALxcrud;
+namespace cCrud;
 
 use Composer\Script\Event;
 use RecursiveDirectoryIterator;
@@ -13,10 +13,10 @@ class Installer
     {
         // Caminho correto da raiz do projeto principal (subir 4 níveis)
         $projectRoot = dirname(__DIR__, 4);
-        $xcrudRoot = dirname(__DIR__, 1);
+        $cCrudRoot = dirname(__DIR__, 1);
         
         echo "Raiz do projeto: $projectRoot\n";
-        echo "Raiz do XCRUD: $xcrudRoot\n";
+        echo "Raiz do cCrud: $cCrudRoot\n";
         
         $map = [
             'app/Config'      => 'app/Config',
@@ -29,7 +29,7 @@ class Installer
         ];
         
         foreach ($map as $src => $dest) {
-            $srcPath = realpath($xcrudRoot . '/' . $src);
+            $srcPath = realpath($cCrudRoot . '/' . $src);
             $destPath = $projectRoot . '/' . $dest;
             
             echo "Verificando: $srcPath → $destPath\n";
@@ -43,7 +43,7 @@ class Installer
             echo "Finalizado: $src → $dest\n";
         }
         
-        echo "Instalação da XCRUD concluída.\n";
+        echo "Instalação do cCrud concluída.\n";
     }
     
     private static function recursiveCopy(string $source, string $destination): void

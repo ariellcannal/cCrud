@@ -1,7 +1,7 @@
 <?php 
-namespace Xcrud\Config;
+namespace cCrud\Config;
 
-class XcrudConfig
+class cCrudConfig
 {
     // theme
     public static $theme = 'xcrud_default'; // can be 'default', 'bootstrap', 'minimal' or your custom. Theme of xCRUD visual presentation. For using bootstrap you need to load it on your page.

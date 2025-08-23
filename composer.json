@@ -1,34 +1,38 @@
 {
-	"name" : "ariellcannal/xcrud",
-	"description" : "CANNAL xcrud",
-	"license" : "MIT",
-	"type" : "library",
-	"require" : {
-		"composer/installers" : "~1.0",
-		"codeigniter4/translations" : "~4.5",
-		"codeigniter4/framework" : "~4.5",
-		"codeigniter4/settings" : "~2.2"
-	},"autoload": {
-    "psr-4": {
-      "CANNALxcrud\\": "installer/"
+    "name": "cCrud/cCrud",
+    "description": "cCrud",
+    "license": "MIT",
+    "type": "library",
+    "require": {
+        "php": "^8.2",
+        "composer/installers": "~1.0",
+        "codeigniter4/translations": "~4.5",
+        "codeigniter4/framework": "~4.5",
+        "codeigniter4/settings": "~2.2",
+        "twbs/bootstrap": "^5.3",
+        "components/jquery": "^3.7"
     },
-    "files": [
-      "app/Libraries/Xcrud.php"
-    ]
-  },
-  "scripts": {
-    "post-install-cmd": [
-      "CANNALxcrud\\Installer::postInstall"
-    ],
-    "post-update-cmd": [
-      "CANNALxcrud\\Installer::postInstall"
-    ]
-  },
-  "minimum-stability": "dev",
-  "prefer-stable": true,
-  "config": {
-    "optimize-autoloader": true,
-    "preferred-install": "dist",
-    "sort-packages": true
-  }
+    "autoload": {
+        "psr-4": {
+            "cCrud\\": [
+            "app/",
+            "installer/"
+        ]
+        }
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "cCrud\\Installer::postInstall"
+        ],
+        "post-update-cmd": [
+            "cCrud\\Installer::postInstall"
+        ]
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    }
 }

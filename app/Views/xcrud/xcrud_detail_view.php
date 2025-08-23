@@ -1,9 +1,9 @@
 <?php if($this->get_var('custom_head')!= false)
-	require (XCRUD_PATH . '/' . Xcrud_config::$themes_path . $this->get_var('custom_head'));?>
+	require (CCRUD_PATH . '/' . \cCrud\Config\cCrudConfig::$themes_path . $this->get_var('custom_head'));?>
 	
 <?php require $_SERVER['DOCUMENT_ROOT'].'/application/views/xcrud_default/_blocos/replace_title.php';?>
 <?php if($this->is_inner)
-	inXcrud 'nested/xcrud_detail_view.php';
+	include 'nested/xcrud_detail_view.php';
 else{
 ?>
 <div class="page-header">

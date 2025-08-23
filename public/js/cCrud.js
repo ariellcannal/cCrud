@@ -1,4 +1,4 @@
-var Xcrud = {
+var cCrud = {
 	config: function(key) {
 		if (xcrud_config[key] !== undefined) {
 			return xcrud_config[key];
@@ -22,7 +22,7 @@ var Xcrud = {
 	request: function(container, data, success_callback) {
 		$.ajax({
 			type: "post",
-			url: Xcrud.config('url'),
+			url: cCrud.config('url'),
 			dataType: "html",
 			cache: false,
 			data: {
@@ -30,25 +30,25 @@ var Xcrud = {
 			},
 			beforeSend: function() {
 				$(document).trigger("xcrudbeforerequest", [container, data]);
-				Xcrud.close_modal = data.close;
-				Xcrud.current_task = data.task;
-				Xcrud.current_focus = $("*:focus");
-				Xcrud.after_task = data.after;
+				cCrud.close_modal = data.close;
+				cCrud.current_task = data.task;
+				cCrud.current_focus = $("*:focus");
+				cCrud.after_task = data.after;
 			},
 			success: function(response) {
 				if (!$('.xcrud_result_validation').lenght) {
 					$('body').append($('<div>').attr('class', 'xcrud_result_validation'));
 				}
 				var validation_container = response;
-				Xcrud.check_message(validation_container);
-				if (!Xcrud.exception) {
-					if (Xcrud.close_modal == true) {
+				cCrud.check_message(validation_container);
+				if (!cCrud.exception) {
+					if (cCrud.close_modal == true) {
 						$("#xcrud-modal-window").modal('hide');
-						if (Xcrud.parent_container) {
-							container = Xcrud.parent_container;
-							Xcrud.parent_container = null;
+						if (cCrud.parent_container) {
+							container = cCrud.parent_container;
+							cCrud.parent_container = null;
 						}
-						Xcrud.close_modal = false;
+						cCrud.close_modal = false;
 					}
 					$(container).html(response);
 					if (success_callback) {
@@ -57,31 +57,31 @@ var Xcrud = {
 				}
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
-				Xcrud.show_error(Xcrud.lang('undefined_error'))
+				cCrud.show_error(cCrud.lang('undefined_error'))
 				console.log(jqXHR.statusText);
 				console.log(jqXHR.responseText);
 			},
 			complete: function(jqXHR) {
 				$(document).trigger("xcrudafterrequest", [container, data]);
-				Xcrud.hide_progress(container);
+				cCrud.hide_progress(container);
 			}
 		});
 	},
 	modal_request: function(container, data) {
 		data.is_modal = true;
-		var html = Xcrud.data2form(data);
-		Xcrud.bootstrap_modal('Aguarde', '');
+		var html = cCrud.data2form(data);
+		cCrud.bootstrap_modal('Aguarde', '');
 		setTimeout(function() {
 			el = $("#xcrud-modal-window .modal-content").addClass('xcrud').addClass('xcrud-ajax');
-			Xcrud.request(el, data, Xcrud.reinit);
+			cCrud.request(el, data, cCrud.reinit);
 		}, 500);
 	},
 	init: function(container) {
 		$(document).trigger("xcrudinit");
 	},
 	new_window_request: function(container, data) {
-		var html = Xcrud.data2form(data);
-		var w = window.open("", "Xcrud_request", "scrollbars,resizable,height=500,width=900");
+		var html = cCrud.data2form(data);
+		var w = window.open("", "cCrud_request", "scrollbars,resizable,height=500,width=900");
 		w.document.open();
 		w.document.write(html);
 		w.document.close();
@@ -89,7 +89,7 @@ var Xcrud = {
 	},
 	data2form: function(data) {
 		var html = '<!DOCTYPE HTML><html><head><meta http-equiv="content-type" content="text/html;charset=utf-8" /></head><body>';
-		html += '<form method="post" action="' + Xcrud.config('url') + '">';
+		html += '<form method="post" action="' + cCrud.config('url') + '">';
 		$.map(data, function(value, key) {
 			if (!$.isPlainObject(value)) {
 				html += '<input type="hidden" name="xcrud[' + key + ']" value="' + value + '" />';
@@ -107,9 +107,9 @@ var Xcrud = {
 			});
 			$.ajax({
 				type: "post",
-				url: Xcrud.config('url'),
+				url: cCrud.config('url'),
 				beforeSend: function() {
-					Xcrud.show_progress(container);
+					cCrud.show_progress(container);
 				},
 				data: {
 					"xcrud": data
@@ -119,8 +119,8 @@ var Xcrud = {
 					// $(container).find(".xcrud-data[name=key]:first").val(response.key);
 					if (response.error) {
 						$(container).find(response.error.selector).parent().parent().addClass('has-error');
-						// alert(Xcrud.lang('unique_error'));
-						Xcrud.show_error(Xcrud.lang('unique_error'));
+						// alert(cCrud.lang('unique_error'));
+						cCrud.show_error(cCrud.lang('unique_error'));
 						return false;
 					}
 					if (success_callback) {
@@ -128,7 +128,7 @@ var Xcrud = {
 					}
 				},
 				complete: function() {
-					Xcrud.hide_progress(container);
+					cCrud.hide_progress(container);
 				},
 				error: function(jqXHR, textStatus, errorThrown) {
 					console.log(textStatus);
@@ -153,16 +153,16 @@ var Xcrud = {
 	},
 	list_data: function(container, element) {
 		var data = {};
-		Xcrud.validation_error = 0;
-		Xcrud.save_editor_content(container);
+		cCrud.validation_error = 0;
+		cCrud.save_editor_content(container);
 		$(container).find(".xcrud-data:not([type='checkbox'])").each(function() {
-			if (Xcrud.check_container(this, container)) {
-				data[$(this).attr("name")] = Xcrud.prepare_val(this);
+			if (cCrud.check_container(this, container)) {
+				data[$(this).attr("name")] = cCrud.prepare_val(this);
 			}
 		});
 		$(container).find('.xcrud-data[type="checkbox"]:not([disabled])').each(function() {
-			if (Xcrud.check_container(this, container) && $(this).prop('checked')) {
-				data[$(this).attr("name")] = Xcrud.prepare_val(this);
+			if (cCrud.check_container(this, container) && $(this).prop('checked')) {
+				data[$(this).attr("name")] = cCrud.prepare_val(this);
 			}
 		});
 		if (element && $.isPlainObject(element)) {
@@ -177,8 +177,8 @@ var Xcrud = {
 			$(document).trigger("xcrudbeforevalidate", [container]);
 		}
 		$('.xcrud-input:not([type="checkbox"],[type="radio"],[disabled])', container).each(function() {
-			if (Xcrud.check_container(this, container)) {
-				var val = Xcrud.prepare_val(this);
+			if (cCrud.check_container(this, container)) {
+				var val = cCrud.prepare_val(this);
 				data.postdata[$(this).attr("name")] = val;
 
 				var required = $(this).data('required');
@@ -186,34 +186,34 @@ var Xcrud = {
 				var plugin = $(this).data('plugin');
 				var validar = $(this).data('validar');
 
-				if (validation && required && !Xcrud.validation_required(val, required)) {
-					Xcrud.field_invalid(this);
-				} else if (validation && pattern && plugin != 'formatter' && !Xcrud.validation_pattern(val, pattern)) {
-					Xcrud.field_invalid(this);
-				} else if (validation && validar == 'cnpj' && !Xcrud.validation_cnpj(val)) {
-					Xcrud.field_invalid(this);
-				} else if (validation && validar == 'url' && !Xcrud.validation_url(val)) {
-					Xcrud.field_invalid(this);
+				if (validation && required && !cCrud.validation_required(val, required)) {
+					cCrud.field_invalid(this);
+				} else if (validation && pattern && plugin != 'formatter' && !cCrud.validation_pattern(val, pattern)) {
+					cCrud.field_invalid(this);
+				} else if (validation && validar == 'cnpj' && !cCrud.validation_cnpj(val)) {
+					cCrud.field_invalid(this);
+				} else if (validation && validar == 'url' && !cCrud.validation_url(val)) {
+					cCrud.field_invalid(this);
 				}
 			}
 		});
 		var group_required = false;
 		var has_group_required = false;
 		$(container).find('.xcrud-input[group-required="true"]:not([type="checkbox"],[type="radio"],[disabled])').each(function() {
-			if (Xcrud.check_container(this, container)) {
+			if (cCrud.check_container(this, container)) {
 				has_group_required = true;
-				var val = Xcrud.prepare_val(this);
+				var val = cCrud.prepare_val(this);
 				data.postdata[$(this).attr("name")] = val;
 				var pattern = $(this).data('pattern');
-				if (Xcrud.validation_required(val, 1)) {
+				if (cCrud.validation_required(val, 1)) {
 					group_required = true;
 				}
 			}
 		});
 		if (has_group_required && !group_required) {
 			$(container).find('.xcrud-input[group-required="true"]:not([type="checkbox"],[type="radio"],[disabled])').each(function() {
-				if (Xcrud.check_container(this, container)) {
-					Xcrud.field_invalid(this);
+				if (cCrud.check_container(this, container)) {
+					cCrud.field_invalid(this);
 				}
 			});
 		}
@@ -221,27 +221,27 @@ var Xcrud = {
 			if (data.postdata[$(this).attr("name")] === undefined) {
 				data.postdata[$(this).attr("name")] = '';
 			}
-			if (Xcrud.check_container(this, container) && $(this).prop('checked')) {
+			if (cCrud.check_container(this, container) && $(this).prop('checked')) {
 				if (!data.postdata[$(this).attr("name")]) {
-					data.postdata[$(this).attr("name")] = Xcrud.prepare_val(this);
+					data.postdata[$(this).attr("name")] = cCrud.prepare_val(this);
 				} else {
-					data.postdata[$(this).attr("name")] += "," + Xcrud.prepare_val(this);
+					data.postdata[$(this).attr("name")] += "," + cCrud.prepare_val(this);
 				}
 			}
 		});
 		$(container).find('.xcrud-input[type="radio"]:not([disabled])').each(function() {
-			if (Xcrud.check_container(this, container) && $(this).prop('checked')) {
-				data.postdata[$(this).attr("name")] = Xcrud.prepare_val(this);
+			if (cCrud.check_container(this, container) && $(this).prop('checked')) {
+				data.postdata[$(this).attr("name")] = cCrud.prepare_val(this);
 			}
 		});
 		$(container).find('.xcrud-input[data-type="bool"]:not([disabled])').each(function() {
-			if (Xcrud.check_container(this, container)) {
+			if (cCrud.check_container(this, container)) {
 				data.postdata[$(this).attr("name")] = $(this).prop('checked') ? 1 : 0;
 			}
 		});
 		$(container).find(".xcrud-searchdata.xcrud-search-active").each(function() {
-			if (Xcrud.check_container(this, container)) {
-				data[$(this).attr("name")] = Xcrud.prepare_val(this);
+			if (cCrud.check_container(this, container)) {
+				data[$(this).attr("name")] = cCrud.prepare_val(this);
 			}
 		});
 		if (validation) {
@@ -250,7 +250,7 @@ var Xcrud = {
 		return data;
 	},
 	field_invalid: function(field) {
-		Xcrud.validation_error = 1;
+		cCrud.validation_error = 1;
 		$(field).addClass('is-invalid');
 		$(field).closest('.form-group').addClass('is-invalid');
 		$('*[href="#' + $(field).closest('.tab-pane').attr('id') + '"]').addClass('is-invalid');
@@ -258,8 +258,8 @@ var Xcrud = {
 	list_controls_data: function(container, element) {
 		var data = {};
 		$(container).find(".xcrud-data").each(function() {
-			if (Xcrud.check_container(this, container)) {
-				data[$(this).attr("name")] = Xcrud.prepare_val(this);
+			if (cCrud.check_container(this, container)) {
+				data[$(this).attr("name")] = cCrud.prepare_val(this);
 			}
 		});
 		return data;
@@ -329,7 +329,7 @@ var Xcrud = {
 		}
 		$(container).find('.xcrud-searchdata[data-fieldtype="' + fieldtype + '"]' + name_selector).show().addClass("xcrud-search-active");
 		if (fieldtype == 'date') {
-			Xcrud.init_datepicker_range(type, container);
+			cCrud.init_datepicker_range(type, container);
 		}
 	},
 	init_datepicker_range: function(type, container) {
@@ -363,7 +363,7 @@ var Xcrud = {
 						useCurrent: false
 					});
 				default:
-					Xcrud.link_datetime_fields(from, to);
+					cCrud.link_datetime_fields(from, to);
 					break;
 			}
 		}
@@ -402,7 +402,7 @@ var Xcrud = {
 					default:
 						var range_start = element.data("rangestart");
 						var range_end = element.data("rangeend");
-						Xcrud.link_datetime_fields(range_start, range_end);
+						cCrud.link_datetime_fields(range_start, range_end);
 						break;
 				}
 			}
@@ -423,12 +423,12 @@ var Xcrud = {
 	init_texteditor: function(container) {
 		var elements = $(container).find(".xcrud-texteditor:not(.editor-loaded)");
 		if ($(elements).length) {
-			if (Xcrud.config('editor_url') || Xcrud.config('force_editor')) {
+			if (cCrud.config('editor_url') || cCrud.config('force_editor')) {
 				$(elements).addClass("editor-loaded").addClass("editor-instance");
-				if (Xcrud.config('editor_init_url')) {
+				if (cCrud.config('editor_init_url')) {
 					window.setTimeout(function() {
 						$.ajax({
-							url: Xcrud.config('editor_init_url'),
+							url: cCrud.config('editor_init_url'),
 							type: "get",
 							dataType: "script",
 							success: function(js) {
@@ -467,7 +467,7 @@ var Xcrud = {
 		data.task = "upload";
 		data.mode = $(element).closest('.xcrud-ajax').find('.xcrud-data[name="task"]').val();
 		data.type = $(element).data("type");
-		var ext = Xcrud.get_extension($(element).val());
+		var ext = cCrud.get_extension($(element).val());
 		if (data.type == 'image') {
 			switch (ext.toLowerCase()) {
 				case 'jpg':
@@ -476,33 +476,33 @@ var Xcrud = {
 				case 'png':
 					break;
 				default:
-					Xcrud.show_error(Xcrud.lang('image_type_error'));
+					cCrud.show_error(cCrud.lang('image_type_error'));
 					$(element).val('');
 					return false;
 					break;
 			}
 		}
 		$(document).trigger("xcrudbeforeupload", [container, data]);
-		Xcrud.show_progress(container);
+		cCrud.show_progress(container);
 		$.ajaxFileUpload({
 			secureuri: false,
 			fileElementId: $(element).attr('id'),
 			data: {
 				"xcrud": data
 			},
-			url: Xcrud.config('url'),
+			url: cCrud.config('url'),
 			success: function(out) {
-				Xcrud.hide_progress(container);
+				cCrud.hide_progress(container);
 				$(upl_container).replaceWith(out);
 				$(document).trigger("xcrudafterupload", [container, data, status]);
 				var crop_img = $(out).find("img.xcrud-crop");
 				if ($(crop_img).length) {
-					Xcrud.show_crop_window(crop_img, container);
+					cCrud.show_crop_window(crop_img, container);
 				}
 			},
 			error: function() {
-				Xcrud.hide_progress(container);
-				Xcrud.show_error(Xcrud.lang('undefined_error'));
+				cCrud.hide_progress(container);
+				cCrud.show_error(cCrud.lang('undefined_error'));
 			}
 		});
 	},
@@ -516,7 +516,7 @@ var Xcrud = {
 			closeOnEscape: false,
 			buttons: {
 				"OK": function() {
-					var data = Xcrud.list_data(container, {
+					var data = cCrud.list_data(container, {
 						"task": "crop_image"
 					});
 					$(upl_container).find('.xrud-crop-data').each(function() {
@@ -524,22 +524,22 @@ var Xcrud = {
 					});
 					// data.task = "crop_image";
 					$(document).trigger("xcrudbeforeecrop", [container, data]);
-					Xcrud.show_progress(container);
+					cCrud.show_progress(container);
 					$.ajax({
 						data: {
 							"xcrud": data
 						},
 						success: function(out) {
-							Xcrud.hide_progress(container);
+							cCrud.hide_progress(container);
 							$(upl_container).replaceWith(out);
 							$(document).trigger("xcrudaftercrop", [container, data]);
 						},
 						error: function() {
-							Xcrud.hide_progress(container);
-							Xcrud.show_error(Xcrud.lang('undefined_error'));
+							cCrud.hide_progress(container);
+							cCrud.show_error(cCrud.lang('undefined_error'));
 						},
 						type: "post",
-						url: Xcrud.config('url'),
+						url: cCrud.config('url'),
 						dataType: "html",
 						cache: false,
 					});
@@ -548,7 +548,7 @@ var Xcrud = {
 				}
 			},
 			close: function(event, ui) {
-				var data = Xcrud.list_data(container, {
+				var data = cCrud.list_data(container, {
 					"task": "crop_image"
 				});
 				$(upl_container).find('.xrud-crop-data').each(function() {
@@ -557,21 +557,21 @@ var Xcrud = {
 				// data.task = "crop_image";
 				data.w = 0;
 				data.h = 0;
-				Xcrud.show_progress(container);
+				cCrud.show_progress(container);
 				$.ajax({
 					data: {
 						"xcrud": data
 					},
 					success: function(out) {
-						Xcrud.hide_progress(container);
+						cCrud.hide_progress(container);
 						$(upl_container).replaceWith(out);
 					},
 					error: function() {
-						Xcrud.hide_progress(container);
-						Xcrud.show_error(Xcrud.lang('undefined_error'));
+						cCrud.hide_progress(container);
+						cCrud.show_error(cCrud.lang('undefined_error'));
 					},
 					type: "post",
-					url: Xcrud.config('url'),
+					url: cCrud.config('url'),
 					dataType: "html",
 					cache: false,
 				});
@@ -579,7 +579,7 @@ var Xcrud = {
 				$(".xcrud-crop").remove();
 			},
 			open: function(event, ui) {
-				Xcrud.load_image(crop_img.attr('src'), function(imageObject) {
+				cCrud.load_image(crop_img.attr('src'), function(imageObject) {
 					var t_w = parseInt($(crop_img).data('width'));
 					var t_h = parseInt($(crop_img).data('height'));
 					var ratio = parseFloat($(crop_img).data('ratio'));
@@ -609,7 +609,7 @@ var Xcrud = {
 					if (ratio) {
 						cropset.aspectRatio = ratio;
 					}
-					cropset.onChange = Xcrud.get_coordinates;
+					cropset.onChange = cCrud.get_coordinates;
 					cropset.keySupport = false;
 					cropset.trueSize = [t_w, t_h];
 					var w1 = t_w / 4;
@@ -651,22 +651,22 @@ var Xcrud = {
 		data.field = $(element).data("field");
 		data.file = $(upl_container).find('.xcrud-input').val();
 		data.task = "remove_upload";
-		Xcrud.show_progress(container);
+		cCrud.show_progress(container);
 		$.ajax({
 			data: {
 				"xcrud": data
 			},
 			success: function(data) {
-				Xcrud.hide_progress(container);
+				cCrud.hide_progress(container);
 				$(upl_container).replaceWith(data);
 			},
 			type: "post",
-			url: Xcrud.config('url'),
+			url: cCrud.config('url'),
 			dataType: "html",
 			cache: false,
 			error: function() {
-				Xcrud.hide_progress(container);
-				Xcrud.show_error(Xcrud.lang('undefined_error'));
+				cCrud.hide_progress(container);
+				cCrud.show_error(cCrud.lang('undefined_error'));
 			}
 		});
 	},
@@ -798,16 +798,16 @@ var Xcrud = {
 		$(container).off('change.depend');
 		var dependencies = {};
 		$(container).find('.xcrud-input[data-depend]').each(function() {
-			var container = Xcrud.get_container(this);
-			var data = Xcrud.list_controls_data(container, this);
+			var container = cCrud.get_container(this);
+			var data = cCrud.list_controls_data(container, this);
 			var depend_on = $(this).data("depend");
 			data.task = "depend";
 			data.name = $(this).attr('name');
 			data.value = $(this).val();
 			$(container).on('change.depend', '.xcrud-input[name="' + depend_on + '"]', function() {
-				if (Xcrud.check_container(this, container)) {
+				if (cCrud.check_container(this, container)) {
 					data.dependval = $(this).val();
-					Xcrud.depend_query(data, depend_on, container);
+					cCrud.depend_query(data, depend_on, container);
 				}
 			});
 			if (depend_on) {
@@ -821,10 +821,10 @@ var Xcrud = {
 		});
 	},
 	depend_query: function(data, depend_on, container) {
-		if (Xcrud.block_query[data.name + depend_on]) {
+		if (cCrud.block_query[data.name + depend_on]) {
 			return;
 		}
-		Xcrud.block_query[data.name + depend_on] = 1;
+		cCrud.block_query[data.name + depend_on] = 1;
 		var el = $(container).find('.xcrud-input[name="' + data.name + '"]');
 		var parent = el.parent();
 		var values = el.val();
@@ -835,7 +835,7 @@ var Xcrud = {
 				"xcrud": data
 			},
 			type: 'post',
-			url: Xcrud.config('url'),
+			url: cCrud.config('url'),
 			success: function(input) {
 				el.select2('destroy').remove();
 				parent.css('visibility', 'hidden').append(input);
@@ -845,8 +845,8 @@ var Xcrud = {
 				}
 				$(parent).trigger("xcrudafterdepend", [container, data]);
 				window.setTimeout(function() {
-					Xcrud.jr_request($(container).find('.xcrud-input[name="' + data.name + '"]'));
-					Xcrud.block_query[data.name + depend_on] = 0;
+					cCrud.jr_request($(container).find('.xcrud-input[name="' + data.name + '"]'));
+					cCrud.block_query[data.name + depend_on] = 0;
 				}, 400);
 				el.select2();
 				$(parent).css('visibility', 'visible');
@@ -983,32 +983,32 @@ var Xcrud = {
 	map_instances: [],
 	marker_instances: [],
 	map_init: function(container) {
-		Xcrud.map_instances = [];
+		cCrud.map_instances = [];
 		$(container).find('.xcrud-map').each(function() {
 			var cont = this;
 			var point_field = $(cont).parent().children('input[data-type="point"]');
 			var search_field = $(cont).parent().children('.xcrud-map-search');
-			var point = Xcrud.parse_latlng($(point_field).val());
-			var map = Xcrud.create_map(cont, point, $(cont).data('zoom'), 'ROADMAP');
-			var marker = Xcrud.place_marker(map, point, $(cont).data('draggable'), $(cont).data('text'), point_field);
+			var point = cCrud.parse_latlng($(point_field).val());
+			var map = cCrud.create_map(cont, point, $(cont).data('zoom'), 'ROADMAP');
+			var marker = cCrud.place_marker(map, point, $(cont).data('draggable'), $(cont).data('text'), point_field);
 			$(point_field).on("keyup", function() {
-				var point = Xcrud.parse_latlng($(point_field).val());
-				Xcrud.move_marker(map, marker, point, $(cont).data('draggable'), $(cont).data('text'));
+				var point = cCrud.parse_latlng($(point_field).val());
+				cCrud.move_marker(map, marker, point, $(cont).data('draggable'), $(cont).data('text'));
 				return false;
 			});
 			if ($(search_field).length) {
 				$(search_field).on("keyup", function() {
 					var value = $.trim($(search_field).val());
 					if (value) {
-						Xcrud.find_point(value, function(results) {
-							Xcrud.map_dropdown(search_field, results, map, marker, point_field, cont);
+						cCrud.find_point(value, function(results) {
+							cCrud.map_dropdown(search_field, results, map, marker, point_field, cont);
 						});
 					}
 					return false;
 				});
 			}
-			Xcrud.map_instances.push(map);
-			Xcrud.marker_instances.push(marker);
+			cCrud.map_instances.push(map);
+			cCrud.marker_instances.push(marker);
 		});
 	},
 	map_dropdown: function(element, results, map, marker, point_field, cont) {
@@ -1027,9 +1027,9 @@ var Xcrud = {
 				"marginTop": m_top + "px",
 				"minWidth": m_left + "px"
 			}).children('li').on("click", function() {
-				var point = Xcrud.parse_latlng($(this).data("val"));
+				var point = cCrud.parse_latlng($(this).data("val"));
 				$(element).val($(this).text());
-				marker = Xcrud.move_marker(map, marker, point, $(cont).data('draggable'), $(cont).data('text'));
+				marker = cCrud.move_marker(map, marker, point, $(cont).data('draggable'), $(cont).data('text'));
 				$(point_field).val(marker.getPosition().lat() + ',' + marker.getPosition().lng());
 				$(this).parent('ul').remove();
 				return false;
@@ -1037,10 +1037,10 @@ var Xcrud = {
 		}
 	},
 	map_resize_all: function() {
-		if ($(".xcrud-map").length && Xcrud.map_instances.length) {
-			for (i = 0; i < Xcrud.map_instances.length; i++) {
-				var map = Xcrud.map_instances[i];
-				var marker = Xcrud.marker_instances[i];
+		if ($(".xcrud-map").length && cCrud.map_instances.length) {
+			for (i = 0; i < cCrud.map_instances.length; i++) {
+				var map = cCrud.map_instances[i];
+				var marker = cCrud.marker_instances[i];
 				google.maps.event.trigger(map, 'resize');
 				map.setZoom(map.getZoom());
 				map.setCenter(marker.position)
@@ -1058,9 +1058,9 @@ var Xcrud = {
 		}
 		obj = obj.eq(0);
 		obj.each(function() {
-			var data = Xcrud.list_data(this);
+			var data = cCrud.list_data(this);
 			data.active_tab_id = $('.tab-pane.active.nested').attr('data-label');
-			Xcrud.request(this, data);
+			cCrud.request(this, data);
 		});
 	},
 	bootstrap_modal: function(header, content) {
@@ -1103,24 +1103,24 @@ var Xcrud = {
 		content = '<span>' + content + '</span>';
 		if (typeof ($.fn.modal) != 'undefined') {
 			if ($(content).first().prop("tagName") == 'IMG') {
-				Xcrud.load_image($(content).first().attr('src'), function(imgObj) {
-					Xcrud.bootstrap_modal(header, content);
+				cCrud.load_image($(content).first().attr('src'), function(imgObj) {
+					cCrud.bootstrap_modal(header, content);
 				})
 			} else {
-				Xcrud.bootstrap_modal(header, content);
+				cCrud.bootstrap_modal(header, content);
 			}
 		} else {
 			if ($(content).first().prop("tagName") == 'IMG') {
-				Xcrud.load_image($(content).first().attr('src'), function(imgObj) {
-					Xcrud.ui_modal(header, content);
+				cCrud.load_image($(content).first().attr('src'), function(imgObj) {
+					cCrud.ui_modal(header, content);
 				})
 			} else {
-				Xcrud.ui_modal(header, content);
+				cCrud.ui_modal(header, content);
 			}
 		}
 	},
 	base64_modal: function(header, content) {
-		Xcrud.bootstrap_modal(Base64.decode(header), Base64.decode(content));
+		cCrud.bootstrap_modal(Base64.decode(header), Base64.decode(content));
 	},
 	init_tabs: function(container) {
 		if ($(container).find('.xcrud-tabs').length) {
@@ -1130,12 +1130,12 @@ var Xcrud = {
 					return false;
 				});
 				$('.xcrud .nav-tabs a').on('shown.bs.tab', function(e) {
-					Xcrud.map_resize_all();
+					cCrud.map_resize_all();
 				});
 			} else {
 				$(container).find('.xcrud-tabs').tabs({
 					activate: function(event, ui) {
-						Xcrud.map_resize_all();
+						cCrud.map_resize_all();
 					}
 				});
 			}
@@ -1201,16 +1201,16 @@ var Xcrud = {
 		if ($(messages).length) {
 			messages.each(function() {
 				var message = this;
-				if (Xcrud.check_container(message, container)) {
+				if (cCrud.check_container(message, container)) {
 					texto = $(message).val();
 					type = $(message).attr("name");
 					if ($(message).attr("data-exception")) {
-						Xcrud.exception = true;
+						cCrud.exception = true;
 					}
 					if (type == 'alert') {
-						Xcrud.show_alert(texto);
+						cCrud.show_alert(texto);
 					} else {
-						Xcrud.show_notify(texto, type);
+						cCrud.show_notify(texto, type);
 					}
 					$(message).remove();
 				}
@@ -1334,40 +1334,40 @@ var Xcrud = {
 		setSaveModal('customListsEdit');
 	},
 	action: function(e) {
-		var container = Xcrud.get_container(e);
-		var data = Xcrud.list_data(container, e);
+		var container = cCrud.get_container(e);
+		var data = cCrud.list_data(container, e);
 		if ($(e).hasClass('xcrud-in-new-window')) {
-			Xcrud.new_window_request(container, data);
+			cCrud.new_window_request(container, data);
 		} else if ($(e).hasClass('xcrud-in-modal')) {
-			Xcrud.parent_container = container;
-			Xcrud.modal_request(container, data);
+			cCrud.parent_container = container;
+			cCrud.modal_request(container, data);
 		} else {
 			if (data.task == 'save') {
-				if (!Xcrud.validation_error) {
-					Xcrud.unique_check(container, data, function(container) {
+				if (!cCrud.validation_error) {
+					cCrud.unique_check(container, data, function(container) {
 						data.task = 'save';
-						Xcrud.request(container, data, data.callback);
+						cCrud.request(container, data, data.callback);
 					});
 				} else {
-					Xcrud.show_message(container, Xcrud.lang('validation_error'), 'error');
+					cCrud.show_message(container, cCrud.lang('validation_error'), 'error');
 				}
 			} else {
-				Xcrud.request(container, data);
+				cCrud.request(container, data);
 			}
 		}
 	},
 	jr_request: function(e) {
-		var container = Xcrud.get_container(e);
-		var data = Xcrud.list_data(container, e);
+		var container = cCrud.get_container(e);
+		var data = cCrud.list_data(container, e);
 		data.task = "join_relation";
 		data.jr_value = e.val();
 		data.select2 = '';
 		// console.log(data);
 		$.ajax({
 			type: "post",
-			url: Xcrud.config('url'),
+			url: cCrud.config('url'),
 			beforeSend: function() {
-				Xcrud.show_progress(container);
+				cCrud.show_progress(container);
 			},
 			data: {
 				"xcrud": data
@@ -1388,7 +1388,7 @@ var Xcrud = {
 				}
 			},
 			complete: function() {
-				Xcrud.hide_progress(container);
+				cCrud.hide_progress(container);
 				$(document).trigger("xcrudafterjoinrelation", [e.closest('.form-horizontal'), data, status]);
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
@@ -1401,7 +1401,7 @@ var Xcrud = {
 	init_select2: function(e) {
 		if (!$.fn.select2)
 			return;
-		var container = Xcrud.get_container(e);
+		var container = cCrud.get_container(e);
 		$('select:not(.xcrud-columns-select):not(.xcrud-searchdata):not(.not_select2):not(.xcrud-columnsList-select)', container).each(function() {
 			var options = $.extend({
 				width: '100%'
@@ -1409,7 +1409,7 @@ var Xcrud = {
 			if ($(this).hasClass('select2-ajax')) {
 				var container = $(this).closest('.xcrud-ajax');
 				var depend_on = $(this).data("depend");
-				var dados = Xcrud.list_controls_data(container);
+				var dados = cCrud.list_controls_data(container);
 				dados.dependval = $('.xcrud-input[name="' + depend_on + '"]').val();
 				dados.name = $(this).data('relationajax');
 				dados.task = 'relation_search';
@@ -1457,7 +1457,7 @@ var Xcrud = {
 		});
 	},
 	init_columns_select: function(container) {
-		var data = Xcrud.list_data(container);
+		var data = cCrud.list_data(container);
 		if (data.task == 'list') {
 			$('.xcrud-columnsList-select', container).SumoSelect({
 				okCancelInMulti: true,
@@ -1470,16 +1470,16 @@ var Xcrud = {
 $(document).on("xcrudinit", function() {
 	if ($(".xcrud").length) {
 		$(".xcrud").off('change', 'select.xcrud-columnsList-select').on("change", "select.xcrud-columnsList-select", function() {
-			var container = Xcrud.get_container(this);
-			var data = Xcrud.list_data(container);
+			var container = cCrud.get_container(this);
+			var data = cCrud.list_data(container);
 			data.task = 'change_columns';
 			data.columns = $(this).val();
-			Xcrud.request(container, data);
+			cCrud.request(container, data);
 		});
 		$(".xcrud").off('change', '.xcrud-actionlist').on("change", ".xcrud-actionlist", function() {
-			var container = Xcrud.get_container(this);
-			var data = Xcrud.list_data(container);
-			Xcrud.request(container, data);
+			var container = cCrud.get_container(this);
+			var data = cCrud.list_data(container);
+			cCrud.request(container, data);
 		});
 		$(".xcrud").off('change', '.xcrud-daterange').on("change", ".xcrud-daterange", function() {
 			var container = $(this).parent();
@@ -1499,19 +1499,19 @@ $(document).on("xcrudinit", function() {
 			var container = $(this).parent();
 			var type = $(this).children("option:selected").data('type');
 			var fieldname = $(this).children("option:selected").val();
-			Xcrud.change_filter(type, container, fieldname);
+			cCrud.change_filter(type, container, fieldname);
 		});
 		$(".xcrud").off('click', '.xcrud-action').on("click", ".xcrud-action", function() {
 			var element = $(this);
 			var confirm_text = $(this).data('confirm');
 			if (confirm_text) {
 				alertify.confirm(xcrud_config.table_name, confirm_text, function() {
-					Xcrud.action(element);
+					cCrud.action(element);
 				}, function() {
 
 				});
 			} else {
-				Xcrud.action(element);
+				cCrud.action(element);
 			}
 			return false;
 		});
@@ -1539,7 +1539,7 @@ $(document).on("xcrudinit", function() {
 			return false;
 		});
 		$(".xcrud").off('keypress', '.xcrud-input').on("keypress", ".xcrud-input", function(e) {
-			return Xcrud.pattern_callback(e, this);
+			return cCrud.pattern_callback(e, this);
 		});
 		$(".xcrud").off('click', '.xcrud-search-toggle').on("click", ".xcrud-search-toggle", function() {
 			$(this).closest(".xcrud-ajax").find(".xcrud-search-toggle").find(".xcrud-searchdata").focus();
@@ -1547,11 +1547,11 @@ $(document).on("xcrudinit", function() {
 		});
 		$(".xcrud").off('keydown', '.xcrud-searchdata').on("keydown", ".xcrud-searchdata", function(e) {
 			if (e.which == 13) { // ENTER
-				var container = Xcrud.get_container(this);
-				var data = Xcrud.list_data(container);
+				var container = cCrud.get_container(this);
+				var data = cCrud.list_data(container);
 				data.search = 1;
 				data.task = 'list';
-				Xcrud.request(container, data);
+				cCrud.request(container, data);
 				return false;
 			} else if (e.which == 27) { // ESC
 				if ($(this).parent().find("a").hasClass('fa-search')) {
@@ -1569,95 +1569,95 @@ $(document).on("xcrudinit", function() {
 			}
 		});
 		$(".xcrud").off('change', '.xcrud-upload').on("change", ".xcrud-upload", function() {
-			var container = Xcrud.get_container(this);
-			var data = Xcrud.list_data(container);
-			Xcrud.upload_file(this, data, container);
+			var container = cCrud.get_container(this);
+			var data = cCrud.list_data(container);
+			cCrud.upload_file(this, data, container);
 			return false;
 		});
 		$(".xcrud").off('click', '.xcrud-remove-file').on("click", ".xcrud-remove-file", function() {
-			var container = Xcrud.get_container(this);
-			var data = Xcrud.list_data(container);
-			Xcrud.remove_file(this, data, container);
+			var container = cCrud.get_container(this);
+			var data = cCrud.list_data(container);
+			cCrud.remove_file(this, data, container);
 			return false;
 		});
 		$(".xcrud").off('click', '.xcrud_modal').on("click", ".xcrud_modal", function() {
 			var content = $(this).data("content");
 			var header = $(this).data("header");
-			Xcrud.modal(header, content);
+			cCrud.modal(header, content);
 			return false;
 		});
 		$(".xcrud").off('change', '.xcrud-mass-select').on("change", ".xcrud-mass-select", function() {
 			if ($(this).val() == 1) {
-				Xcrud.get_container(this).find('.xcrud-mass-form-group').show(150);
+				cCrud.get_container(this).find('.xcrud-mass-form-group').show(150);
 			}
 			else {
-				Xcrud.get_container(this).find('.xcrud-mass-form-group').hide(150);
+				cCrud.get_container(this).find('.xcrud-mass-form-group').hide(150);
 			}
 
 		});
 		$(".xcrud").off('change', 'input.xcrud-mass-checkbox-header[type="checkbox"],input.xcrud-mass-checkbox-footer[type="checkbox"]').on("change", 'input.xcrud-mass-checkbox-header[type="checkbox"],input.xcrud-mass-checkbox-footer[type="checkbox"]', function() {
 			if ($(this).is(':checked')) {
-				$('input.xcrud-mass-checkbox[type="checkbox"]', Xcrud.get_container(this)).prop("checked", true);
+				$('input.xcrud-mass-checkbox[type="checkbox"]', cCrud.get_container(this)).prop("checked", true);
 			} else {
-				$('input.xcrud-mass-checkbox[type="checkbox"]', Xcrud.get_container(this)).prop("checked", false);
+				$('input.xcrud-mass-checkbox[type="checkbox"]', cCrud.get_container(this)).prop("checked", false);
 			}
 		});
 		$(".xcrud").off('change', '.join_relation').on("change", ".join_relation", function() {
-			Xcrud.jr_request($(this));
-			Xcrud.depend_init(this);
+			cCrud.jr_request($(this));
+			cCrud.depend_init(this);
 		});
 		$(".xcrud-ajax").each(function() {
-			Xcrud.init_datepicker(this);
-			Xcrud.init_datepicker_range($(this).find('.xcrud-columns-select option:selected').data('type'), this);
-			Xcrud.depend_init(this);
-			Xcrud.map_init(this);
-			Xcrud.check_fixed_buttons();
-			Xcrud.init_tooltips(this);
-			Xcrud.init_tabs(this);
-			Xcrud.check_message(this);
-			Xcrud.init_autosave();
-			Xcrud.hide_progress(this);
-			Xcrud.init_nestable(this);
-			Xcrud.init_select2(this);
-			Xcrud.init_checkbox(this);
-			Xcrud.init_columns_select(this);
-			Xcrud.init_mask(this);
+			cCrud.init_datepicker(this);
+			cCrud.init_datepicker_range($(this).find('.xcrud-columns-select option:selected').data('type'), this);
+			cCrud.depend_init(this);
+			cCrud.map_init(this);
+			cCrud.check_fixed_buttons();
+			cCrud.init_tooltips(this);
+			cCrud.init_tabs(this);
+			cCrud.check_message(this);
+			cCrud.init_autosave();
+			cCrud.hide_progress(this);
+			cCrud.init_nestable(this);
+			cCrud.init_select2(this);
+			cCrud.init_checkbox(this);
+			cCrud.init_columns_select(this);
+			cCrud.init_mask(this);
 			//$(".xcrud-input").first().focus();
 		});
 	}
 });
 $(document).ready(function() {
-	Xcrud.init();
+	cCrud.init();
 });
 $(window).on("resize load xcrudslidetoggle", function() {
-	Xcrud.check_fixed_buttons();
+	cCrud.check_fixed_buttons();
 });
 $(window).on("load", function() {
 	$(".xcrud-ajax").each(function() {
-		Xcrud.init_texteditor(this);
+		cCrud.init_texteditor(this);
 	});
 });
 $(document).on("xcrudbeforerequest", function(event, container) {
-	Xcrud.show_progress(container);
+	cCrud.show_progress(container);
 });
 $(document).on("xcrudafterrequest", function(event, container) {
-	Xcrud.init_datepicker(container);
-	Xcrud.init_texteditor(container);
-	Xcrud.init_datepicker_range($(container).find('.xcrud-columns-select option:selected').data('type'), container);
-	Xcrud.depend_init(container);
-	Xcrud.map_init(container);
-	Xcrud.check_fixed_buttons();
-	Xcrud.init_tooltips(container);
-	Xcrud.init_tabs(container);
-	Xcrud.check_message(container);
-	Xcrud.init_nestable(container);
-	Xcrud.init_select2(container);
-	Xcrud.init_checkbox(container);
-	Xcrud.init_mask(container);
-	Xcrud.init_columns_select(container);
+	cCrud.init_datepicker(container);
+	cCrud.init_texteditor(container);
+	cCrud.init_datepicker_range($(container).find('.xcrud-columns-select option:selected').data('type'), container);
+	cCrud.depend_init(container);
+	cCrud.map_init(container);
+	cCrud.check_fixed_buttons();
+	cCrud.init_tooltips(container);
+	cCrud.init_tabs(container);
+	cCrud.check_message(container);
+	cCrud.init_nestable(container);
+	cCrud.init_select2(container);
+	cCrud.init_checkbox(container);
+	cCrud.init_mask(container);
+	cCrud.init_columns_select(container);
 });
 $(document).on("xcrudafterupload", function(event, container) {
-	Xcrud.check_message(container);
+	cCrud.check_message(container);
 });
 $(document).on("xcrudbeforedepend", function(event, container, data) {
 	$('select[name="' + data.name + '"]').parent().find('.select2').remove();
@@ -1665,19 +1665,19 @@ $(document).on("xcrudbeforedepend", function(event, container, data) {
 $(document).on("xcrudafterdepend", function(event, container, data) {
 });
 $(document).on("xcrudafterjoinrelation", function(event, container) {
-	Xcrud.init_datepicker(container);
-	Xcrud.init_texteditor(container);
-	Xcrud.init_datepicker_range($(container).find('.xcrud-columns-select option:selected').data('type'), container);
-	Xcrud.map_init(container);
-	Xcrud.check_fixed_buttons();
-	Xcrud.init_tooltips(container);
-	Xcrud.init_tabs(container);
-	Xcrud.check_message(container);
-	Xcrud.init_nestable(container);
-	Xcrud.init_select2(container);
-	Xcrud.init_checkbox(container);
-	Xcrud.init_mask(container);
-	Xcrud.init_columns_select(container);
+	cCrud.init_datepicker(container);
+	cCrud.init_texteditor(container);
+	cCrud.init_datepicker_range($(container).find('.xcrud-columns-select option:selected').data('type'), container);
+	cCrud.map_init(container);
+	cCrud.check_fixed_buttons();
+	cCrud.init_tooltips(container);
+	cCrud.init_tabs(container);
+	cCrud.check_message(container);
+	cCrud.init_nestable(container);
+	cCrud.init_select2(container);
+	cCrud.init_checkbox(container);
+	cCrud.init_mask(container);
+	cCrud.init_columns_select(container);
 });
 //
 /** print */
