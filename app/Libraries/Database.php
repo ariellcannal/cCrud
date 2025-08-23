@@ -26,6 +26,13 @@ class Database
 
     private $ci;
 
+    /**
+     * Configurações do cCrud.
+     *
+     * @var cCrudConfig
+     */
+    private cCrudConfig $config;
+
     public static function get_instance($params = false, &$ci)
     {
         if (is_array($params)) {
@@ -35,21 +42,23 @@ class Database
             $instance_name = 'db_instance_default';
         }
         if (! isset(self::$_instance[$instance_name]) or null === self::$_instance[$instance_name]) {
+            $config = config('cCrudConfig');
             if (! is_array($params)) {
-                $dbuser = cCrudConfig::$dbuser;
-                $dbpass = cCrudConfig::$dbpass;
-                $dbname = cCrudConfig::$dbname;
-                $dbhost = cCrudConfig::$dbhost;
-                $dbencoding = cCrudConfig::$dbencoding;
+                $dbuser     = $config->dbuser;
+                $dbpass     = $config->dbpass;
+                $dbname     = $config->dbname;
+                $dbhost     = $config->dbhost;
+                $dbencoding = $config->dbencoding;
             }
-            self::$_instance[$instance_name] = new self($dbuser, $dbpass, $dbname, $dbhost, $dbencoding, $ci);
+            self::$_instance[$instance_name] = new self($dbuser, $dbpass, $dbname, $dbhost, $dbencoding, $ci, $config);
         }
         return self::$_instance[$instance_name];
     }
 
-    private function __construct($dbuser, $dbpass, $dbname, $dbhost, $dbencoding, &$ci)
+    private function __construct($dbuser, $dbpass, $dbname, $dbhost, $dbencoding, &$ci, cCrudConfig $config)
     {
-        $this->ci = &$ci;
+        $this->ci     = &$ci;
+        $this->config = $config;
         $this->ci->load->model('xcrud_model');
         return;
 
@@ -65,8 +74,8 @@ class Database
         $this->connect->set_charset($dbencoding);
         if ($this->connect->error)
             $this->error($this->connect->error);
-        if (cCrudConfig::$db_time_zone)
-            $this->connect->query('SET time_zone = \'' . cCrudConfig::$db_time_zone . '\'');
+        if ($this->config->db_time_zone)
+            $this->connect->query('SET time_zone = \'' . $this->config->db_time_zone . '\'');
     }
 
     public function query($query = '')
