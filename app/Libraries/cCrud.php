@@ -493,11 +493,16 @@ class cCrud
     public $ci = null;
 
     /**
-     * constructor, sets basic xcrud vars (they can be changed by public
-     * pethods)
+     * Construtor que define as variáveis básicas do cCrud,
+     * podendo ser alteradas por métodos públicos.
      */
     protected function __construct()
     {
+        // Verifica se o pacote está sendo utilizado dentro do CodeIgniter 4
+        if (!defined('CI_VERSION') || version_compare(CI_VERSION, '4.0.0', '<')) {
+            throw new \Error('Este pacote requer a execução dentro do CodeIgniter 4.');
+        }
+
         $this->config = class_exists('\\Config\\cCrudConfig') ? new \Config\cCrudConfig() : new cCrudConfig();
 
         $this->config->scripts_url = self::check_url($this->config->scripts_url, true);
