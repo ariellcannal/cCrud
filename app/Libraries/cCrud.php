@@ -5566,6 +5566,19 @@ class cCrud
     protected function _set_column_names()
     {
         $subselect_before = $this->subselect_before;
+
+        // Recupera os atributos definidos na Entity para utilizar como labels padrão
+        $entityAttributes = [];
+        $returnType = method_exists($this->model, 'getReturnType') ? $this->model->getReturnType() : $this->model->returnType;
+        if ($returnType && class_exists($returnType)) {
+            $ref = new \ReflectionClass($returnType);
+            if ($ref->hasProperty('attributes')) {
+                $property = $ref->getProperty('attributes');
+                $property->setAccessible(true);
+                $entityAttributes = (array) $property->getValue($ref->newInstance());
+            }
+        }
+
         foreach ($this->columns as $key => $col) {
             if ($name = array_search($key, $subselect_before)) {
                 $this->columns_names[$name] = $this->html_safe($this->labels[$name]);
@@ -5577,6 +5590,8 @@ class cCrud
                 $this->columns_names[$key] = $this->html_safe($this->labels[$key]);
             } elseif ($this->fk_relation && isset($this->fk_relation[$key])) {
                 $this->columns_names[$key] = $this->fk_relation[$key]['label'];
+            } elseif (isset($entityAttributes[$col['field']])) {
+                $this->columns_names[$key] = $this->html_safe($entityAttributes[$col['field']]);
             } else {
                 $this->columns_names[$key] = $this->html_safe($this->_humanize($col['field']));
             }
