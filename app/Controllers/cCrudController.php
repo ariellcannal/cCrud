@@ -3,18 +3,24 @@ namespace cCrud\Controller;
 
 use App\Controllers\BaseController;
 use cCrud\Libraries\cCrud;
+use CodeIgniter\Model;
 
 class cCrudController extends BaseController
 {
+    /**
+     * Model utilizado pelo controlador.
+     */
+    protected Model $model;
 
-    public function ajax()
+    public function ajax(Model $model)
     {
-        return cCrud::get_requested_instance();
+        return cCrud::get_requested_instance($model);
     }
 
-    protected function obterInstancia($name = false): cCrud
+    protected function obterInstancia(Model $model, $name = false): cCrud
     {
-        return cCrud::get_instance($name);
+        $this->model = $model;
+        return cCrud::get_instance($model, $name);
     }
 
     protected function armazenarSessao()
