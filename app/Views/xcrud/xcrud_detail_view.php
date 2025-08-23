@@ -1,5 +1,5 @@
-<?php if($this->get_var('custom_head')!= false)
-	require (CCRUD_PATH . '/' . $this->config->themes_path . $this->get_var('custom_head'));?>
+<?php if ($this->get_var('custom_head') != false)
+        require APPPATH . 'Views/' . ltrim($this->get_var('custom_head'), '/'); ?>
 	
 <?php require $_SERVER['DOCUMENT_ROOT'].'/application/views/xcrud_default/_blocos/replace_title.php';?>
 <?php if($this->is_inner)
