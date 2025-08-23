@@ -94,6 +94,13 @@ class Database
         if ($this->config->db_time_zone) {
             $this->connect->query('SET time_zone = \'\'' . $this->config->db_time_zone . '\'\'');
         }
+        if (! $this->connect)
+            $this->erro('db_connection_error');
+        $this->connect->set_charset($dbencoding);
+        if ($this->connect->error)
+            $this->erro('db_error', 500, [$this->connect->error]);
+        if ($this->config->db_time_zone)
+            $this->connect->query('SET time_zone = \'' . $this->config->db_time_zone . '\'');
     }
 
     /**
@@ -110,6 +117,10 @@ class Database
         $this->result = $this->ci->xcrud_model->consulta($query);
         if (is_array($this->result)) {
             throw new RuntimeException(lang('cCrud.db_query_error', [$this->result['message'], $query]), (int) $this->result['code']);
+            $this->erro('db_error_query', 500, [$this->result['message'], $query, $this->result['code']]);
+            return;
+        } else {
+            return $this->ci->xcrud_model->linhasAfetadas();
         }
 
         return $this->ci->xcrud_model->linhasAfetadas();
@@ -220,4 +231,9 @@ class Database
      * @author Ariel Canal
      *         Inserido o filtro do erro de Foreing Key.
      */
+    private function erro(string $chave = 'undefined_error', int $codigoHttp = 500, array $parametros = []): void
+    {
+        $mensagem = lang('cCrud.' . $chave, $parametros);
+        throw new \RuntimeException($mensagem, $codigoHttp);
+    }
 }

@@ -2704,7 +2704,7 @@ class cCrud
                 // $image;
                 if (! is_file($path)) {
                     header("HTTP/1.0 404 Not Found");
-                    exit('Not Found');
+                    self::erro('not_found', 404);
                 }
                 // $output = file_get_contents($path);
             }
@@ -2727,7 +2727,7 @@ class cCrud
             // $image;
             if (! is_file($path)) {
                 header("HTTP/1.0 404 Not Found");
-                exit('Not Found');
+                self::erro('not_found', 404);
             }
             // $output = file_get_contents($path);
         }
@@ -2959,7 +2959,6 @@ class cCrud
     {
         if (! $this->is_create || $this->table_ro)
             throw new RuntimeException('Forbidden');
-
         $this->primary_val = null;
         $this->result_row = array_merge($this->defaults, $postdata);
 
@@ -3788,7 +3787,6 @@ class cCrud
 
             if (! $this->is_edit($row))
                 throw new RuntimeException('Forbidden');
-
             if (isset($this->pass_var['edit'])) {
                 foreach ($this->pass_var['edit'] as $field => $param) {
                     if (isset($param['tmp_value'])) {
@@ -6108,6 +6106,11 @@ class cCrud
             if (! $res) {
                 throw new RuntimeException('Can\'t use alternative session. Memcache(d) has invalid parameters or broken. Storing failed');
             }
+            unset($_SESSION['lists']['xcrud_session']);
+            if (! $res) {
+                self::erro('memcache_invalid_parameters');
+
+            }
         }
     }
     protected function find_prev_task()
@@ -8249,7 +8252,7 @@ class cCrud
         }
         if (! $srcHandle) {
             throw new RuntimeException('Could not execute imagecreatefrom() function! ');
-            return false;
+                return false;
         }
         if ($srcHeight < $srcWidth) {
             $ratio = (double) ($srcHeight / $new_size_h);
@@ -8372,7 +8375,7 @@ class cCrud
         }
         if (! $srcHandle) {
             throw new RuntimeException('Could not execute imagecreatefrom() function!');
-            return false;
+                return false;
         }
         $dstHandle = ImageCreateTrueColor($new_size_w, $new_size_h);
         switch ($type) {
