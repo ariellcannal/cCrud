@@ -1,5 +1,7 @@
 <?php
-namespace Xcrud\Libraries;
+namespace cCrud\Libraries;
+
+use cCrud\Config\cCrudConfig;
 
 class Database
 {
@@ -34,11 +36,11 @@ class Database
         }
         if (! isset(self::$_instance[$instance_name]) or null === self::$_instance[$instance_name]) {
             if (! is_array($params)) {
-                $dbuser = Xcrud_config::$dbuser;
-                $dbpass = Xcrud_config::$dbpass;
-                $dbname = Xcrud_config::$dbname;
-                $dbhost = Xcrud_config::$dbhost;
-                $dbencoding = Xcrud_config::$dbencoding;
+                $dbuser = cCrudConfig::$dbuser;
+                $dbpass = cCrudConfig::$dbpass;
+                $dbname = cCrudConfig::$dbname;
+                $dbhost = cCrudConfig::$dbhost;
+                $dbencoding = cCrudConfig::$dbencoding;
             }
             self::$_instance[$instance_name] = new self($dbuser, $dbpass, $dbname, $dbhost, $dbencoding, $ci);
         }
@@ -63,27 +65,27 @@ class Database
         $this->connect->set_charset($dbencoding);
         if ($this->connect->error)
             $this->error($this->connect->error);
-        if (Xcrud_config::$db_time_zone)
-            $this->connect->query('SET time_zone = \'' . Xcrud_config::$db_time_zone . '\'');
+        if (cCrudConfig::$db_time_zone)
+            $this->connect->query('SET time_zone = \'' . cCrudConfig::$db_time_zone . '\'');
     }
 
     public function query($query = '')
     {
-        $this->result = $this->ci->xcrud_model->query($query);
+        $this->result = $this->ci->xcrud_model->consulta($query);
         if (is_array($this->result)) {
             $this->error($this->result['message'] . '<pre>' . $query . '</pre>', $this->result['code'], $this->result['message']);
             return;
         } else {
-            return $this->ci->xcrud_model->affected_rows();
+            return $this->ci->xcrud_model->linhasAfetadas();
         }
     }
 
-    public function insert_id()
+    public function idInserido()
     {
         return $this->ci->xcrud_model->insert_id();
     }
 
-    public function result()
+    public function resultado()
     {
         return $this->ci->xcrud_model->result($this->result);
 
@@ -97,7 +99,7 @@ class Database
         return $out;
     }
 
-    public function row()
+    public function linha()
     {
         return $this->ci->xcrud_model->row($this->result);
 
@@ -141,7 +143,7 @@ class Database
                             $val = 0;
                         }
                     }
-                    return '\'' . $this->ci->xcrud_model->escape_str($val) . '\'';
+                    return '\'' . $this->ci->xcrud_model->escaparString($val) . '\'';
                     break;
                 default:
                     if (is_null($val) || trim($val) == '') {
@@ -160,8 +162,8 @@ class Database
             }
         }
         if ($not_qu)
-            return $this->magic_quotes ? (string) $val : $this->ci->xcrud_model->escape_str((string) $val);
-        return '\'' . ($this->magic_quotes ? (string) $val : $this->ci->xcrud_model->escape_str((string) $val)) . '\'';
+            return $this->magic_quotes ? (string) $val : $this->ci->xcrud_model->escaparString((string) $val);
+        return '\'' . ($this->magic_quotes ? (string) $val : $this->ci->xcrud_model->escaparString((string) $val)) . '\'';
     }
 
     public function escape_like($val, $pattern = array(
@@ -174,7 +176,7 @@ class Database
         if ($val == '') {
             return '\'\'';
         } else {
-            return '\'' . $pattern[0] . ($this->magic_quotes ? (string) str_replace(' ', '%', $val) : $this->ci->xcrud_model->escape_str((string) str_replace(' ', '%', $val))) . $pattern[1] . '\'';
+            return '\'' . $pattern[0] . ($this->magic_quotes ? (string) str_replace(' ', '%', $val) : $this->ci->xcrud_model->escaparString((string) str_replace(' ', '%', $val))) . $pattern[1] . '\'';
         }
     }
 

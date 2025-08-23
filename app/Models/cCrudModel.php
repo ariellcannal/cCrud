@@ -1,9 +1,9 @@
 <?php
-namespace Xcrud\Model;
+namespace cCrud\Model;
 
 use CodeIgniter\Model;
 
-class XcrudModel extends Model
+class cCrudModel extends Model
 {
 
     function __construct()
@@ -11,7 +11,7 @@ class XcrudModel extends Model
         parent::__construct();
     }
 
-    function query($query)
+    function consulta($query)
     {
         $r = $this->db->query($query, false);
         if (! $r) {
@@ -20,27 +20,27 @@ class XcrudModel extends Model
         return $r;
     }
 
-    function affected_rows()
+    function linhasAfetadas()
     {
         return $this->db->affected_rows();
     }
 
-    function insert_id()
+    function idInserido()
     {
         return $this->db->insert_id();
     }
 
-    function result($r)
+    function resultado($r)
     {
         return $r->result_array();
     }
 
-    function row($r)
+    function linha($r)
     {
         return $r->row_array();
     }
 
-    function escape_str($value)
+    function escaparString($value)
     {
         return $this->db->escape_str($value);
     }
