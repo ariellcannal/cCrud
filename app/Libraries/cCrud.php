@@ -2,7 +2,7 @@
 namespace cCrud\Libraries;
 
 use cCrud\Config\cCrudConfig;
-use cCrud\Libraries\Database;
+use CodeIgniter\Model;
 use RuntimeException;
 
 // direct access to DB driver and config
@@ -32,6 +32,13 @@ class cCrud
      * @var cCrudConfig
      */
     protected cCrudConfig $config;
+
+    /**
+     * Model utilizado para todas as consultas ao banco de dados.
+     *
+     * @var Model
+     */
+    protected Model $model;
 
     public $instance_name;
 
@@ -561,21 +568,34 @@ class cCrud
         return $this->render();
     }
 
-    public static function get_instance($name = false)
+    /**
+     * Retorna uma instância do cCrud utilizando o Model informado.
+     */
+    public static function get_instance(Model $model, $name = false)
     {
         self::init_prepare();
-        if (! $name)
+        if (! $name) {
             $name = sha1(rand() . microtime());
+        }
         if (! isset(self::$instance[$name]) || null === self::$instance[$name]) {
             self::$instance[$name] = new self();
             self::$instance[$name]->instance_name = $name;
-            self::$instance[$name]->ci = &$ci;
         }
         self::$instance[$name]->instance_count = count(self::$instance);
+        self::$instance[$name]->model = $model;
+
+        $returnType = method_exists($model, 'getReturnType') ? $model->getReturnType() : $model->returnType;
+        if (! is_subclass_of($returnType, '\\CodeIgniter\\Entity\\Entity')) {
+            throw new \Error('O Model informado deve utilizar uma Entity CI4 como returnType.');
+        }
+
         return self::$instance[$name];
     }
 
-    public static function get_requested_instance(&$ci)
+    /**
+     * Recupera a instância solicitada via requisição Ajax.
+     */
+    public static function get_requested_instance(Model $model)
     {
         if (isset($_POST['xcrud']['instance']) && isset($_POST['xcrud']['key']) && isset($_POST['xcrud']['task'])) {
             self::init_prepare('post');
@@ -590,8 +610,8 @@ class cCrud
         } else {
             self::error('Wrong request!');
         }
-        $ci = &get_instance();
-        $xcrud_session = $ci->session->userdata('xcrud_session');
+        $session = \Config\Services::session();
+        $xcrud_session = $session->get('xcrud_session');
 
         // var_dump($xcrud_session[$inst_name]);
         // if (isset($xcrud_session[$inst_name]['key']) && $xcrud_session[$inst_name]['key'] == $key) {
@@ -600,7 +620,7 @@ class cCrud
             self::$instance[$inst_name]->is_get = $is_get;
             self::$instance[$inst_name]->ajax_request = true;
             self::$instance[$inst_name]->instance_name = $inst_name;
-            self::$instance[$inst_name]->ci = &$ci;
+            self::$instance[$inst_name]->model = $model;
             self::$instance[$inst_name]->import_vars($key);
             self::$instance[$inst_name]->inner_where();
             return self::$instance[$inst_name]->render();
@@ -2456,14 +2476,12 @@ class cCrud
     protected function render_custom_datagrid()
     {
         $query = $this->parse_query_params();
-        $db = Database::get_instance($this->connection, $this->ci);
-        $db->query('SELECT COUNT(*) as `count` FROM (SELECT NULL' . $this->total_query . ') counts');
-        $this->sum_row = $db->row();
+        $countQuery = $this->model->db->query('SELECT COUNT(*) as `count` FROM (SELECT NULL' . $this->total_query . ') counts');
+        $this->sum_row = $countQuery->getRowArray();
         $this->result_total = $this->sum_row['count'];
         $order_by = $this->_build_order_by();
         $limit = $this->_build_limit($this->result_total);
-        $db->query($query . ' ' . $order_by . ' ' . $limit);
-        $this->result_list = $db->result();
+        $this->result_list = $this->model->db->query($query . ' ' . $order_by . ' ' . $limit)->getResultArray();
         $this->columns = reset($this->result_list);
         unset($this->columns['primary_key']);
         foreach ($this->columns as $key => $tmp) {
@@ -2490,7 +2508,6 @@ class cCrud
         }
         $this->columns = $this->fields_list;
         $query = $this->parse_query_params();
-        $db = Database::get_instance($this->connection, $this->ci);
         $order_by = $this->_build_order_by();
         $this->_set_column_names();
         ini_set('auto_detect_line_endings', true);
@@ -2505,8 +2522,8 @@ class cCrud
         $output = fopen('php://output', 'w');
         fwrite($output, chr(0xEF) . chr(0xBB) . chr(0xBF)); // bom
         fputcsv($output, $this->columns_names, $this->config->csv_delimiter, $this->config->csv_enclosure);
-        $db->query($query . ' ' . $order_by);
-        foreach ($db->result() as $row) {
+        $queryResult = $this->model->db->query($query . ' ' . $order_by);
+        foreach ($queryResult->getResultArray() as $row) {
             $out = array();
             foreach ($this->columns as $field => $fitem) {
                 $out[] = htmlspecialchars_decode(strip_tags($this->_render_export_item($field, $row[$field], $row['primary_key'], $row)), ENT_QUOTES);
@@ -2644,15 +2661,13 @@ class cCrud
         $image = array_search($field, array_reverse($this->upload_to_save));
         if (! $image) {
             list ($tmp1, $tmp2) = explode('.', $field);
-            $db = Database::get_instance($this->connection, $this->ci);
 
             $this->where_pri($this->primary_key, $this->primary_val);
             $where = $this->_build_where();
             $table_join = $this->_build_table_join();
 
-            $db = Database::get_instance($this->connection, $this->ci);
-            $db->query("SELECT `$tmp1`.`$tmp2`\r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where}\r\n LIMIT 1");
-            $row = $db->row();
+            $query = $this->model->db->query("SELECT `$tmp1`.`$tmp2`\r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where}\r\n LIMIT 1");
+            $row = $query->getRowArray();
             $image = $row[$tmp2];
             if (isset($this->upload_config[$field]['blob']) && $this->upload_config[$field]['blob'] === true) {
                 $blob = true;
@@ -2785,7 +2800,6 @@ class cCrud
         if (! $this->is_csv) {
             return self::error('Restricted');
         }
-        $db = Database::get_instance($this->connection, $this->ci);
         $select = $this->_build_select_list(true);
         $table_join = $this->_build_table_join();
         $where = $this->_build_where();
@@ -2798,8 +2812,8 @@ class cCrud
             $headers[] = $this->columns_names[$field];
         }
         // print "SELECT {$select} FROM `{$this->table}` {$table_join} {$where} {$order_by}";exit;
-        $db->query("SELECT {$select} FROM `{$this->table}` {$table_join} {$where} {$order_by}");
-        if ($db->result->num_rows > $this->config->csv_limit)
+        $query = $this->model->db->query("SELECT {$select} FROM `{$this->table}` {$table_join} {$where} {$order_by}");
+        if ($query->getNumRows() > $this->config->csv_limit)
             return self::error('A quantidade de registros excede o maximo permitido para esta operacao.');
         ini_set('auto_detect_line_endings', true);
         header("Pragma: public");
@@ -2997,9 +3011,8 @@ class cCrud
         $select = $this->_build_select_details($mode);
         $where = $this->_build_where();
         $table_join = $this->_build_table_join();
-        $db = Database::get_instance($this->connection, $this->ci);
-        $db->query("SELECT {$select}\r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where}\r\n LIMIT 1");
-        $this->result_row = array_merge((array) $db->row(), $postdata);
+        $query = $this->model->db->query("SELECT {$select}\r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where}\r\n LIMIT 1");
+        $this->result_row = array_merge((array) $query->getRowArray(), $postdata);
 
         // moved here to support conditions for buttons
         if (((! $this->is_edit($this->result_row) || $this->table_ro) && $mode == 'edit') or (! $this->is_view($this->result_row) && $mode == 'view'))
@@ -3076,32 +3089,7 @@ class cCrud
 
     protected function prepare_query_field($val, $key, $action, $no_processing = false)
     {
-        $db = Database::get_instance($this->connection, $this->ci);
-        if ($no_processing) {
-            if (isset($this->no_quotes[$key]) && isset($this->pass_var[$action][$key])) {
-                return $db->escape($val, true);
-            } else {
-                return $db->escape($val, false, $this->field_type[$key], $this->field_null[$key], isset($this->bit_field[$key]));
-            }
-        } else {
-            if (is_array($val)) {
-                return $db->escape(implode(',', $val), false, $this->field_type[$key], $this->field_null[$key], isset($this->bit_field[$key]));
-            } elseif (isset($this->point_field[$key])) {
-                return 'Point(' . $db->escape($val, true, 'point', $this->field_null[$key], isset($this->bit_field[$key])) . ')';
-            } elseif (isset($this->int_field[$key])) {
-                return $db->escape($val, false, 'int', $this->field_null[$key], isset($this->bit_field[$key]));
-            } elseif (isset($this->float_field[$key]) && $this->field_type[$key] == 'price') {
-                $val = str_replace($this->field_attr[$key]['prefix'], '', $val);
-                $val = str_replace($this->field_attr[$key]['suffix'], '', $val);
-                $val = str_replace($this->field_attr[$key]['separator'], '', $val);
-                $val = str_replace($this->field_attr[$key]['point'], '.', $val);
-                return $db->escape($val, false, 'float', $this->field_null[$key], isset($this->bit_field[$key]));
-            } elseif (isset($this->no_quotes[$key]) && isset($this->pass_var[$action][$key])) {
-                return $db->escape($val, true);
-            } else {
-                return $db->escape($val, false, $this->field_type[$key], $this->field_null[$key], isset($this->bit_field[$key]));
-            }
-        }
+        return $this->model->db->escape($val);
     }
 
     /**
