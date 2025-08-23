@@ -2,6 +2,7 @@
 namespace cCrud\Libraries;
 
 use cCrud\Config\cCrudConfig;
+use RuntimeException;
 
 class Database
 {
@@ -55,6 +56,19 @@ class Database
         return self::$_instance[$instance_name];
     }
 
+    /**
+     * Construtor da classe.
+     *
+     * @param string      $dbuser     Usuário do banco de dados
+     * @param string      $dbpass     Senha do banco de dados
+     * @param string      $dbname     Nome do banco de dados
+     * @param string      $dbhost     Host do banco de dados
+     * @param string      $dbencoding Codificação utilizada
+     * @param mixed       $ci         Instância do CodeIgniter
+     * @param cCrudConfig $config     Configurações do cCrud
+     *
+     * @throws RuntimeException Quando ocorrer falha na conexão com o banco
+     */
     private function __construct($dbuser, $dbpass, $dbname, $dbhost, $dbencoding, &$ci, cCrudConfig $config)
     {
         $this->ci     = &$ci;
@@ -64,11 +78,22 @@ class Database
 
         $this->magic_quotes = get_magic_quotes_runtime();
         if (strpos($dbhost, ':') !== false) {
-            list ($host, $port) = explode(':', $dbhost, 2);
+            list($host, $port) = explode(':', $dbhost, 2);
             preg_match('/^([0-9]*)([^0-9]*.*)$/', $port, $socks);
             $this->connect = mysqli_connect($host, $dbuser, $dbpass, $dbname, $socks[1] ? $socks[1] : null, $socks[2] ? $socks[2] : null);
-        } else
+        } else {
             $this->connect = mysqli_connect($dbhost, $dbuser, $dbpass, $dbname);
+        }
+        if (! $this->connect) {
+            throw new RuntimeException(lang('cCrud.db_connection_error'));
+        }
+        $this->connect->set_charset($dbencoding);
+        if ($this->connect->error) {
+            throw new RuntimeException($this->connect->error);
+        }
+        if ($this->config->db_time_zone) {
+            $this->connect->query('SET time_zone = \'\'' . $this->config->db_time_zone . '\'\'');
+        }
         if (! $this->connect)
             $this->erro('db_connection_error');
         $this->connect->set_charset($dbencoding);
@@ -78,15 +103,27 @@ class Database
             $this->connect->query('SET time_zone = \'' . $this->config->db_time_zone . '\'');
     }
 
+    /**
+     * Executa consulta SQL.
+     *
+     * @param string $query Consulta a ser executada
+     *
+     * @return mixed Número de linhas afetadas
+     *
+     * @throws RuntimeException Quando a consulta retornar erro
+     */
     public function query($query = '')
     {
         $this->result = $this->ci->xcrud_model->consulta($query);
         if (is_array($this->result)) {
+            throw new RuntimeException(lang('cCrud.db_query_error', [$this->result['message'], $query]), (int) $this->result['code']);
             $this->erro('db_error_query', 500, [$this->result['message'], $query, $this->result['code']]);
             return;
         } else {
             return $this->ci->xcrud_model->linhasAfetadas();
         }
+
+        return $this->ci->xcrud_model->linhasAfetadas();
     }
 
     public function idInserido()
