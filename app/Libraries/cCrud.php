@@ -600,16 +600,16 @@ class cCrud
     {
         if (isset($_POST['xcrud']['instance']) && isset($_POST['xcrud']['key']) && isset($_POST['xcrud']['task'])) {
             self::init_prepare('post');
-            $key = $_POST['xcrud']['key'] ? $_POST['xcrud']['key'] : self::error('Security key cannot be empty');
-            $inst_name = $_POST['xcrud']['instance'] ? $_POST['xcrud']['instance'] : self::error('Instance name cannot be empty');
+            $key = $_POST['xcrud']['key'] ? $_POST['xcrud']['key'] : self::erro('security_key_empty');
+            $inst_name = $_POST['xcrud']['instance'] ? $_POST['xcrud']['instance'] : self::erro('instance_name_empty');
             $is_get = false;
         } elseif (isset($_GET['xcrud']['instance']) && isset($_GET['xcrud']['key']) && isset($_GET['xcrud']['task']) && $_GET['xcrud']['task'] == 'file') {
             self::init_prepare('get');
-            $key = $_GET['xcrud']['key'] ? $_GET['xcrud']['key'] : self::error('Security key cannot be empty');
-            $inst_name = $_GET['xcrud']['instance'] ? $_GET['xcrud']['instance'] : self::error('Instance name cannot be empty');
+            $key = $_GET['xcrud']['key'] ? $_GET['xcrud']['key'] : self::erro('security_key_empty');
+            $inst_name = $_GET['xcrud']['instance'] ? $_GET['xcrud']['instance'] : self::erro('instance_name_empty');
             $is_get = true;
         } else {
-            self::error('Wrong request!');
+            self::erro('wrong_request');
         }
         $session = \Config\Services::session();
         $xcrud_session = $session->get('xcrud_session');
@@ -626,9 +626,7 @@ class cCrud
             self::$instance[$inst_name]->inner_where();
             return self::$instance[$inst_name]->render();
         } else
-            self::error('<strong>The verification key is out of date</strong><br />
-                This means that your browser cached a previous version of this page with an old key (for security reasons the verification key is generated every request)<br />
-                Why? Maybe you pressed the back button in your browser or opened a bookmark from last session. <br /><strong>Just reload the page, nothing happened :)</strong>');
+            self::erro('verification_key_outdated');
     }
 
     protected static function init_prepare($method = false)
@@ -664,8 +662,7 @@ class cCrud
                     session();
                 }
             } else {
-                self::error('xCRUD can not create session, because the output is already sent into browser.
-                Try to define xCRUD instance before the output start or use session_start() at the beginning of your script');
+                self::erro('session_output_sent');
             }
         }
     }
@@ -2068,7 +2065,7 @@ class cCrud
     public function call_update($postdata, $primary)
     {
         if (! $this->task) {
-            self::error('Sorry, but you must use <strong>call_update()</strong> only in callbacks');
+            self::erro('call_update_only_callbacks');
         }
         return $this->_update($postdata->to_array(), $primary);
     }
@@ -2192,7 +2189,7 @@ class cCrud
                     $this->load_view[$mode] = '../' . $file;
                     break;
                 default:
-                    self::error('Incorrect mode.');
+                    self::erro('incorrect_mode');
             }
         }
         return $this;
@@ -2234,7 +2231,7 @@ class cCrud
     public function get($name = '')
     {
         if (! $this->task) {
-            self::error('Sorry, but you must use <strong>get()</strong> only in callbacks');
+            self::erro('get_only_callbacks');
         }
         if ($this->_get('key')) {
             return $this->_get($name);
@@ -2310,7 +2307,7 @@ class cCrud
     protected function _run_task()
     {
         if ($this->after && $this->after == $this->task) {
-            return self::error('Task recursion!');
+            return self::erro('task_recursion');
         }
         if (! $this->task) {
             $this->task = 'list';
@@ -2327,7 +2324,7 @@ class cCrud
                 break;
             case 'save':
                 if (! $this->before) {
-                    return self::error('Restricted task!');
+                    return self::erro('restricted_task');
                 }
                 $this->_set_field_types($this->before);
                 return $this->_save();
@@ -2370,7 +2367,7 @@ class cCrud
                 break;
             case 'print':
                 if (! $this->is_print) {
-                    return self::error('Restricted');
+                    return self::erro('restricted');
                 }
                 $this->_set_field_types('list', $this->config->print_all_fields);
                 $this->set_custom_lists();
@@ -2449,7 +2446,7 @@ class cCrud
         switch ($this->task) {
             case 'print':
                 if (! $this->is_print) {
-                    return self::error('Restricted');
+                    return self::erro('restricted');
                 }
                 $this->start = 0;
                 $this->limit = 0;
@@ -2498,7 +2495,7 @@ class cCrud
     protected function render_custom_csv()
     {
         if (! $this->is_csv) {
-            return self::error('Restricted');
+            return self::erro('restricted');
         }
         $this->columns = $this->fields_list;
         $query = $this->parse_query_params();
@@ -2684,7 +2681,7 @@ class cCrud
                 // $image;
                 if (! is_file($path)) {
                     header("HTTP/1.0 404 Not Found");
-                    exit('Not Found');
+                    self::erro('not_found', 404);
                 }
                 // $output = file_get_contents($path);
             }
@@ -2707,7 +2704,7 @@ class cCrud
             // $image;
             if (! is_file($path)) {
                 header("HTTP/1.0 404 Not Found");
-                exit('Not Found');
+                self::erro('not_found', 404);
             }
             // $output = file_get_contents($path);
         }
@@ -2792,7 +2789,7 @@ class cCrud
     public function _csv()
     {
         if (! $this->is_csv) {
-            return self::error('Restricted');
+            return self::erro('restricted');
         }
         $select = $this->_build_select_list(true);
         $table_join = $this->_build_table_join();
@@ -2938,7 +2935,7 @@ class cCrud
     protected function _create($postdata = array())
     {
         if (! $this->is_create || $this->table_ro)
-            return self::error('Forbidden');
+            return self::erro('forbidden');
 
         $this->primary_val = null;
         $this->result_row = array_merge($this->defaults, $postdata);
@@ -3014,7 +3011,7 @@ class cCrud
                 $this->task = $this->grid_restrictions[$mode][0]['alt'];
                 return $this->_run_task();
             } else {
-                return self::error('Forbidden');
+                return self::erro('forbidden');
             }
 
         $callback_method = 'before_' . $mode;
@@ -3103,7 +3100,7 @@ class cCrud
     protected function _insert($postdata, $no_processing = false, $no_processing_fields = array())
     {
         if (! $postdata) {
-            self::error('$postdata array is empty');
+            self::erro('postdata_empty');
         }
         $set = array();
         $db = Database::get_instance($this->connection, $this->ci);
@@ -3170,10 +3167,10 @@ class cCrud
         }
         // $keys = array_keys($set[$this->table]);
         if (! $set) {
-            self::error('Nothing to insert');
+            self::erro('nothing_to_insert');
         }
         if (! $this->primary_ai && ! isset($postdata[$this->table . '.' . $this->primary_key])) {
-            self::error('Can\'t insert a row. No primary value.');
+            self::erro('no_primary_value');
         }
         $db->query('INSERT INTO `' . $this->table . '` (' . implode(',', array_keys($set[$this->table])) . ') VALUES (' . implode(',', $set[$this->table]) . ')');
         if ($this->primary_ai) {
@@ -3259,7 +3256,7 @@ class cCrud
     protected function _update($postdata, $primary)
     {
         if (! $postdata) {
-            self::error('$postdata array is empty');
+            self::erro('postdata_empty');
         }
         $res = false;
         $set = array();
@@ -3311,7 +3308,7 @@ class cCrud
             }
         }
         if (! $set) {
-            self::error('Nothing to update');
+            self::erro('nothing_to_update');
         }
         $this->apply_record_changes($set);
         if (! $this->join && ! $this->join_relation) {
@@ -3381,7 +3378,7 @@ class cCrud
     {
         $del = false;
         if ($this->table_ro)
-            return self::error('Forbidden');
+            return self::erro('forbidden');
         if ($this->before_remove) {
             $path = $this->check_file($this->before_remove['path'], 'before_remove');
             include_once ($path);
@@ -3448,7 +3445,7 @@ class cCrud
                     $del_row = $db->row();
                 }
                 if (! $this->is_remove($del_row)) {
-                    return self::error('Forbidden');
+                    return self::erro('forbidden');
                 }
                 $del = $db->query("DELETE FROM `{$this->table}` WHERE `{$this->primary_key}` = " . $db->escape($this->primary_val) . " LIMIT 1");
             } else {
@@ -3467,7 +3464,7 @@ class cCrud
                     $del_row = $db->row();
                 }
                 if (! $this->is_remove($del_row)) {
-                    return self::error('Forbidden');
+                    return self::erro('forbidden');
                 }
                 $del = $db->query("DELETE " . implode(',', $tables) . " FROM `{$this->table}` AS `{$this->table}` " . implode(' ', $joins) . " WHERE `{$this->table}`.`{$this->primary_key}` = " . $db->escape($this->primary_val));
             }
@@ -3586,7 +3583,7 @@ class cCrud
     {
         $postdata = $this->_post('postdata');
         if (! $postdata) {
-            self::error('No data to save!');
+            self::erro('no_data_to_save');
         }
 
         $postdata = $this->check_postdata($postdata, $this->primary_val);
@@ -3610,7 +3607,7 @@ class cCrud
         }
         if (! $this->primary_val) {
             if (! $this->is_create || $this->table_ro)
-                return self::error('Forbidden');
+                return self::erro('forbidden');
             if (isset($this->pass_var['create'])) {
                 foreach ($this->pass_var['create'] as $field => $param) {
                     if ($param['eval']) {
@@ -3737,7 +3734,7 @@ class cCrud
             }
         } else {
             if ($this->table_ro)
-                return self::error('Forbidden');
+                return self::erro('forbidden');
             $fields = array();
             $row = array();
             $this->find_details_text_variables();
@@ -3767,7 +3764,7 @@ class cCrud
             }
 
             if (! $this->is_edit($row))
-                return self::error('Forbidden');
+                return self::erro('forbidden');
 
             if (isset($this->pass_var['edit'])) {
                 foreach ($this->pass_var['edit'] as $field => $param) {
@@ -3957,7 +3954,7 @@ class cCrud
                         return $this->create_file($this->_post('field'), '') . $this->render_messages();
                         break;
                     default:
-                        return self::error('Upload Error');
+                        return self::erro('upload_error');
                         break;
                 }
                 break;
@@ -4065,7 +4062,7 @@ class cCrud
     protected function _list($render = true)
     {
         if (! $this->is_list) {
-            return self::error('Forbidden');
+            return self::erro('forbidden');
         }
         $this->_alphabetical();
         /*
@@ -5348,10 +5345,7 @@ class cCrud
                             // $this->is_search = false;
                             break;
                         default:
-                            self::error('<strong>Table "' . $this->table . '" has no any primary or unique key!</strong><br />
-                                This error was made to prevent loss of your data.
-                                You must create primary key (the best - primary autoincrement) for this table.
-                                See documentation for more info.');
+                            self::erro('table_no_primary_or_unique', 400, [$this->table]);
                             break;
                     }
                 }
@@ -6082,11 +6076,11 @@ class cCrud
                 $mc->connect($this->config->mc_host, $this->config->mc_port);
                 $res = $mc->set(self::$sess_id, $data, $this->config->alt_lifetime * 60);
             } else {
-                self::error('Can\'t use alternative session. Memcache(d) is not available');
+                self::erro('memcache_not_available');
             }
             unset($_SESSION['lists']['xcrud_session']);
             if (! $res) {
-                self::error('Can\'t use alternative session. Memcache(d) has invalid parameters or broken. Storing failed');
+                self::erro('memcache_invalid_parameters');
             }
         }
     }
@@ -6120,15 +6114,15 @@ class cCrud
                 $mc->connect($this->config->mc_host, $this->config->mc_port);
                 $data = $mc->get(self::$sess_id);
             } else {
-                self::error('Can\'t use alternative session. Memcache(d) is not available');
+                self::erro('memcache_not_available');
             }
             if (! $data) {
-                self::error('Can\'t use alternative session. Data is not exist');
+                self::erro('alternative_session_data_not_exist');
             }
             $_SESSION['lists']['xcrud_session'] = $this->decrypt($data[0], $data[1]);
             unset($data);
             if (! $_SESSION['lists']['xcrud_session']) {
-                self::error('Can\'t use alternative session. Data is invalid');
+                self::erro('alternative_session_data_invalid');
             }
         }
 
@@ -7663,9 +7657,13 @@ class cCrud
         }
     }
 
-    protected static function error($text = 'Error!', $http_response_code = 400)
+    /**
+     * Lança exceção com mensagem traduzida.
+     */
+    protected static function erro(string $chave = 'undefined_error', int $codigoHttp = 400, array $parametros = []): void
     {
-        throw new RuntimeException($text, $http_response_code);
+        $mensagem = lang('cCrud.' . $chave, $parametros);
+        throw new \RuntimeException($mensagem, $codigoHttp);
     }
 
     protected function _upload()
@@ -7678,7 +7676,7 @@ class cCrud
                 return $this->_upload_file();
                 break;
             default:
-                return self::error('Upload Error');
+                return self::erro('upload_error');
                 break;
         }
     }
@@ -7738,7 +7736,7 @@ class cCrud
             $this->after_render();
             return $out;
         } else
-            return self::error('File is not uploaded');
+            return self::erro('file_not_uploaded');
     }
 
     protected function _upload_image()
@@ -7818,7 +7816,7 @@ class cCrud
             $this->after_render();
             return $out;
         } else
-            return self::error('File is not uploaded');
+            return self::erro('file_not_uploaded');
     }
 
     protected function render_crop_window($filename, $field)
@@ -8033,7 +8031,7 @@ class cCrud
                 return $this->_remove_file();
                 break;
             default:
-                return self::error('Remove Error');
+                return self::erro('remove_error');
                 break;
         }
     }
@@ -8115,7 +8113,7 @@ class cCrud
                 $srcHandle = imagecreatefrompng($src_file);
                 break;
             default:
-                self::error('NO FILE');
+                self::erro('no_file');
                 return false;
         }
         if ($srcWidth >= $srcHeight) {
@@ -8184,7 +8182,7 @@ class cCrud
                     break;
                     break;
                 default:
-                    self::error('NO WATERMARK FILE');
+                    self::erro('no_watermark_file');
                     return false;
             }
             imagecopy($dstHandle, $waterHandle, $offsets['x'], $offsets['y'], 0, 0, $water_w, $water_h);
@@ -8201,7 +8199,7 @@ class cCrud
                 imagepng($dstHandle, $dest_file);
                 break;
             default:
-                self::error('File Type Not Supported!');
+                self::erro('file_type_not_supported');
                 return false;
         }
         imagedestroy($dstHandle);
@@ -8229,11 +8227,11 @@ class cCrud
                 $srcHandle = imagecreatefrompng($src_file);
                 break;
             default:
-                self::error('NO FILE');
+                self::erro('no_file');
                 return false;
         }
         if (! $srcHandle) {
-            self::error('Could not execute imagecreatefrom() function! ');
+            self::erro('imagecreatefrom_failed');
             return false;
         }
         if ($srcHeight < $srcWidth) {
@@ -8282,7 +8280,7 @@ class cCrud
                 break;
         }
         if (! imagecopyresampled($dstHandle, $srcHandle, 0, 0, $xOffset, $yOffset, $new_size_w, $new_size_h, $cpyWidth, $cpyHeight)) {
-            self::error('Could not execute imagecopyresampled() function!');
+            self::erro('imagecopyresampled_failed');
             return false;
         }
         imagedestroy($srcHandle);
@@ -8311,7 +8309,7 @@ class cCrud
                     break;
                     break;
                 default:
-                    self::error('NO WATERMARK FILE');
+                    self::erro('no_watermark_file');
                     return false;
             }
             imagecopy($dstHandle, $waterHandle, $offsets['x'], $offsets['y'], 0, 0, $water_w, $water_h);
@@ -8328,7 +8326,7 @@ class cCrud
                 imagepng($dstHandle, $dest_file);
                 break;
             default:
-                self::error('File Type Not Supported!');
+                self::erro('file_type_not_supported');
                 return false;
         }
         imagedestroy($dstHandle);
@@ -8352,11 +8350,11 @@ class cCrud
                 $srcHandle = imagecreatefrompng($src_file);
                 break;
             default:
-                self::error('NO FILE');
+                self::erro('no_file');
                 return false;
         }
         if (! $srcHandle) {
-            self::error('Could not execute imagecreatefrom() function!');
+            self::erro('imagecreatefrom_failed');
             return false;
         }
         $dstHandle = ImageCreateTrueColor($new_size_w, $new_size_h);
@@ -8376,7 +8374,7 @@ class cCrud
                 break;
         }
         if (! imagecopyresampled($dstHandle, $srcHandle, 0, 0, $x, $y, $new_size_w, $new_size_h, $w, $h)) {
-            self::error('Could not execute imagecopyresampled() function!');
+            self::erro('imagecopyresampled_failed');
             return false;
         }
         imagedestroy($srcHandle);
@@ -8405,7 +8403,7 @@ class cCrud
                     break;
                     break;
                 default:
-                    self::error('NO WATERMARK FILE');
+                    self::erro('no_watermark_file');
                     return false;
             }
             imagecopy($dstHandle, $waterHandle, $offsets['x'], $offsets['y'], 0, 0, $water_w, $water_h);
@@ -8422,7 +8420,7 @@ class cCrud
                 imagepng($dstHandle, $dest_file);
                 break;
             default:
-                self::error('File Type Not Supported!');
+                self::erro('file_type_not_supported');
                 return false;
         }
         imagedestroy($dstHandle);
@@ -8446,7 +8444,7 @@ class cCrud
                 $srcHandle = imagecreatefrompng($src_file);
                 break;
             default:
-                self::error('NO FILE');
+                self::erro('no_file');
                 return false;
         }
         $dstHandle = imagecreatetruecolor($srcWidth, $srcHeight);
@@ -8493,7 +8491,7 @@ class cCrud
                     break;
                     break;
                 default:
-                    self::error('NO WATERMARK FILE');
+                    self::erro('no_watermark_file');
                     return false;
             }
             imagecopy($dstHandle, $waterHandle, $offsets['x'], $offsets['y'], 0, 0, $water_w, $water_h);
@@ -8510,7 +8508,7 @@ class cCrud
                 imagepng($dstHandle, $dest_file);
                 break;
             default:
-                self::error('File Type Not Supported!');
+                self::erro('file_type_not_supported');
                 return false;
         }
         imagedestroy($dstHandle);
@@ -9488,7 +9486,7 @@ class cCrud
             }
 
             if (! $this->is_duplicate($row)) {
-                return self::error('Forbidden');
+                return self::erro('forbidden');
             }
 
             $columns = array();
@@ -9502,7 +9500,7 @@ class cCrud
                                 $this->primary_ai = "`{$table}`.`{$row['Field']}`";
                             }
                         } elseif ($row['Key'] == 'UNI' or $row['Key'] == 'PRI') {
-                            self::error('Duplication impossible. The table has a unique field.');
+                            self::erro('duplication_unique_field');
                         } else {
                             $columns[$field_index] = array(
                                 'table' => $table,
@@ -9513,7 +9511,7 @@ class cCrud
                 }
             }
             if (! $this->primary_ai) {
-                self::error('Duplication impossible. Table does not have a primary autoincrement field.');
+                self::erro('duplication_no_primary_autoincrement');
             }
             $select = $this->_build_select_clone($columns);
             $where = $this->_build_where();
@@ -9615,7 +9613,7 @@ class cCrud
     protected function _get_table($method)
     {
         if (! $this->table && ! $this->query)
-            self::error('You must define your table before using the <strong>' . $method . '</strong> method.');
+            self::erro('table_not_defined', 400, [$method]);
         else
             return $this->table ? $this->table : '';
         return false;
@@ -9757,7 +9755,7 @@ class cCrud
             }
             unset($fields);
         } else
-            self::error('You must set field name(s) for the <strong>' . $location . '</strong> method.');
+            self::erro('field_name_required', 400, [$location]);
         return $field_names;
     }
 
@@ -9814,7 +9812,7 @@ class cCrud
         }
 
         if (self::$css_loaded) {
-            self::error('cCrud\'s styles already rendered! Please, set <strong>$manual_load = true</strong> in your configuração file');
+            self::erro('styles_already_rendered');
         }
 
         self::$css_loaded = true;
@@ -9854,7 +9852,7 @@ class cCrud
         }
 
         if (self::$js_loaded) {
-            self::error('cCrud\'s scripts already rendered! Please, set <strong>$manual_load = true</strong> in your configuração file');
+            self::erro('scripts_already_rendered');
         }
         self::$js_loaded = true;
         if ($config->load_jquery)
@@ -9967,7 +9965,7 @@ class cCrud
         }
 
         if (! is_file($path))
-            self::error('Wrong path or file is not exist! The <strong>' . $func_name . '</strong> method fails.<br /><small>' . $path . '</small>');
+            self::erro('wrong_path_or_file', 400, [$func_name, $path]);
         return $path;
     }
 
@@ -9980,7 +9978,7 @@ class cCrud
             $path = CCRUD_PATH . '/' . trim($path, '/');
         if (! is_dir($path)) {
             if (! @mkdir($path))
-                self::error('Wrong path or folder is not exist! The <strong>' . $func_name . '</strong> method fails.<br /><small>' . $path . '</small>');
+                self::erro('wrong_path_or_folder', 400, [$func_name, $path]);
         }
         return $path;
     }
@@ -11608,9 +11606,9 @@ class cCrud
         array_pop($path_array);
         if (is_dir(implode('/', $path_array))) {
             if (! mkdir($path))
-                self::error('cannot create directory ' . $path);
+                self::erro('cannot_create_directory', 400, [$path]);
         } else {
-            self::error('File path is incorrect!');
+            self::erro('file_path_incorrect');
         }
     }
 
@@ -11973,12 +11971,12 @@ class cCrud
     public function encrypt($obj)
     {
         if (! $this->config->alt_encription_key) {
-            self::error('Please, set <strong>$alt_encription_key</strong> parameter in configuration file');
+            self::erro('set_alt_encription_key');
         }
         $text = json_encode($obj);
 
         if (! is_callable('mcrypt_module_open')) {
-            self::error('<strong>mcrypt_module</strong> not found');
+            self::erro('mcrypt_module_not_found');
         }
         if (defined('MCRYPT_TWOFISH') && mcrypt_module_self_test(MCRYPT_TWOFISH)) {
             $algoritm = MCRYPT_TWOFISH;
@@ -11989,7 +11987,7 @@ class cCrud
         } elseif (defined('MCRYPT_BLOWFISH') && mcrypt_module_self_test(MCRYPT_BLOWFISH)) {
             $algoritm = MCRYPT_BLOWFISH;
         } else {
-            self::error('MCRYPT - Supported algorytm not found');
+            self::erro('mcrypt_algorithm_not_found');
         }
         $td = mcrypt_module_open($algoritm, '', MCRYPT_MODE_CFB, '');
         $iv = mcrypt_create_iv(mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
@@ -12009,10 +12007,10 @@ class cCrud
     public function decrypt($text, $iv)
     {
         if (! $this->config->alt_encription_key) {
-            self::error('Please, set <strong>$alt_encription_key</strong> parameter in configuration file');
+            self::erro('set_alt_encription_key');
         }
         if (! is_callable('mcrypt_module_open')) {
-            self::error('<strong>mcrypt_module</strong> not found');
+            self::erro('mcrypt_module_not_found');
         }
         if (defined('MCRYPT_TWOFISH') && mcrypt_module_self_test(MCRYPT_TWOFISH)) {
             $algoritm = MCRYPT_TWOFISH;
@@ -12023,7 +12021,7 @@ class cCrud
         } elseif (defined('MCRYPT_BLOWFISH') && mcrypt_module_self_test(MCRYPT_BLOWFISH)) {
             $algoritm = MCRYPT_BLOWFISH;
         } else {
-            self::error('MCRYPT - Supported algorytm not found');
+            self::erro('mcrypt_algorithm_not_found');
         }
         $td = mcrypt_module_open($algoritm, '', MCRYPT_MODE_CFB, '');
         $ks = mcrypt_enc_get_key_size($td);
@@ -12270,10 +12268,10 @@ class cCrud
                 self::$classes[$name] = new $class();
                 return self::$classes[$name];
             } else {
-                self::error('Class "' . $class . '" not exist!');
+                self::erro('class_not_exist', 400, [$class]);
             }
         } else {
-            self::error('File "' . $name . '.php" not exist!');
+            self::erro('file_not_exist', 400, [$name]);
         }
     }
 
@@ -13230,7 +13228,7 @@ class cCrud
     public function _mass_action()
     {
         if ($this->table_ro)
-            return self::error('Forbidden');
+            return self::erro('forbidden');
             
             $this->set_custom_lists();
             $this->_set_field_types('list');
