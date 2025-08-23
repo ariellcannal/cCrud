@@ -6055,9 +6055,11 @@ class cCrud
         }
         $this->condition_restore();
 
-        foreach ($this->params2save() as $item) {
-            $xcrud_session[$inst_name][$item] = $this->{$item};
-        }
+        // Armazena todos os atributos atuais da instância
+        $vars = get_object_vars($this);
+        unset($vars['ci']); // Evita armazenar a instância do CodeIgniter
+
+        $xcrud_session[$inst_name]            = $vars;
         $xcrud_session[$inst_name]['before'] = $this->find_prev_task();
 
         $this->ci->session->set_userdata('xcrud_session', $xcrud_session);
@@ -6081,179 +6083,6 @@ class cCrud
             }
         }
     }
-
-    protected function params2save()
-    {
-        return array(
-            'key',
-            'time',
-            'table',
-            'table_name',
-            'where',
-            'order_by',
-            'relation',
-            'fields_create',
-            'fields_edit',
-            'fields_view',
-            'fields_list',
-            'columns_select',
-            'fields_list_default',
-            'labels',
-            'columns_names',
-            'is_create',
-            'is_edit',
-            'is_remove',
-            'is_csv',
-            'buttons',
-            'validation_required',
-            'validation_pattern',
-            'before_insert',
-            'before_update',
-            'before_remove',
-            'after_insert',
-            'after_update',
-            'after_remove',
-            'field_type',
-            'field_attr',
-            'limit',
-            'limit_list',
-            'column_cut',
-            'column_cut_list',
-            'no_editor',
-            'show_primary_ai_field',
-            'show_primary_ai_column',
-            'disabled',
-            'readonly',
-            'benchmark',
-            'search_pattern',
-            'connection',
-            'remove_confirm',
-            'upload_folder',
-            'upload_config',
-            'pass_var',
-            'reverse_fields',
-            'no_quotes',
-            'inner_table_instance',
-            'inner_where',
-            'unique',
-            'theme',
-            'is_duplicate',
-            'links_label',
-            'emails_label',
-            'sum',
-            'alert_create',
-            'alert_edit',
-            'is_search',
-            'is_print',
-            'is_pagination',
-            'is_limitlist',
-            'is_sortable',
-            'is_list',
-            'subselect',
-            'subselect_before',
-            'subselect_query',
-            'highlight',
-            'highlight_row',
-            'modal',
-            'column_class',
-            'no_select',
-            'is_inner',
-            'join',
-            'fk_relation',
-            'is_title',
-            'is_numbers',
-            'language',
-            'field_params',
-            'mass_alert_create',
-            'mass_alert_edit',
-            'column_callback',
-            'field_callback',
-            'replace_insert',
-            'replace_update',
-            'replace_remove',
-            'send_external_create',
-            'send_external_edit',
-            'column_pattern',
-            'field_tabs',
-            'field_marker',
-            'is_view',
-            'field_tooltip',
-            'table_tooltip',
-            'column_tooltip',
-            'search_columns',
-            'search_default',
-            'column_width',
-            'before',
-            'before_upload',
-            'after_upload',
-            'after_resize',
-            'custom_vars',
-            'tabdesc',
-            'column_name',
-            'upload_to_save',
-            'upload_to_remove',
-            'defaults',
-            'search',
-            'inner_value',
-            'bit_field',
-            'point_field',
-            'buttons_position',
-            'grid_condition',
-            'condition',
-            'hide_button',
-            'set_lang',
-            'table_ro',
-            'grid_restrictions',
-            'load_view',
-            'action',
-            'prefix',
-            'query',
-            'default_tab',
-            'strip_tags',
-            'safe_output',
-            'before_list',
-            'before_create',
-            'before_edit',
-            'before_view',
-            'lists_null_opt',
-            'custom_fields',
-            'date_format',
-            'alphabetical_filter',
-            'alphabetical_field',
-            'alphabetical_index',
-            'custom_filter',
-            'custom_filter_active',
-            'custom_filter_all_label',
-            'totalizers',
-            'start_minimized',
-            'nested_readonly_on_view',
-            'active_tab_id',
-            'parent',
-            'table_always_edit_mode',
-            'record_changes',
-            'custom_lists',
-            'custom_lists_active',
-            'custom_lists_static',
-            'columns_default',
-            'unset_custom_columns',
-            'mass_actions',
-            'opened_tab',
-            'nested_default_render',
-            'nested_default_render_primary',
-            'join_relation',
-            'parameters',
-            'fields_report',
-            'report',
-            'report_reverse',
-            'report_tabs',
-            'report_values',
-            'group_by',
-            'search_lines',
-            'search_submit',
-            'custom_buttons'
-        );
-    }
-
     protected function find_prev_task()
     {
         switch ($this->task) {
@@ -6296,25 +6125,18 @@ class cCrud
             }
         }
 
-        $inst_name = $this->instance_name;
-        $this->ci = &get_instance();
-        $xcrud_session = $this->ci->session->userdata('xcrud_session');
-        foreach ($this->params2save() as $item) {
-            /**
-             *
-             * @author Ariel Canal
-             *         O original contém um erro de
-             *         lógica. Caso o atributo desejado não esteja armazenado
-             *         na sessão, ele atribui NULL no atributo da classe,
-             *         fazendo com que a instância não funcione
-             *         e apresente o erro: Incorrect table name '' SHOW COLUMNS FROM ``
-             *         Correção: Só sobrescreve o atributo inicial pelo da
-             *         sessão, caso este exista, na sessão.
-             */
-            if (isset($xcrud_session[$inst_name][$item])) {
-                $this->{$item} = $xcrud_session[$inst_name][$item];
+        $inst_name      = $this->instance_name;
+        $this->ci       = &get_instance();
+        $xcrud_session  = $this->ci->session->userdata('xcrud_session');
+
+        if (isset($xcrud_session[$inst_name])) {
+            foreach ($xcrud_session[$inst_name] as $propriedade => $valor) {
+                if ($propriedade !== 'ci') {
+                    $this->{$propriedade} = $valor;
+                }
             }
         }
+
         if ($key) {
             $this->key = $key;
         }
