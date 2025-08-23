@@ -1,11 +1,10 @@
 {
-    "name": "cCrud/cCrud",
+    "name": "ccrud/ccrud",
     "description": "cCrud",
     "license": "MIT",
     "type": "library",
     "require": {
         "php": "^8.2",
-        "composer/installers": "~1.0",
         "codeigniter4/translations": "~4.5",
         "codeigniter4/framework": "~4.5",
         "codeigniter4/settings": "~2.2",
@@ -14,19 +13,8 @@
     },
     "autoload": {
         "psr-4": {
-            "cCrud\\": [
-            "app/",
-            "installer/"
-        ]
+            "cCrud\\": "app/"
         }
-    },
-    "scripts": {
-        "post-install-cmd": [
-            "cCrud\\Installer::postInstall"
-        ],
-        "post-update-cmd": [
-            "cCrud\\Installer::postInstall"
-        ]
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
