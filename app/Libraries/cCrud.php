@@ -3,6 +3,7 @@ namespace cCrud\Libraries;
 
 use cCrud\Config\cCrudConfig;
 use cCrud\Libraries\Database;
+use RuntimeException;
 
 // direct access to DB driver and config
 define('CCRUD_PATH', str_replace('\\', '/', dirname(__file__)));
@@ -7852,10 +7853,7 @@ class cCrud
 
     protected static function error($text = 'Error!', $http_response_code = 400)
     {
-        http_response_code($http_response_code);
-        exit($text);
-        exit('<div class="xcrud-error" style="position:relative;line-height:1.25;padding:15px;color:#BA0303;margin:10px;border:1px solid #BA0303;border-radius:4px;font-family:Arial,sans-serif;background:#FFB5B5;box-shadow:inset 0 0 80px #E58989;">
-            <span style="position:absolute;font-size:10px;bottom:3px;right:5px;">xCRUD</span>' . $text . '</div>');
+        throw new RuntimeException($text, $http_response_code);
     }
 
     protected function _upload()
@@ -9822,10 +9820,12 @@ class cCrud
      */
     protected function _get_language()
     {
-        if (is_file(CCRUD_PATH . '/' . $this->config->lang_path . '/' . $this->language . '/xcrud.ini'))
-            self::$lang_arr = parse_ini_file(CCRUD_PATH . '/' . $this->config->lang_path . '/' . $this->language . '/xcrud.ini');
-        elseif (is_file(CCRUD_PATH . '/' . $this->config->lang_path . '/en/xcrud.ini'))
-            self::$lang_arr = parse_ini_file(CCRUD_PATH . '/' . $this->config->lang_path . '/en/xcrud.ini');
+        // Carrega o arquivo de idioma de acordo com a linguagem atual
+        self::$lang_arr = lang('cCrud', [], $this->language);
+        // Fallback para o inglês caso a chave não exista
+        if (! self::$lang_arr) {
+            self::$lang_arr = lang('cCrud', [], 'en');
+        }
         if ($this->set_lang) {
             self::$lang_arr = array_merge(self::$lang_arr, $this->set_lang);
         }
@@ -9839,10 +9839,10 @@ class cCrud
     protected static function _get_language_static()
     {
         $config = config('cCrudConfig');
-        if (is_file(CCRUD_PATH . '/' . $config->lang_path . '/' . \Config\App::$defaultLocale . '/xcrud.ini'))
-            self::$lang_arr = parse_ini_file(CCRUD_PATH . '/' . $config->lang_path . '/' . \Config\App::$defaultLocale . '/xcrud.ini');
-        elseif (is_file(CCRUD_PATH . '/' . $config->lang_path . '/en.ini'))
-            self::$lang_arr = parse_ini_file(CCRUD_PATH . '/' . $config->lang_path . '/en/xcrud.ini');
+        self::$lang_arr = lang('cCrud', [], \Config\App::$defaultLocale);
+        if (! self::$lang_arr) {
+            self::$lang_arr = lang('cCrud', [], 'en');
+        }
     }
 
     /**
@@ -9862,7 +9862,7 @@ class cCrud
     protected function lang($text = '')
     {
         $langtext = mb_convert_case($text, MB_CASE_LOWER, \Config\App::$charset);
-        return htmlspecialchars((isset(self::$lang_arr[$langtext]) ? self::$lang_arr[$langtext] : $text), ENT_QUOTES, \Config\App::$charset);
+        return lang('cCrud.' . $langtext);
     }
 
     protected function theme_config($text = '')
