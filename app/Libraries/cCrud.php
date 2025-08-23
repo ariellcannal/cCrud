@@ -44,7 +44,7 @@ class cCrud
 
     public $table;
 
-    // ALTERADO PARA PUBLIC, NECESS�RIO NOS HELPERS CALLBACK'S
+    // ALTERADO PARA PUBLIC, NECESSÁRIO NOS HELPERS CALLBACK'S
     protected $table_name;
 
     protected $primary_key;
@@ -143,7 +143,7 @@ class cCrud
 
     public $defaults = array();
 
-    // ALTERADO PARA PUBLIC, NECESS�RIO NOS HELPERS
+    // ALTERADO PARA PUBLIC, NECESSÁRIO NOS HELPERS
     // CALLBACK'S
     protected $limit = 20;
 
@@ -927,7 +927,7 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         Armazena quem � a nested m�e.
+     *         Armazena quem é a nested mãe.
      */
     /**
      * nested table constructor
@@ -1121,7 +1121,7 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         Inser��o do parametro $alt_task
+     *         Inserção do parâmetro $alt_task
      *         Possibilidade de armazenar mais de uma condição
      */
     public function unset_view($bool = true, $field = false, $operand = false, $value = false, $alt_task = false)
@@ -1234,11 +1234,11 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         Ao atribuir o array de configura��o do bot�o � $this->buttons, a
-     *         chave �
-     *         gravada tamb�m. Isso impede que sejam criados v�rios bot�es
-     *         iguais quando h� mais de
-     *         uma inst�ncia do CRUD na mesma p�gina.
+     *         Ao atribuir o array de configuração do botão à $this->buttons, a
+     *         chave é
+     *         gravada também. Isso impede que sejam criados vários botões
+     *         iguais quando há mais de
+     *         uma instância do CRUD na mesma página.
      */
     public function button($link = '', $name = '', $icon = '', $class = '', $parameters = array(), $conditions = array(), $table_ro = true)
     {
@@ -2194,10 +2194,10 @@ class cCrud
      *
      * @author Ariel Canal
      *         Alterado o path default para os helpers.
-     *         Incluido o par�metro icon.
-     *         Incluido o par�metro button_attr
-     *         Incluido os par�metros conditions.
-     *         Incluido o mode.
+     *         Incluído o parâmetro icon.
+     *         Incluído o parâmetro button_attr
+     *         Incluídos os parâmetros conditions.
+     *         Incluído o mode.
      */
     public function create_action($name = '', $callable = '', $path = 'functions.php', $icon = null, $button_attr = null, $cond_field = null, $cond_operator = null, $cond_value = null, $mode = null)
     {
@@ -2984,7 +2984,7 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         EXECUTA A PRIMEIRA TAREFA ALTERNATIVA SE A PRIM�RIA ESTIVER
+     *         EXECUTA A PRIMEIRA TAREFA ALTERNATIVA SE A PRIMÁRIA ESTIVER
      *         BLOQUEADA
      *         compatibilizada com reports
      */
@@ -3081,10 +3081,10 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         Se um campo est� 'disabled' ou 'readonly', a fun��o ignora ele
+     *         Se um campo está 'disabled' ou 'readonly', a função ignora ele
      *         ao montar a SQL, mesmo que
      *         haja um pass_var[create] para este campo.
-     *         CORRE��O: a fun��o s� ignorar� o campo, se n�o houver
+     *         Correção: a função só ignorará o campo, se não houver
      *         pass_var[create] nele.
      *        
      *         Corrigido a inserção do fk_relation quando há o atributo add_data e mais de um campo para a mesma tabela
@@ -3239,10 +3239,10 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         Se um campo est� 'disabled' ou 'readonly', a fun��o ignora ele
+     *         Se um campo está 'disabled' ou 'readonly', a função ignora ele
      *         ao montar a SQL, mesmo que
      *         haja um pass_var[create] para este campo.
-     *         CORRE��O: a fun��o s� ignorar� o campo, se n�o houver
+     *         Correção: a função só ignorará o campo, se não houver
      *         pass_var[create] nele.
      *        
      *         Compatibilizado com join_relation
@@ -3568,11 +3568,11 @@ class cCrud
      * save events switcher
      */
     /**
-     * FUN��O ALTERADA DO PADR�O
+     * FUNÇÃO ALTERADA DO PADRÃO
      *
      * @author Ariel Canal
-     *         Fun��o make_upload_process() � chamada tamb�m durante a
-     *         atualiza��o das informa��o, e n�o s� na inser��o.
+     *         Função make_upload_process() é chamada também durante a
+     *         atualização das informações, e não só na inserção.
      */
     protected function _save()
     {
@@ -3973,10 +3973,10 @@ class cCrud
     }
 
     /**
-     * FUN��O ALTERADA DO PADR�O
+     * FUNÇÃO ALTERADA DO PADRÃO
      *
      * @author Ariel Canal
-     *         Corre��o feita na substitui��o do conte�do de $pd.
+     *         Correção feita na substituição do conteúdo de $pd.
      */
     protected function make_upload_process($pd)
     {
@@ -4395,12 +4395,11 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         As condi��es definidas pelo controller e pelos filtros s� s�o
-     *         consideradas caso a task n�o seja edit ou view.
-     *         Isso evita que o formul�rio seja renderizado em branco caso, ap�s
-     *         o
-     *         'save', o registro n�o esteja mais na listagem filtrada pelo
-     *         usu�rio.
+     *         As condições definidas pelo controller e pelos filtros só são
+     *         consideradas caso a task não seja edit ou view.
+     *         Isso evita que o formulário seja renderizado em branco caso, após o
+     *         'save', o registro não esteja mais na listagem filtrada pelo
+     *         usuário.
      */
     /**
      * builds main where condition for query
@@ -4921,7 +4920,7 @@ class cCrud
     }
 
     /**
-     * FUN��O ALTERADA DO PADR�O
+     * FUNÇÃO ALTERADA DO PADRÃO
      * compatibilizada com reports
      */
     /**
@@ -5640,7 +5639,7 @@ class cCrud
      *
      * @author Ariel Canal
      *         Se a função field_callback retornar falso, rederiza o field
-     *         padr�o.
+     *         padrão.
      *         Mesmo com Field Calback, cria o campo.
      */
     /**
@@ -7027,7 +7026,7 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         Fun��o alterada do padr�o.
+     *         Função alterada do padrão.
      *         Compatibilizada com relation AJAX.
      *         Compatibilizada com join_relation.
      */
@@ -9273,8 +9272,8 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         Inserido o atributo data-after na renderiza��o do bot�o de
-     *         duplica��o
+     *         Inserido o atributo data-after na renderização do botão de
+     *         duplicação
      */
     protected function _render_list_buttons(&$row)
     {
@@ -9622,7 +9621,7 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         Fun��o passou a considerar o atributo data-after do bot�o
+     *         Função passou a considerar o atributo data-after do botão
      */
     protected function _clone_row()
     {
@@ -10370,7 +10369,7 @@ class cCrud
         }
 
         /*
-         * ALTERADO DO PADR�O - Compatibiliza��o com array de
+         * ALTERADO DO PADRÃO - Compatibilização com array de
          * grid_restrictions
          */
         if ($this->grid_restrictions) {
@@ -11372,7 +11371,7 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         Renderiza��o da classe xcrud-actions-fixed
+     *         Renderização da classe xcrud-actions-fixed
      */
     protected function render_grid_body($row_tag = array(
         'tag' => 'tr'
@@ -11592,7 +11591,7 @@ class cCrud
      * renders action button for details view
      *
      * @author Ariel Canal
-     *         Adaptada para o funcionamento dos novos par�metros do m�todo
+     *         Adaptada para o funcionamento dos novos parâmetros do método
      *         create_action (icon, button_attr e conditions)
      */
     protected function render_button($name = '', $task = '', $after = '', $class = '', $icon = '', $mode = '', $primary = '')
@@ -12209,7 +12208,7 @@ class cCrud
     }
 
     /*
-     * ALTERADO DO PADR�O - Compatibiliza��o com array de grid_restrictions
+     * ALTERADO DO PADRÃO - Compatibilização com array de grid_restrictions
      */
     protected function is_edit(&$row)
     {
@@ -12233,7 +12232,7 @@ class cCrud
     }
 
     /*
-     * ALTERADO DO PADR�O - Compatibiliza��o com array de grid_restrictions
+     * ALTERADO DO PADRÃO - Compatibilização com array de grid_restrictions
      */
     protected function is_remove(&$row)
     {
@@ -12256,7 +12255,7 @@ class cCrud
     }
 
     /*
-     * ALTERADO DO PADR�O - Compatibiliza��o com array de grid_restrictions
+     * ALTERADO DO PADRÃO - Compatibilização com array de grid_restrictions
      */
     protected function is_duplicate(&$row)
     {
@@ -12279,7 +12278,7 @@ class cCrud
     }
 
     /*
-     * ALTERADO DO PADR�O - Compatibiliza��o com array de grid_restrictions
+     * ALTERADO DO PADRÃO - Compatibilização com array de grid_restrictions
      */
     protected function is_view(&$row)
     {
@@ -12302,7 +12301,7 @@ class cCrud
     }
 
     /*
-     * ALTERADO DO PADR�O - Compatibiliza��o com array de grid_restrictions
+     * ALTERADO DO PADRÃO - Compatibilização com array de grid_restrictions
      */
     protected function is_button($name, &$row)
     {
@@ -12399,9 +12398,9 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         As propriedades readonly_on_* e disabled_on_* n�o existem na
-     *         classe, portando o backup delas, quando acionadas pelo m�todo
-     *         condition() n�o era feito.
+     *         As propriedades readonly_on_* e disabled_on_* não existem na
+     *         classe, portanto o backup delas, quando acionadas pelo método
+     *         condition() não era feito.
      */
     protected function condition_backup($method, $field = null)
     {
@@ -12923,18 +12922,18 @@ class cCrud
                     $modals['customListsEdit']['filtrosAdicionais'] = json_decode($this->custom_lists_active['lpe_filtrosAdicionais'], true);
                 }
 
-                $options['0'] = 'N�o Filtrar';
+                $options['0'] = 'Não Filtrar';
                 $options['='] = 'Igual a';
                 $options['maior'] = 'Maior que';
                 $options['menor'] = 'Menor que';
                 $options['maior_i'] = 'Maior ou igual a';
                 $options['menor_i'] = 'Menor ou igual a';
-                $options['LIKE'] = 'Cont�m';
-                $options['NOT LIKE'] = 'N�o cont�m';
-                $options['IN'] = 'Est� entre';
-                $options['NOT IN'] = 'N�o est� entre';
-                $options['IS NULL'] = '� vazio ou nulo';
-                $options['IS NOT NULL'] = 'N�o � vazio ou nulo';
+                $options['LIKE'] = 'Contém';
+                $options['NOT LIKE'] = 'Não contém';
+                $options['IN'] = 'Está entre';
+                $options['NOT IN'] = 'Não está entre';
+                $options['IS NULL'] = 'É vazio ou nulo';
+                $options['IS NOT NULL'] = 'Não é vazio ou nulo';
 
                 $db = Database::get_instance($this->connection, $this->ci);
                 if ($this->table == "propostas") {
@@ -13101,7 +13100,7 @@ class cCrud
                     $out .= $this->open_tag('div', 'col-md-6 dd', array(
                         'id' => 'nestable_list_1'
                     ));
-                    $out .= $this->open_tag('h3') . 'Colunas Dispon�veis' . $this->close_tag('h3');
+                    $out .= $this->open_tag('h3') . 'Colunas Disponíveis' . $this->close_tag('h3');
                     $out .= $this->open_tag('ol', 'dd-list');
                     foreach ($all_fields as $field => $lbl) {
                         if (! in_array($field, $cfg['cols'])) {
