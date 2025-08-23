@@ -2,6 +2,7 @@
 namespace cCrud\Libraries;
 
 use cCrud\Config\cCrudConfig;
+use cCrud\Config\Views as ViewsConfig;
 use CodeIgniter\Model;
 use RuntimeException;
 
@@ -37,6 +38,13 @@ class cCrud
      * @var Model
      */
     protected Model $model;
+
+    /**
+     * Configurações do tema do cCrud.
+     *
+     * @var array<string,string>
+     */
+    protected array $theme_config = [];
 
     public $instance_name;
 
@@ -9834,11 +9842,11 @@ class cCrud
      */
     protected function _get_theme_config()
     {
-        $caminho = APPPATH . 'Views/xcrud/xcrud.ini';
-        if (is_file($caminho)) {
-            $this->theme_config = parse_ini_file($caminho);
+        if (class_exists(ViewsConfig::class)) {
+            $config = new ViewsConfig();
+            $this->theme_config = $config->classes;
         } else {
-            self::error('Arquivo xcrud.ini não encontrado.');
+            self::error('Arquivo de configuração das views não encontrado.');
         }
     }
 
