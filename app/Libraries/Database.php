@@ -70,10 +70,10 @@ class Database
         } else
             $this->connect = mysqli_connect($dbhost, $dbuser, $dbpass, $dbname);
         if (! $this->connect)
-            $this->error('Connection error. Can not connect to database');
+            $this->erro('db_connection_error');
         $this->connect->set_charset($dbencoding);
         if ($this->connect->error)
-            $this->error($this->connect->error);
+            $this->erro('db_error', 500, [$this->connect->error]);
         if ($this->config->db_time_zone)
             $this->connect->query('SET time_zone = \'' . $this->config->db_time_zone . '\'');
     }
@@ -82,7 +82,7 @@ class Database
     {
         $this->result = $this->ci->xcrud_model->consulta($query);
         if (is_array($this->result)) {
-            $this->error($this->result['message'] . '<pre>' . $query . '</pre>', $this->result['code'], $this->result['message']);
+            $this->erro('db_error_query', 500, [$this->result['message'], $query, $this->result['code']]);
             return;
         } else {
             return $this->ci->xcrud_model->linhasAfetadas();
@@ -194,33 +194,9 @@ class Database
      * @author Ariel Canal
      *         Inserido o filtro do erro de Foreing Key.
      */
-    private function error($text = 'Error!', $errno = null, $error = null)
+    private function erro(string $chave = 'undefined_error', int $codigoHttp = 500, array $parametros = []): void
     {
-        if ($errno) {
-            $log_number = time() . rand(0, 999);
-            switch ($errno) {
-                case "1451": // erro de foreign key
-                    echo '<script>alertify.alert("Este registro não pode ser removido pois está vinculado a outros cadastros. <br/><br/><small> Erro: ' . $log_number . '</small>");</script>';
-                    break;
-                case "1062": // duplicate entry
-                    echo '<script>alertify.alert("Este registro já existe. <br/><br/><small> Erro: ' . $log_number . '</small>");</script>';
-                    break;
-                case "1264": // out of range
-                    echo '<script>alertify.alert("Dado inválido. <br/><br/><small> Erro: ' . $log_number . '</small>");</script>';
-                    break;
-                default:
-                    if (ENVIRONMENT != "production") {
-                        exit('<div class="xcrud-error" style="position:relative;line-height:1.25;padding:15px;color:#BA0303;margin:10px;border:1px solid #BA0303;border-radius:4px;font-family:Arial,sans-serif;background:#FFB5B5;box-shadow:inset 0 0 80px #E58989;">' . $text . '</div>');
-                    } else {
-                        echo '<script>alertify.alert("Ocorreu um erro ao completar a operação. <br/><br/><small> Erro: ' . $log_number . '</small>");</script>';
-                    }
-                    break;
-            }
-            $fp = fopen($_SERVER['DOCUMENT_ROOT'] . '/application/logs/' . $log_number, "w+");
-            fwrite($fp, $text);
-            fclose($fp);
-        } else {
-            exit('<div class="xcrud-error" style="position:relative;line-height:1.25;padding:15px;color:#BA0303;margin:10px;border:1px solid #BA0303;border-radius:4px;font-family:Arial,sans-serif;background:#FFB5B5;box-shadow:inset 0 0 80px #E58989;">' . $text . '</div>');
-        }
+        $mensagem = lang('cCrud.' . $chave, $parametros);
+        throw new \RuntimeException($mensagem, $codigoHttp);
     }
 }
