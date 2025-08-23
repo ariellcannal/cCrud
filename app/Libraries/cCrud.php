@@ -25,6 +25,13 @@ class cCrud
 
     protected $ajax_request = false;
 
+    /**
+     * Instância das configurações do cCrud.
+     *
+     * @var cCrudConfig
+     */
+    protected cCrudConfig $config;
+
     public $instance_name;
 
     protected $instance_count;
@@ -491,51 +498,53 @@ class cCrud
      */
     protected function __construct()
     {
-        cCrudConfig::$scripts_url = self::check_url(cCrudConfig::$scripts_url, true);
-        cCrudConfig::$editor_url = self::check_url(cCrudConfig::$editor_url);
-        cCrudConfig::$editor_init_url = self::check_url(cCrudConfig::$editor_init_url);
+        $this->config = class_exists('\\Config\\cCrudConfig') ? new \Config\cCrudConfig() : new cCrudConfig();
 
-        $this->limit = cCrudConfig::$limit;
-        $this->limit_list = cCrudConfig::$limit_list;
-        $this->column_cut = cCrudConfig::$column_cut;
-        $this->show_primary_ai_field = cCrudConfig::$show_primary_ai_field;
-        $this->show_primary_ai_column = cCrudConfig::$show_primary_ai_column;
+        $this->config->scripts_url = self::check_url($this->config->scripts_url, true);
+        $this->config->editor_url = self::check_url($this->config->editor_url);
+        $this->config->editor_init_url = self::check_url($this->config->editor_init_url);
 
-        $this->benchmark = cCrudConfig::$benchmark;
-        $this->start_minimized = cCrudConfig::$start_minimized;
-        $this->remove_confirm = cCrudConfig::$remove_confirm;
-        $this->upload_folder_def = cCrudConfig::$upload_folder_def;
+        $this->limit = $this->config->limit;
+        $this->limit_list = $this->config->limit_list;
+        $this->column_cut = $this->config->column_cut;
+        $this->show_primary_ai_field = $this->config->show_primary_ai_field;
+        $this->show_primary_ai_column = $this->config->show_primary_ai_column;
 
-        $this->theme = cCrudConfig::$theme;
-        $this->is_print = cCrudConfig::$enable_printout;
-        $this->is_title = cCrudConfig::$enable_table_title;
-        $this->is_csv = cCrudConfig::$enable_csv_export;
-        $this->is_numbers = cCrudConfig::$enable_numbers;
-        $this->is_pagination = cCrudConfig::$enable_pagination;
-        $this->is_search = cCrudConfig::$enable_search;
-        $this->is_limitlist = cCrudConfig::$enable_limitlist;
-        $this->is_sortable = cCrudConfig::$enable_sorting;
+        $this->benchmark = $this->config->benchmark;
+        $this->start_minimized = $this->config->start_minimized;
+        $this->remove_confirm = $this->config->remove_confirm;
+        $this->upload_folder_def = $this->config->upload_folder_def;
+
+        $this->theme = $this->config->theme;
+        $this->is_print = $this->config->enable_printout;
+        $this->is_title = $this->config->enable_table_title;
+        $this->is_csv = $this->config->enable_csv_export;
+        $this->is_numbers = $this->config->enable_numbers;
+        $this->is_pagination = $this->config->enable_pagination;
+        $this->is_search = $this->config->enable_search;
+        $this->is_limitlist = $this->config->enable_limitlist;
+        $this->is_sortable = $this->config->enable_sorting;
 
         $this->language = \Config\App::$defaultLocale;
 
-        $this->search_pattern = cCrudConfig::$search_pattern;
+        $this->search_pattern = $this->config->search_pattern;
 
-        $this->demo_mode = cCrudConfig::$demo_mode;
+        $this->demo_mode = $this->config->demo_mode;
 
-        $this->default_tab = cCrudConfig::$default_tab;
+        $this->default_tab = $this->config->default_tab;
 
-        $this->is_rtl = cCrudConfig::$is_rtl;
+        $this->is_rtl = $this->config->is_rtl;
 
-        $this->strip_tags = cCrudConfig::$strip_tags;
-        $this->safe_output = cCrudConfig::$safe_output;
+        $this->strip_tags = $this->config->strip_tags;
+        $this->safe_output = $this->config->safe_output;
 
-        $this->lists_null_opt = cCrudConfig::$lists_null_opt;
+        $this->lists_null_opt = $this->config->lists_null_opt;
 
         $this->date_format = array(
-            'php_d' => cCrudConfig::$php_date_format,
-            'php_t' => cCrudConfig::$php_time_format
+            'php_d' => $this->config->php_date_format,
+            'php_t' => $this->config->php_time_format
         );
-        $this->nested_readonly_on_view = cCrudConfig::$nested_readonly_on_view;
+        $this->nested_readonly_on_view = $this->config->nested_readonly_on_view;
     }
 
     protected function __clone()
@@ -598,20 +607,21 @@ class cCrud
     protected static function init_prepare($method = false)
     {
         $session = config('Session');
+        $config  = config('cCrudConfig');
         switch ($method) {
             case 'post':
-                $sess_name = (cCrudConfig::$dynamic_session && isset($_POST['xcrud']['sess_name']) && $_POST['xcrud']['sess_name']) ? $_POST['xcrud']['sess_name'] : $session->cookieName;
+                $sess_name = ($config->dynamic_session && isset($_POST['xcrud']['sess_name']) && $_POST['xcrud']['sess_name']) ? $_POST['xcrud']['sess_name'] : $session->cookieName;
                 break;
             case 'get':
-                $sess_name = (cCrudConfig::$dynamic_session && isset($_GET['xcrud']['sess_name']) && $_GET['xcrud']['sess_name']) ? $_GET['xcrud']['sess_name'] : $session->cookieName;
+                $sess_name = ($config->dynamic_session && isset($_GET['xcrud']['sess_name']) && $_GET['xcrud']['sess_name']) ? $_GET['xcrud']['sess_name'] : $session->cookieName;
                 break;
             default:
                 $sess_name = $session->cookieName;
                 break;
         }
         self::session_start($sess_name);
-        if (is_callable(cCrudConfig::$before_construct)) {
-            call_user_func(cCrudConfig::$before_construct);
+        if (is_callable($config->before_construct)) {
+            call_user_func($config->before_construct);
         }
     }
 
@@ -1295,13 +1305,13 @@ class cCrud
                         // $this->field_attr[$fitem['table'] . '.' .
                         // $fitem['field']] = $map_attr;
                         $def_attr = array( // defaults
-                            'text' => cCrudConfig::$default_text,
-                            'search_text' => cCrudConfig::$default_search_text,
-                            'zoom' => cCrudConfig::$default_zoom,
-                            'width' => cCrudConfig::$default_width,
-                            'height' => cCrudConfig::$default_height,
-                            'search' => cCrudConfig::$default_coord,
-                            'coords' => cCrudConfig::$default_search
+                            'text' => $this->config->default_text,
+                            'search_text' => $this->config->default_search_text,
+                            'zoom' => $this->config->default_zoom,
+                            'width' => $this->config->default_width,
+                            'height' => $this->config->default_height,
+                            'search' => $this->config->default_coord,
+                            'coords' => $this->config->default_search
                         );
                         $this->field_attr[$fitem['table'] . '.' . $fitem['field']] = array_merge($def_attr, (array) $attr);
                         break;
@@ -2340,7 +2350,7 @@ class cCrud
                 if (! $this->is_print) {
                     return self::error('Restricted');
                 }
-                $this->_set_field_types('list', cCrudConfig::$print_all_fields);
+                $this->_set_field_types('list', $this->config->print_all_fields);
                 $this->theme = 'printout';
                 $this->set_custom_lists();
                 return $this->_list();
@@ -2367,7 +2377,7 @@ class cCrud
                 break;
             case 'csv':
                 $this->set_custom_lists();
-                $this->_set_field_types('list', cCrudConfig::$csv_all_fields);
+                $this->_set_field_types('list', $this->config->csv_all_fields);
                 return $this->_csv();
                 break;
             case 'relation_search':
@@ -2488,14 +2498,14 @@ class cCrud
         header("Content-Transfer-Encoding: binary");
         $output = fopen('php://output', 'w');
         fwrite($output, chr(0xEF) . chr(0xBB) . chr(0xBF)); // bom
-        fputcsv($output, $this->columns_names, cCrudConfig::$csv_delimiter, cCrudConfig::$csv_enclosure);
+        fputcsv($output, $this->columns_names, $this->config->csv_delimiter, $this->config->csv_enclosure);
         $db->query($query . ' ' . $order_by);
         foreach ($db->result() as $row) {
             $out = array();
             foreach ($this->columns as $field => $fitem) {
                 $out[] = htmlspecialchars_decode(strip_tags($this->_render_export_item($field, $row[$field], $row['primary_key'], $row)), ENT_QUOTES);
             }
-            fputcsv($output, $out, cCrudConfig::$csv_delimiter, cCrudConfig::$csv_enclosure);
+            fputcsv($output, $out, $this->config->csv_delimiter, $this->config->csv_enclosure);
         }
     }
 
@@ -2560,15 +2570,15 @@ class cCrud
             $this->after_render();
         } else {
             $contents = '';
-            if (! self::$css_loaded && ! cCrudConfig::$manual_load) {
+            if (! self::$css_loaded && ! $this->config->manual_load) {
                 $contents .= self::load_css();
             }
             ob_start();
-            include (CCRUD_PATH . '/' . cCrudConfig::$themes_path . '/' . $this->theme . '/xcrud_container.php');
+            include (CCRUD_PATH . '/' . $this->config->themes_path . '/' . $this->theme . '/xcrud_container.php');
             $contents .= ob_get_contents();
             ob_end_clean();
             unset($this->data);
-            if (! self::$js_loaded && ! cCrudConfig::$manual_load) {
+            if (! self::$js_loaded && ! $this->config->manual_load) {
                 $contents .= self::load_js();
             }
             $this->after_render();
@@ -2599,8 +2609,8 @@ class cCrud
                 }
                 break;
         }
-        if (is_callable(cCrudConfig::$after_render)) {
-            call_user_func(cCrudConfig::$after_render);
+        if (is_callable($this->config->after_render)) {
+            call_user_func($this->config->after_render);
         }
     }
 
@@ -2783,7 +2793,7 @@ class cCrud
         }
         // print "SELECT {$select} FROM `{$this->table}` {$table_join} {$where} {$order_by}";exit;
         $db->query("SELECT {$select} FROM `{$this->table}` {$table_join} {$where} {$order_by}");
-        if ($db->result->num_rows > cCrudConfig::$csv_limit)
+        if ($db->result->num_rows > $this->config->csv_limit)
             return self::error('A quantidade de registros excede o maximo permitido para esta operacao.');
         ini_set('auto_detect_line_endings', true);
         header("Pragma: public");
@@ -2795,7 +2805,7 @@ class cCrud
         header("Content-Transfer-Encoding: binary");
         $output = fopen('php://output', 'w');
         fwrite($output, chr(0xEF) . chr(0xBB) . chr(0xBF)); // bom
-        fputcsv($output, $headers, cCrudConfig::$csv_delimiter, cCrudConfig::$csv_enclosure);
+        fputcsv($output, $headers, $this->config->csv_delimiter, $this->config->csv_enclosure);
 
         foreach ($db->result() as $row) {
             $out = array();
@@ -2804,7 +2814,7 @@ class cCrud
                     continue;
                 $out[] = htmlspecialchars_decode(strip_tags($this->_render_export_item($field, $row[$field], $row['primary_key'], $row)), ENT_QUOTES);
             }
-            fputcsv($output, $out, cCrudConfig::$csv_delimiter, cCrudConfig::$csv_enclosure);
+            fputcsv($output, $out, $this->config->csv_delimiter, $this->config->csv_enclosure);
         }
     }
 
@@ -2824,7 +2834,7 @@ class cCrud
                     $_POST['xcrud'][$field] == stripslashes($_POST['xcrud'][$field]);
                 }
             }
-            if (cCrudConfig::$auto_xss_filtering) {
+            if ($this->config->auto_xss_filtering) {
                 $xss = $this->load_core_class('xss');
             } else {
                 $xss = false;
@@ -2876,7 +2886,7 @@ class cCrud
                     $_GET['xcrud'][$field] == stripslashes($_GET['xcrud'][$field]);
                 }
             }
-            if (cCrudConfig::$auto_xss_filtering) {
+            if ($this->config->auto_xss_filtering) {
                 $xss = $this->load_core_class('xss');
             } else {
                 $xss = false;
@@ -3645,11 +3655,11 @@ class cCrud
                     if (! $send_to or ! preg_match('/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/', $send_to))
                         continue;
                     $alert['message'] = $this->replace_text_variables($alert['message'], $postdata);
-                    if (cCrudConfig::$email_enable_html)
+                    if ($this->config->email_enable_html)
                         $message = $alert['message'] . '<br /><br />' . "\r\n" . ($alert['link'] ? '<a href="' . $alert['link'] . '" target="_blank">' . $alert['link'] . '</a>' : '');
                     else
                         $message = $alert['message'] . "\r\n\r\n" . ($alert['link'] ? $alert['link'] : '');
-                    $this->send_email($send_to, $alert['subject'], $message, $alert['cc'], cCrudConfig::$email_enable_html);
+                    $this->send_email($send_to, $alert['subject'], $message, $alert['cc'], $this->config->email_enable_html);
                 }
             }
             if ($this->mass_alert_create) {
@@ -3658,14 +3668,14 @@ class cCrud
                         continue;
                     $alert['message'] = $this->replace_text_variables($alert['message'], $postdata);
                     $alert['where'] = $this->replace_text_variables($alert['where'], $postdata);
-                    if (cCrudConfig::$email_enable_html)
+                    if ($this->config->email_enable_html)
                         $message = $alert['message'] . '<br /><br />' . "\r\n" . ($alert['link'] ? '<a href="' . $alert['link'] . '" target="_blank">' . $alert['link'] . '</a>' : '');
                     else
                         $message = $alert['message'] . "\r\n\r\n" . ($alert['link'] ? $alert['link'] : '');
                     $db = Database::get_instance($this->connection, $this->ci);
                     $db->query("SELECT `{$alert['email_column']}` FROM `{$alert['email_table']}`" . ($alert['where'] ? ' WHERE ' . $alert['where'] : ''));
                     foreach ($db->result() as $row) {
-                        $this->send_email($row[$alert['email_column']], $alert['subject'], $message, array(), cCrudConfig::$email_enable_html);
+                        $this->send_email($row[$alert['email_column']], $alert['subject'], $message, array(), $this->config->email_enable_html);
                     }
                 }
             }
@@ -3807,11 +3817,11 @@ class cCrud
                     if (! $send_to or ! preg_match('/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/', $send_to))
                         continue;
                     $alert['message'] = $this->replace_text_variables($alert['message'], $postdata);
-                    if (cCrudConfig::$email_enable_html)
+                    if ($this->config->email_enable_html)
                         $message = $alert['message'] . '<br /><br />' . "\r\n" . ($alert['link'] ? '<a href="' . $alert['link'] . '" target="_blank">' . $alert['link'] . '</a>' : '');
                     else
                         $message = $alert['message'] . "\r\n\r\n" . ($alert['link'] ? $alert['link'] : '');
-                    $this->send_email($send_to, $alert['subject'], $message, $alert['cc'], cCrudConfig::$email_enable_html);
+                    $this->send_email($send_to, $alert['subject'], $message, $alert['cc'], $this->config->email_enable_html);
                 }
             }
             if ($this->mass_alert_edit) {
@@ -3820,14 +3830,14 @@ class cCrud
                         continue;
                     $alert['message'] = $this->replace_text_variables($alert['message'], $postdata);
                     $alert['where'] = $this->replace_text_variables($alert['where'], $postdata);
-                    if (cCrudConfig::$email_enable_html)
+                    if ($this->config->email_enable_html)
                         $message = $alert['message'] . '<br /><br />' . "\r\n" . ($alert['link'] ? '<a href="' . $alert['link'] . '" target="_blank">' . $alert['link'] . '</a>' : '');
                     else
                         $message = $alert['message'] . "\r\n\r\n" . ($alert['link'] ? $alert['link'] : '');
                     $db = Database::get_instance($this->connection, $this->ci);
                     $db->query("SELECT `{$alert['email_column']}` FROM `{$alert['email_table']}`" . ($alert['where'] ? ' WHERE ' . $alert['where'] : ''));
                     foreach ($db->result() as $row) {
-                        $this->send_email($row[$alert['email_column']], $alert['subject'], $message, array(), cCrudConfig::$email_enable_html);
+                        $this->send_email($row[$alert['email_column']], $alert['subject'], $message, array(), $this->config->email_enable_html);
                     }
                 }
             }
@@ -5007,7 +5017,7 @@ class cCrud
                 $this->search_submit = array();
             }
             $this->start = $this->_post('start', 0, 'int');
-            $this->limit = $this->_post('limit', ($this->limit ? $this->limit : cCrudConfig::$limit));
+            $this->limit = $this->_post('limit', ($this->limit ? $this->limit : $this->config->limit));
             $this->after = $this->_post('after');
             $this->primary_val = $this->_post('primary');
             $this->active_tab_id = $this->_post('active_tab_id');
@@ -5145,7 +5155,7 @@ class cCrud
                         $fields_object = array();
                     }
                     $this->field_null[$field_index] = $row['Null'] == 'YES' ? true : false;
-                    if (! $this->field_null[$field_index] && cCrudConfig::$not_null_is_required && ! isset($this->validation_required[$field_index])) {
+                    if (! $this->field_null[$field_index] && $this->config->not_null_is_required && ! isset($this->validation_required[$field_index])) {
                         $this->validation_required[$field_index] = 1;
                     }
                     if ($row['Type'] == 'point') {
@@ -5399,7 +5409,7 @@ class cCrud
                 if (isset($this->field_type[$field_index])) {
                     return;
                 }
-                if ($max_l == 1 && cCrudConfig::$make_checkbox) {
+                if ($max_l == 1 && $this->config->make_checkbox) {
                     $this->field_type[$field_index] = 'bool';
                     if (! isset($this->defaults[$field_index]))
                         $this->defaults[$field_index] = $row['Default'];
@@ -5463,7 +5473,7 @@ class cCrud
                 if (isset($this->field_type[$field_index])) {
                     return;
                 }
-                if (! isset($this->no_editor[$field_index]) && cCrudConfig::$auto_editor_insertion)
+                if (! isset($this->no_editor[$field_index]) && $this->config->auto_editor_insertion)
                     $this->field_type[$field_index] = 'texteditor';
                 else
                     $this->field_type[$field_index] = 'textarea';
@@ -5524,7 +5534,7 @@ class cCrud
                 if (isset($this->field_type[$field_index])) {
                     return;
                 }
-                $this->field_type[$field_index] = cCrudConfig::$enum_as_radio ? 'radio' : 'select';
+                $this->field_type[$field_index] = $this->config->enum_as_radio ? 'radio' : 'select';
                 $this->field_attr[$field_index]['values'] = $max_l;
                 if (! isset($this->defaults[$field_index]))
                     $this->defaults[$field_index] = $row['Default'];
@@ -5533,7 +5543,7 @@ class cCrud
                 if (isset($this->field_type[$field_index])) {
                     return;
                 }
-                $this->field_type[$field_index] = cCrudConfig::$set_as_checkboxes ? 'checkboxes' : 'multiselect';
+                $this->field_type[$field_index] = $this->config->set_as_checkboxes ? 'checkboxes' : 'multiselect';
                 $this->field_attr[$field_index]['values'] = $max_l;
                 if (! isset($this->defaults[$field_index]))
                     $this->defaults[$field_index] = $row['Default'];
@@ -5544,17 +5554,17 @@ class cCrud
                 }
                 $this->field_type[$field_index] = 'point';
                 $this->field_attr[$field_index] = array( // defaults
-                    'text' => cCrudConfig::$default_text,
-                    'search_text' => cCrudConfig::$default_search_text,
-                    'zoom' => cCrudConfig::$default_zoom,
-                    'width' => cCrudConfig::$default_width,
-                    'height' => cCrudConfig::$default_height,
-                    'search' => cCrudConfig::$default_coord,
-                    'coords' => cCrudConfig::$default_search
+                    'text' => $this->config->default_text,
+                    'search_text' => $this->config->default_search_text,
+                    'zoom' => $this->config->default_zoom,
+                    'width' => $this->config->default_width,
+                    'height' => $this->config->default_height,
+                    'search' => $this->config->default_coord,
+                    'coords' => $this->config->default_search
                 );
                 $this->validation_pattern[$field_index] = 'point';
                 if (! isset($this->defaults[$field_index]))
-                    $this->defaults[$field_index] = cCrudConfig::$default_point ? cCrudConfig::$default_point : '0,0';
+                    $this->defaults[$field_index] = $this->config->default_point ? $this->config->default_point : '0,0';
                 break;
         }
     }
@@ -5619,7 +5629,7 @@ class cCrud
         if ($this->column === false) {
             if ($this->search_default) {
                 $this->column = $this->search_default;
-            } elseif (! cCrudConfig::$search_all) {
+            } elseif (! $this->config->search_all) {
                 if ($this->search_columns) {
                     $this->column = key($this->search_columns);
                 } else {
@@ -5628,7 +5638,7 @@ class cCrud
             }
         }
         $mode = 'list';
-        $view_file = cCrudConfig::$themes_path . '/' . $this->theme . '/' . $this->load_view['list'];
+        $view_file = $this->config->themes_path . '/' . $this->theme . '/' . $this->load_view['list'];
         $view_file = $this->check_file($view_file, 'render');
         ob_start();
         include ($view_file);
@@ -5824,7 +5834,7 @@ class cCrud
             }
         }
 
-        $view_file = cCrudConfig::$themes_path . '/' . $this->theme . '/' . $this->load_view[$mode];
+        $view_file = $this->config->themes_path . '/' . $this->theme . '/' . $this->load_view[$mode];
         $view_file = $this->check_file($view_file, 'render');
         ob_start();
         include ($view_file);
@@ -5842,7 +5852,7 @@ class cCrud
          * $instance->ajax_request = true;
          * $instance->import_vars();
          * $instance->inner_where($this->result_row[$field]);
-         * if ($mode == 'view' && cCrudConfig::$nested_readonly_on_view)
+         * if ($mode == 'view' && $this->config->nested_readonly_on_view)
          * {
          * $instance->table_ro = true;
          * }
@@ -5986,7 +5996,7 @@ class cCrud
         }
 
         $slen = mb_strlen($strip_string, \Config\App::$charset);
-        if ($slen <= $len || (cCrudConfig::$print_full_texts && $this->theme == 'printout')) {
+        if ($slen <= $len || ($this->config->print_full_texts && $this->theme == 'printout')) {
             return $this->output_string($string, $this->strip_tags, $safe);
         }
         if ($wordsafe) {
@@ -6047,7 +6057,7 @@ class cCrud
                 foreach ($xcrud_session as $s_key => $s_val) {
                     // workaround on some servers session duplication
                     $old_time = isset($s_val['time']) ? (int) $s_val['time'] : 0;
-                    if ($time > $old_time + cCrudConfig::$autoclean_timeout) {
+                    if ($time > $old_time + $this->config->autoclean_timeout) {
                         // autocleaner
                         unset($xcrud_session[$s_key]);
                     }
@@ -6062,17 +6072,17 @@ class cCrud
         $xcrud_session[$inst_name]['before'] = $this->find_prev_task();
 
         $this->ci->session->set_userdata('xcrud_session', $xcrud_session);
-        if (cCrudConfig::$alt_session) {
+        if ($this->config->alt_session) {
             $data = $this->encrypt($_SESSION['lists']['xcrud_session']);
 
             if (class_exists('Memcache')) {
                 $mc = new Memcache();
-                $mc->connect(cCrudConfig::$mc_host, cCrudConfig::$mc_port);
-                $res = $mc->set(self::$sess_id, $data, false, cCrudConfig::$alt_lifetime * 60);
+                $mc->connect($this->config->mc_host, $this->config->mc_port);
+                $res = $mc->set(self::$sess_id, $data, false, $this->config->alt_lifetime * 60);
             } elseif (class_exists('Memcached')) {
                 $mc = new Memcached();
-                $mc->connect(cCrudConfig::$mc_host, cCrudConfig::$mc_port);
-                $res = $mc->set(self::$sess_id, $data, cCrudConfig::$alt_lifetime * 60);
+                $mc->connect($this->config->mc_host, $this->config->mc_port);
+                $res = $mc->set(self::$sess_id, $data, $this->config->alt_lifetime * 60);
             } else {
                 self::error('Can\'t use alternative session. Memcache(d) is not available');
             }
@@ -6275,14 +6285,14 @@ class cCrud
 
     public function import_vars($key = false)
     {
-        if (cCrudConfig::$alt_session) {
+        if ($this->config->alt_session) {
             if (class_exists('Memcache')) {
                 $mc = new Memcache();
-                $mc->connect(cCrudConfig::$mc_host, cCrudConfig::$mc_port);
+                $mc->connect($this->config->mc_host, $this->config->mc_port);
                 $data = $mc->get(self::$sess_id);
             } elseif (class_exists('Memcached')) {
                 $mc = new Memcached();
-                $mc->connect(cCrudConfig::$mc_host, cCrudConfig::$mc_port);
+                $mc->connect($this->config->mc_host, $this->config->mc_port);
                 $data = $mc->get(self::$sess_id);
             } else {
                 self::error('Can\'t use alternative session. Memcache(d) is not available');
@@ -6520,7 +6530,7 @@ class cCrud
 
     protected function create_view_email($name, $value = '', $tag = array())
     {
-        if (cCrudConfig::$clickable_list_links) {
+        if ($this->config->clickable_list_links) {
             $value = $this->make_links($value);
             $value = $this->make_mailto($value);
         }
@@ -6544,7 +6554,7 @@ class cCrud
 
     protected function create_view_text($name, $value = '', $tag = array())
     {
-        if (cCrudConfig::$clickable_list_links) {
+        if ($this->config->clickable_list_links) {
             $value = $this->make_links($value);
             $value = $this->make_mailto($value);
         }
@@ -7098,7 +7108,7 @@ class cCrud
         $total = $db->row();
         unset($this->field_attr[$name]['data-relationajax']);
         $this->field_attr[$name]['class'] = $tag['class'];
-        if ($total['total'] >= cCrudConfig::$relation_ajax) {
+        if ($total['total'] >= $this->config->relation_ajax) {
             $this->field_attr[$name]['data-relationajax'] = $this->fieldname_encode($name);
             $this->field_attr[$name]['class'] = $tag['class'] . ' select2-ajax';
         }
@@ -7120,7 +7130,7 @@ class cCrud
             }
             // }
         } else {
-            if ($total['total'] > cCrudConfig::$relation_ajax) {
+            if ($total['total'] > $this->config->relation_ajax) {
                 $where = "WHERE `" . $this->relation[$name]['rel_field'] . "` IS NULL";
             }
             $vals = implode("','", $values);
@@ -7728,7 +7738,7 @@ class cCrud
         $out = '';
         $attr = $this->field_attr[$name];
         if (! $value) {
-            $value = cCrudConfig::$default_point ? cCrudConfig::$default_point : '0,0';
+            $value = $this->config->default_point ? $this->config->default_point : '0,0';
         }
 
         $tag = $tag + array(
@@ -7791,7 +7801,7 @@ class cCrud
         $out = '';
         $attr = $this->field_attr[$name];
         if (! $value) {
-            $value = cCrudConfig::$default_point;
+            $value = $this->config->default_point;
         }
         if ($value) {
             $tag = array(
@@ -7805,7 +7815,7 @@ class cCrud
                 'tag' => 'img',
                 'class' => 'xcrud-map',
                 'style' => 'width:' . $attr['width'] . 'px;height:' . $attr['height'] . 'px;',
-                'src' => 'https://maps.googleapis.com/maps/api/staticmap?center=' . $value . '&zoom=' . $attr['zoom'] . '&size=' . '2000x' . $attr['height'] . '&maptype=roadmap&markers=color:red%7C' . $value . '&key=' . cCrudConfig::$maps_api_key
+                'src' => 'https://maps.googleapis.com/maps/api/staticmap?center=' . $value . '&zoom=' . $attr['zoom'] . '&size=' . '2000x' . $attr['height'] . '&maptype=roadmap&markers=color:red%7C' . $value . '&key=' . $this->config->maps_api_key
             );
             unset($attr['text'], $attr['zoom'], $attr['width'], $attr['height'], $attr['search_text']);
             $out .= $this->single_tag($tag, $this->theme_config('point_field'), $attr);
@@ -9001,7 +9011,7 @@ class cCrud
             $attr['data-content'] = $content;
         }
         $out .= $this->open_tag('a', 'xcrud_modal', $attr);
-        if (cCrudConfig::$images_in_grid && $image) {
+        if ($this->config->images_in_grid && $image) {
             $out .= $content;
         } else {
             $out .= $this->open_tag('i', $this->modal[$field] ? $this->modal[$field] : $this->theme_config('modal_icon')) . $this->close_tag('i');
@@ -9087,7 +9097,7 @@ class cCrud
                     }
                 case 'image':
                     if ($value) {
-                        if (cCrudConfig::$images_in_grid) {
+                        if ($this->config->images_in_grid) {
                             $settings = $this->upload_config[$field];
                             if (isset($settings['grid_thumb']) && isset($settings['thumbs'][$settings['grid_thumb']])) {
                                 $thumb = $settings['grid_thumb'];
@@ -9097,7 +9107,7 @@ class cCrud
                             $out .= $this->single_tag('img', '', array(
                                 'alt' => '',
                                 'src' => isset($this->upload_config[$field]['url']) ? $this->real_file_link($value, $this->upload_config[$field]) : $this->file_link($field, $primary_val, $thumb, false, $value),
-                                'style' => 'max-height: ' . cCrudConfig::$images_in_grid_height . 'px;'
+                                'style' => 'max-height: ' . $this->config->images_in_grid_height . 'px;'
                             ));
                         } else {
                             $out .= $this->open_tag('a', '', array(
@@ -9112,11 +9122,11 @@ class cCrud
                     break;
                 case 'remote_image':
                     if ($value) {
-                        if (cCrudConfig::$images_in_grid) {
+                        if ($this->config->images_in_grid) {
                             $out .= $this->single_tag('img', '', array(
                                 'alt' => '',
                                 'src' => $value,
-                                'style' => 'max-height: ' . cCrudConfig::$images_in_grid_height . 'px;'
+                                'style' => 'max-height: ' . $this->config->images_in_grid_height . 'px;'
                             ));
                         } else {
                             $out .= $this->open_tag('a', '', array(
@@ -9134,7 +9144,7 @@ class cCrud
                     break;
                 case 'text':
                     $value = $this->_cut($value, $field);
-                    if (cCrudConfig::$clickable_list_links) {
+                    if ($this->config->clickable_list_links) {
                         $value = $this->make_links($value);
                         $value = $this->make_mailto($value);
                     }
@@ -9328,7 +9338,7 @@ class cCrud
                     } elseif ($this->theme_config('grid_default_icon')) {
                         $out .= $this->open_tag('i', $this->theme_config('grid_default_icon')) . $this->close_tag('i');
                     }
-                    if (cCrudConfig::$button_labels) {
+                    if ($this->config->button_labels) {
                         $out .= ' ' . $this->html_safe($button['name']);
                     }
                     $out .= $this->close_tag($tag);
@@ -9350,7 +9360,7 @@ class cCrud
             if ($this->theme_config('grid_duplicate_icon')) {
                 $out .= $this->open_tag('i', $this->theme_config('grid_duplicate_icon')) . $this->close_tag('i');
             }
-            if (cCrudConfig::$button_labels) {
+            if ($this->config->button_labels) {
                 $out .= ' ' . $this->lang('duplicate');
             }
             $out .= $this->close_tag($tag);
@@ -9368,7 +9378,7 @@ class cCrud
             if ($this->theme_config('grid_view_icon')) {
                 $out .= $this->open_tag('i', $this->theme_config('grid_view_icon')) . $this->close_tag('i');
             }
-            if (cCrudConfig::$button_labels) {
+            if ($this->config->button_labels) {
                 $out .= ' ' . $this->lang('view');
             }
             $out .= $this->close_tag($tag);
@@ -9386,7 +9396,7 @@ class cCrud
             if ($this->theme_config('grid_edit_icon')) {
                 $out .= $this->open_tag('i', $this->theme_config('grid_edit_icon')) . $this->close_tag('i');
             }
-            if (cCrudConfig::$button_labels) {
+            if ($this->config->button_labels) {
                 $out .= ' ' . $this->lang('edit');
             }
             $out .= $this->close_tag($tag);
@@ -9407,7 +9417,7 @@ class cCrud
             if ($this->theme_config('grid_remove_icon')) {
                 $out .= $this->open_tag('i', $this->theme_config('grid_remove_icon')) . $this->close_tag('i');
             }
-            if (cCrudConfig::$button_labels) {
+            if ($this->config->button_labels) {
                 $out .= ' ' . $this->lang('remove');
             }
             $out .= $this->close_tag($tag);
@@ -9493,7 +9503,7 @@ class cCrud
                     $url = preg_replace('/(:\/\/)www\./u', '$1', $url, 1);
                 }
             }
-        } elseif (cCrudConfig::$urls2abs) {
+        } elseif ($this->config->urls2abs) {
             if (mb_substr($url, 0, 1) == '/' or mb_substr($url, 0, 2) == './') {
                 $url = $curr_host . ltrim($url, '.');
             } elseif ($scr_url && ! $url) {
@@ -9585,10 +9595,10 @@ class cCrud
         if ($crop) {
             $params['xcrud']['crop'] = $crop;
         }
-        if (cCrudConfig::$dynamic_session) {
+        if ($this->config->dynamic_session) {
             $params['xcrud']['sess_name'] = session_name();
         }
-        return cCrudConfig::$scripts_url . '/' . cCrudConfig::$ajax_uri . '?' . http_build_query($params);
+        return $this->config->scripts_url . '/' . $this->config->ajax_uri . '?' . http_build_query($params);
     }
 
     protected function real_file_link($filename, $params, $is_details = false)
@@ -9742,7 +9752,7 @@ class cCrud
 
     protected function send_email($to, $subject = '(No subject)', $message = '', $cc = array(), $html = true)
     {
-        $header = 'MIME-Version: 1.0' . "\r\n" . 'Content-type: text/' . ($html ? 'html' : 'plain') . '; charset=UTF-8' . "\r\n" . 'From: ' . cCrudConfig::$email_from_name . ' <' . cCrudConfig::$email_from . ">\r\n";
+        $header = 'MIME-Version: 1.0' . "\r\n" . 'Content-type: text/' . ($html ? 'html' : 'plain') . '; charset=UTF-8' . "\r\n" . 'From: ' . $this->config->email_from_name . ' <' . $this->config->email_from . ">\r\n";
         if ($cc)
             $header .= 'Cc: ' . implode(',', $cc) . "\r\n";
         if ($html)
@@ -9807,10 +9817,10 @@ class cCrud
      */
     protected function _get_language()
     {
-        if (is_file(CCRUD_PATH . '/' . cCrudConfig::$lang_path . '/' . $this->language . '/xcrud.ini'))
-            self::$lang_arr = parse_ini_file(CCRUD_PATH . '/' . cCrudConfig::$lang_path . '/' . $this->language . '/xcrud.ini');
-        elseif (is_file(CCRUD_PATH . '/' . cCrudConfig::$lang_path . '/en/xcrud.ini'))
-            self::$lang_arr = parse_ini_file(CCRUD_PATH . '/' . cCrudConfig::$lang_path . '/en/xcrud.ini');
+        if (is_file(CCRUD_PATH . '/' . $this->config->lang_path . '/' . $this->language . '/xcrud.ini'))
+            self::$lang_arr = parse_ini_file(CCRUD_PATH . '/' . $this->config->lang_path . '/' . $this->language . '/xcrud.ini');
+        elseif (is_file(CCRUD_PATH . '/' . $this->config->lang_path . '/en/xcrud.ini'))
+            self::$lang_arr = parse_ini_file(CCRUD_PATH . '/' . $this->config->lang_path . '/en/xcrud.ini');
         if ($this->set_lang) {
             self::$lang_arr = array_merge(self::$lang_arr, $this->set_lang);
         }
@@ -9823,10 +9833,11 @@ class cCrud
      */
     protected static function _get_language_static()
     {
-        if (is_file(CCRUD_PATH . '/' . cCrudConfig::$lang_path . '/' . \Config\App::$defaultLocale . '/xcrud.ini'))
-            self::$lang_arr = parse_ini_file(CCRUD_PATH . '/' . cCrudConfig::$lang_path . '/' . \Config\App::$defaultLocale . '/xcrud.ini');
-        elseif (is_file(CCRUD_PATH . '/' . cCrudConfig::$lang_path . '/en.ini'))
-            self::$lang_arr = parse_ini_file(CCRUD_PATH . '/' . cCrudConfig::$lang_path . '/en/xcrud.ini');
+        $config = config('cCrudConfig');
+        if (is_file(CCRUD_PATH . '/' . $config->lang_path . '/' . \Config\App::$defaultLocale . '/xcrud.ini'))
+            self::$lang_arr = parse_ini_file(CCRUD_PATH . '/' . $config->lang_path . '/' . \Config\App::$defaultLocale . '/xcrud.ini');
+        elseif (is_file(CCRUD_PATH . '/' . $config->lang_path . '/en.ini'))
+            self::$lang_arr = parse_ini_file(CCRUD_PATH . '/' . $config->lang_path . '/en/xcrud.ini');
     }
 
     /**
@@ -9837,8 +9848,8 @@ class cCrud
     protected function _get_theme_config()
     { // loads theme configuration from
       // ini file
-        if (is_file(CCRUD_PATH . '/' . cCrudConfig::$themes_path . '/xcrud_default/xcrud.ini'))
-            $this->theme_config = parse_ini_file(CCRUD_PATH . '/' . cCrudConfig::$themes_path . '/xcrud_default/xcrud.ini');
+        if (is_file(CCRUD_PATH . '/' . $this->config->themes_path . '/xcrud_default/xcrud.ini'))
+            $this->theme_config = parse_ini_file(CCRUD_PATH . '/' . $this->config->themes_path . '/xcrud_default/xcrud.ini');
         else
             self::error('xcrud.ini does not exist in your theme folder');
     }
@@ -9976,26 +9987,27 @@ class cCrud
      */
     public static function load_css()
     {
-        $out = '';
+        $out    = '';
+        $config = config('cCrudConfig');
 
         if (! self::$js_loaded && ! self::$instance) {
-            cCrudConfig::$scripts_url = self::check_url(cCrudConfig::$scripts_url, true);
-            cCrudConfig::$editor_url = self::check_url(cCrudConfig::$editor_url);
-            cCrudConfig::$editor_init_url = self::check_url(cCrudConfig::$editor_init_url);
+            $config->scripts_url     = self::check_url($config->scripts_url, true);
+            $config->editor_url      = self::check_url($config->editor_url);
+            $config->editor_init_url = self::check_url($config->editor_init_url);
         }
 
         if (self::$css_loaded) {
-            self::error('cCrud\'s styles already rendered! Please, set <strong>$manual_load = true</strong> in your configuration file');
+            self::error('cCrud\'s styles already rendered! Please, set <strong>$manual_load = true</strong> in your configuração file');
         }
 
         self::$css_loaded = true;
-        if (cCrudConfig::$load_bootstrap) {
-            $out .= '<link href="' . cCrudConfig::$scripts_url . '/' . cCrudConfig::$plugins_uri . '/bootstrap/css/bootstrap.min.css?' . time() . '" rel="stylesheet" type="text/css" />';
+        if ($config->load_bootstrap) {
+            $out .= '<link href="' . $config->scripts_url . '/' . $config->plugins_uri . '/bootstrap/css/bootstrap.min.css?' . time() . '" rel="stylesheet" type="text/css" />';
         }
-        if (cCrudConfig::$load_jquery_ui)
-            $out .= '<link href="' . cCrudConfig::$scripts_url . '/' . cCrudConfig::$plugins_uri . '/jquery-ui/jquery-ui.min.css?' . time() . '" rel="stylesheet" type="text/css" />';
-        if (cCrudConfig::$load_jcrop)
-            $out .= '<link href="' . cCrudConfig::$scripts_url . '/' . cCrudConfig::$plugins_uri . '/jcrop/jquery.Jcrop.min.css?' . time() . '" rel="stylesheet" type="text/css" />';
+        if ($config->load_jquery_ui)
+            $out .= '<link href="' . $config->scripts_url . '/' . $config->plugins_uri . '/jquery-ui/jquery-ui.min.css?' . time() . '" rel="stylesheet" type="text/css" />';
+        if ($config->load_jcrop)
+            $out .= '<link href="' . $config->scripts_url . '/' . $config->plugins_uri . '/jcrop/jquery.Jcrop.min.css?' . time() . '" rel="stylesheet" type="text/css" />';
 
         return $out;
     }
@@ -10016,20 +10028,21 @@ class cCrud
             $language = \Config\App::$defaultLocale;
             self::_get_language_static();
         }
+        $config = config('cCrudConfig');
 
         if (! self::$css_loaded && ! self::$instance) {
-            cCrudConfig::$scripts_url = self::check_url(cCrudConfig::$scripts_url, true);
-            cCrudConfig::$editor_url = self::check_url(cCrudConfig::$editor_url);
-            cCrudConfig::$editor_init_url = self::check_url(cCrudConfig::$editor_init_url);
+            $config->scripts_url     = self::check_url($config->scripts_url, true);
+            $config->editor_url      = self::check_url($config->editor_url);
+            $config->editor_init_url = self::check_url($config->editor_init_url);
         }
 
         if (self::$js_loaded) {
-            self::error('cCrud\'s scripts already rendered! Please, set <strong>$manual_load = true</strong> in your configuration file');
+            self::error('cCrud\'s scripts already rendered! Please, set <strong>$manual_load = true</strong> in your configuração file');
         }
         self::$js_loaded = true;
-        if (cCrudConfig::$load_jquery)
-            $out .= '<script src="' . cCrudConfig::$scripts_url . '/' . cCrudConfig::$plugins_uri . '/jquery.min.js"></script>';
-        if (cCrudConfig::$jquery_no_conflict) {
+        if ($config->load_jquery)
+            $out .= '<script src="' . $config->scripts_url . '/' . $config->plugins_uri . '/jquery.min.js"></script>';
+        if ($config->jquery_no_conflict) {
             $out .= '
             <script type="text/javascript">
             <!--
@@ -10039,38 +10052,38 @@ class cCrud
             -->
             </script>';
         }
-        if (cCrudConfig::$load_jquery_ui)
-            $out .= '<script src="' . cCrudConfig::$scripts_url . '/' . cCrudConfig::$plugins_uri . '/jquery-ui/jquery-ui.min.js?' . time() . '"></script>';
-        if (cCrudConfig::$load_jcrop) {
-            $out .= '<script src="' . cCrudConfig::$scripts_url . '/' . cCrudConfig::$plugins_uri . '/jcrop/jquery.Jcrop.min.js?' . time() . '"></script>';
+        if ($config->load_jquery_ui)
+            $out .= '<script src="' . $config->scripts_url . '/' . $config->plugins_uri . '/jquery-ui/jquery-ui.min.js?' . time() . '"></script>';
+        if ($config->load_jcrop) {
+            $out .= '<script src="' . $config->scripts_url . '/' . $config->plugins_uri . '/jcrop/jquery.Jcrop.min.js?' . time() . '"></script>';
         }
-        if (cCrudConfig::$load_bootstrap)
-            $out .= '<script src="' . cCrudConfig::$scripts_url . '/' . cCrudConfig::$plugins_uri . '/bootstrap/js/bootstrap.min.js?' . time() . '"></script>';
+        if ($config->load_bootstrap)
+            $out .= '<script src="' . $config->scripts_url . '/' . $config->plugins_uri . '/bootstrap/js/bootstrap.min.js?' . time() . '"></script>';
 
-        if (cCrudConfig::$editor_url)
-            $out .= '<script src="' . cCrudConfig::$editor_url . '?' . time() . '"></script>';
-        if (cCrudConfig::$load_googlemap)
+        if ($config->editor_url)
+            $out .= '<script src="' . $config->editor_url . '?' . time() . '"></script>';
+        if ($config->load_googlemap)
             $out .= '<script src="//maps.google.com/maps/api/js?sensor=false&language=' . $language . '&' . time() . '"></script>';
-        $out .= '<script src="' . cCrudConfig::$scripts_url . '/' . cCrudConfig::$plugins_uri . '/cCrud.js?' . time() . '"></script>';
+        $out .= '<script src="' . $config->scripts_url . '/' . $config->plugins_uri . '/cCrud.js?' . time() . '"></script>';
 
-        $config = array(
-            'url' => cCrudConfig::$scripts_url . '/' . cCrudConfig::$ajax_uri,
+        $settings = array(
+            'url' => $config->scripts_url . '/' . $config->ajax_uri,
             'table_name' => $instance->table_name,
-            'editor_url' => cCrudConfig::$editor_url,
-            'editor_init_url' => cCrudConfig::$editor_init_url,
-            'force_editor' => cCrudConfig::$force_editor,
-            'date_first_day' => cCrudConfig::$date_first_day,
-            'date_format' => cCrudConfig::$date_format,
-            'time_format' => cCrudConfig::$time_format,
+            'editor_url' => $config->editor_url,
+            'editor_init_url' => $config->editor_init_url,
+            'force_editor' => $config->force_editor,
+            'date_first_day' => $config->date_first_day,
+            'date_format' => $config->date_format,
+            'time_format' => $config->time_format,
             'lang' => self::$lang_arr,
-            'rtl' => cCrudConfig::$is_rtl ? 1 : 0
+            'rtl' => $config->is_rtl ? 1 : 0
         );
         $out .= '
             <script type="text/javascript">
             <!--
-            
-           	var xcrud_config = ' . json_encode($config) . ';
-                            
+
+                var xcrud_config = ' . json_encode($settings) . ';
+
             -->
             </script>';
         return $out;
@@ -10242,7 +10255,7 @@ class cCrud
 
     protected function find_grid_text_variables()
     {
-        if (! cCrudConfig::$performance_mode) {
+        if (! $this->config->performance_mode) {
             if ($this->column_pattern) {
                 foreach ($this->column_pattern as $item) {
                     $this->extract_fields_from_text($item, 'columns');
@@ -10395,7 +10408,7 @@ class cCrud
 
     protected function replace_text_variables($value, array $data, $safety = false, $null_if_empty = false)
     {
-        if (! is_array($value) && ! cCrudConfig::$performance_mode && $value) {
+        if (! is_array($value) && ! $this->config->performance_mode && $value) {
             foreach ($data as $key => $val) {
                 $tmp = explode('.', $key);
                 if (count($tmp) > 1) {
@@ -10459,7 +10472,7 @@ class cCrud
         // curl_setopt($ch, CURLOPT_MAXREDIRS, 3);
         curl_setopt($ch, CURLOPT_ENCODING, '');
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-        if (cCrudConfig::$use_browser_info) {
+        if ($this->config->use_browser_info) {
             $this->get_browser_info($ch);
         }
         $output = curl_exec($ch);
@@ -10489,13 +10502,13 @@ class cCrud
                 } elseif ($class) {
                     $tag['class'] = $class;
                 }
-                if (cCrudConfig::$encode_field_names && isset($tag['data-depend'])) {
+                if ($this->config->encode_field_names && isset($tag['data-depend'])) {
                     $tag['data-depend'] = $this->fieldname_encode($tag['data-depend']);
                 }
-                if (cCrudConfig::$encode_field_names && isset($tag['data-rangestart'])) {
+                if ($this->config->encode_field_names && isset($tag['data-rangestart'])) {
                     $tag['data-rangestart'] = $this->fieldname_encode($tag['data-rangestart']);
                 }
-                if (cCrudConfig::$encode_field_names && isset($tag['data-rangeend'])) {
+                if ($this->config->encode_field_names && isset($tag['data-rangeend'])) {
                     $tag['data-rangeend'] = $this->fieldname_encode($tag['data-rangeend']);
                 }
                 if ($tag) {
@@ -10551,13 +10564,13 @@ class cCrud
                 } elseif ($class) {
                     $tag['class'] = $class;
                 }
-                if (cCrudConfig::$encode_field_names && isset($tag['data-depend'])) {
+                if ($this->config->encode_field_names && isset($tag['data-depend'])) {
                     $tag['data-depend'] = $this->fieldname_encode($tag['data-depend']);
                 }
-                if (cCrudConfig::$encode_field_names && isset($tag['data-rangestart'])) {
+                if ($this->config->encode_field_names && isset($tag['data-rangestart'])) {
                     $tag['data-rangestart'] = $this->fieldname_encode($tag['data-rangestart']);
                 }
-                if (cCrudConfig::$encode_field_names && isset($tag['data-rangeend'])) {
+                if ($this->config->encode_field_names && isset($tag['data-rangeend'])) {
                     $tag['data-rangeend'] = $this->fieldname_encode($tag['data-rangeend']);
                 }
                 if ($tag) {
@@ -10648,7 +10661,7 @@ class cCrud
             }
 
             $tab_count = 0;
-            if ((isset($this->field_tabs[$mode]) && $tabs_out) || ($this->nested_rendered && cCrudConfig::$nested_in_tab)) {
+            if ((isset($this->field_tabs[$mode]) && $tabs_out) || ($this->nested_rendered && $this->config->nested_in_tab)) {
                 $tab_total = count($this->field_tabs[$mode]) + count($this->nested_rendered);
                 if ($tab_total < $this->opened_tab || ! $this->opened_tab) {
                     $old_val = $this->opened_tab;
@@ -10680,7 +10693,7 @@ class cCrud
                 }
             }
 
-            if ($this->nested_rendered && cCrudConfig::$nested_in_tab) {
+            if ($this->nested_rendered && $this->config->nested_in_tab) {
                 foreach ($this->nested_rendered as $tabname => $content) {
                     $tab_count ++;
                     $class = '';
@@ -10736,7 +10749,7 @@ class cCrud
                 $raw_out[] = $row_rendered;
             }
         }
-        if ((isset($this->field_tabs[$mode]) or $this->default_tab !== false) && ! cCrudConfig::$tabs_in_widgets) {
+        if ((isset($this->field_tabs[$mode]) or $this->default_tab !== false) && ! $this->config->tabs_in_widgets) {
             $tabs_header = $this->open_tag($tabs_block, $this->theme_config('tabs_container'), array(
                 'class' => 'xcrud-tabs'
             )) . $this->open_tag($tabs_head, $this->theme_config('tabs_header_row'));
@@ -10773,15 +10786,15 @@ class cCrud
             }
             $out .= $tabs_header . $this->close_tag($tabs_head) . $tabs_body . $this->close_tag($tabs_content) . $this->close_tag($tabs_block);
         }
-        if ((isset($this->field_tabs[$mode]) or $this->default_tab !== false) && cCrudConfig::$tabs_in_widgets) {
+        if ((isset($this->field_tabs[$mode]) or $this->default_tab !== false) && $this->config->tabs_in_widgets) {
             $k = 0;
             if (isset($this->field_tabs[$mode]) && $tabs_out) {
                 foreach ($this->field_tabs[$mode] as $key => $tabname) {
                     if ($key == $tab) {
                         $class_widget_container = 'widget';
-                        if (cCrudConfig::$widgets_open != 'all' && cCrudConfig::$widgets_open != 'none' && $k >= (int) cCrudConfig::$widgets_open)
+                        if ($this->config->widgets_open != 'all' && $this->config->widgets_open != 'none' && $k >= (int) $this->config->widgets_open)
                             $class_widget_container .= ' widget-closed';
-                        else if (cCrudConfig::$widgets_open == 'none')
+                        else if ($this->config->widgets_open == 'none')
                             $class_widget_container .= ' widget-closed';
                         $widget .= $this->open_tag('div', $class_widget_container, array(
                             'class' => 'xcrud-widgets'
@@ -10905,7 +10918,7 @@ class cCrud
             'data-bs-toggle' => 'collapse',
             'href' => '#search_' . $this->table_name
         ];
-        if ($this->search || cCrudConfig::$search_opened) {
+        if ($this->search || $this->config->search_opened) {
             $attr['aria-expanded'] = 'true';
         } else {
             $attr['aria-expanded'] = 'false';
@@ -10945,7 +10958,7 @@ class cCrud
                 'class' => 'xcrud-search-form collapse',
                 'id' => 'search_' . $this->table_name
             ];
-            if ($this->search || cCrudConfig::$search_opened) {
+            if ($this->search || $this->config->search_opened) {
                 $container_tag['class'] = ' show';
             }
             // ABRE CONTAINER
@@ -10985,7 +10998,7 @@ class cCrud
                     $phrase = $this->search_submit[$i]['phrase'];
                 }
                 $optlist = array();
-                if (cCrudConfig::$search_all) {
+                if ($this->config->search_all) {
                     $optlist[] = $this->open_tag('option', '', array(
                         'value' => ''
                     )) . $this->lang('all_fields') . $this->close_tag('option');
@@ -11170,8 +11183,8 @@ class cCrud
                     $fieldlist['date'] .= $this->open_tag('option', '', array(
                         'value' => ''
                     )) . $this->lang('choose_range') . $this->close_tag('option');
-                    if (cCrudConfig::$available_date_ranges) {
-                        foreach (cCrudConfig::$available_date_ranges as $range) {
+                    if ($this->config->available_date_ranges) {
+                        foreach ($this->config->available_date_ranges as $range) {
                             $attr_rs = array(
                                 'value' => $range
                             );
@@ -11416,7 +11429,7 @@ class cCrud
                     $out .= $this->open_tag($item, 'xcrud-num', $this->_cell_attrib(false, false, false, $row, false, $row_color, $row_class)) . $this->open_tag('span') . ($key + $this->start + 1) . $this->close_tag('span') . $this->close_tag($item);
                 }
                 if (($this->is_edit || $this->is_remove || $this->is_view || $this->buttons || $this->is_duplicate || $this->grid_restrictions) && $this->task != 'print' && $this->buttons_position == 'left') {
-                    $out .= $this->open_tag($item, 'xcrud-actions' . ((cCrudConfig::$fixed_action_buttons) ? ' xcrud-actions-fixed' : ''), $this->_cell_attrib(false, false, false, $row, false, $row_color, $row_class));
+                    $out .= $this->open_tag($item, 'xcrud-actions' . (($this->config->fixed_action_buttons) ? ' xcrud-actions-fixed' : ''), $this->_cell_attrib(false, false, false, $row, false, $row_color, $row_class));
                     $out .= $this->_render_list_buttons($row);
                     $out .= $this->open_tag('span') . $this->close_tag($item);
                 }
@@ -11429,7 +11442,7 @@ class cCrud
                     $out .= $this->open_tag('span') . $this->close_tag($item);
                 }
                 if (($this->is_edit || $this->is_remove || $this->is_view || $this->buttons || $this->is_duplicate || $this->grid_restrictions) && $this->task != 'print' && $this->buttons_position == 'right') {
-                    $out .= $this->open_tag($item, 'xcrud-actions' . ((cCrudConfig::$fixed_action_buttons) ? ' xcrud-actions-fixed' : '') . (cCrudConfig::$fixed_action_buttons ? ' xcrud-fix' : ''), $this->_cell_attrib(false, false, false, $row, false, $row_color, $row_class)) . $this->open_tag('span');
+                    $out .= $this->open_tag($item, 'xcrud-actions' . (($this->config->fixed_action_buttons) ? ' xcrud-actions-fixed' : '') . ($this->config->fixed_action_buttons ? ' xcrud-fix' : ''), $this->_cell_attrib(false, false, false, $row, false, $row_color, $row_class)) . $this->open_tag('span');
                     $out .= $this->_render_list_buttons($row);
                     $out .= $this->open_tag('span') . $this->close_tag($item);
                 }
@@ -11547,7 +11560,7 @@ class cCrud
         ));
         $out .= $this->single_tag($tag, '', array(
             'name' => 'limit',
-            'value' => ($this->limit ? $this->limit : cCrudConfig::$limit)
+            'value' => ($this->limit ? $this->limit : $this->config->limit)
         ));
         $out .= $this->single_tag($tag, '', array(
             'name' => 'instance',
@@ -11557,7 +11570,7 @@ class cCrud
             'name' => 'task',
             'value' => $this->task
         ));
-        if (cCrudConfig::$dynamic_session) {
+        if ($this->config->dynamic_session) {
             $out .= $this->single_tag($tag, '', array(
                 'name' => 'sess_name',
                 'value' => session_name()
@@ -11750,7 +11763,7 @@ class cCrud
         if (isset($settings['path'])) {
             $path = $this->check_folder($settings['path'], 'get_image_folder');
         } else {
-            $path = $this->check_folder(cCrudConfig::$upload_folder_def, 'get_image_folder');
+            $path = $this->check_folder($this->config->upload_folder_def, 'get_image_folder');
         }
         $this->upload_folder[$field] = $path;
         return $path;
@@ -11944,8 +11957,8 @@ class cCrud
     protected function get_range($name)
     {
         $range = array();
-        $time = time() /* + 3600 * cCrudConfig::$local_time_correction*/;
-        $week_day = date('w', $time) /* + cCrudConfig::$date_first_day*/;
+        $time = time() /* + 3600 * $this->config->local_time_correction*/;
+        $week_day = date('w', $time) /* + $this->config->date_first_day*/;
         switch ($name) {
             default:
             case 'today':
@@ -11961,41 +11974,41 @@ class cCrud
                 $range['to'] = gmmktime(23, 59, 59, date('n', $time) + 2, - 1, date('Y', $time));
                 break;
             case 'this_week_today':
-                if ($week_day >= cCrudConfig::$date_first_day) {
-                    $offset1 = $week_day - cCrudConfig::$date_first_day;
+                if ($week_day >= $this->config->date_first_day) {
+                    $offset1 = $week_day - $this->config->date_first_day;
                 } else {
-                    $offset1 = 7 - (cCrudConfig::$date_first_day - $week_day);
+                    $offset1 = 7 - ($this->config->date_first_day - $week_day);
                 }
                 $range['from'] = gmmktime(0, 0, 0, date('n', $time), date('j', $time) - $offset1, date('Y', $time));
                 $range['to'] = gmmktime(23, 59, 59, date('n', $time), date('j', $time), date('Y', $time));
                 break;
             case 'this_week_full':
-                if ($week_day >= cCrudConfig::$date_first_day) {
-                    $offset1 = $week_day - cCrudConfig::$date_first_day;
+                if ($week_day >= $this->config->date_first_day) {
+                    $offset1 = $week_day - $this->config->date_first_day;
                 } else {
-                    $offset1 = 7 - (cCrudConfig::$date_first_day - $week_day);
+                    $offset1 = 7 - ($this->config->date_first_day - $week_day);
                 }
-                $offset2 = 6 - $week_day + cCrudConfig::$date_first_day;
+                $offset2 = 6 - $week_day + $this->config->date_first_day;
                 $range['from'] = gmmktime(0, 0, 0, date('n', $time), date('j', $time) - $offset1, date('Y', $time));
                 $range['to'] = gmmktime(23, 59, 59, date('n', $time), date('j', $time) + $offset2, date('Y', $time));
                 break;
             case 'last_week':
-                if ($week_day >= cCrudConfig::$date_first_day) {
-                    $offset1 = $week_day - cCrudConfig::$date_first_day;
+                if ($week_day >= $this->config->date_first_day) {
+                    $offset1 = $week_day - $this->config->date_first_day;
                 } else {
-                    $offset1 = 7 - (cCrudConfig::$date_first_day - $week_day);
+                    $offset1 = 7 - ($this->config->date_first_day - $week_day);
                 }
-                $offset2 = 6 - $week_day + cCrudConfig::$date_first_day;
+                $offset2 = 6 - $week_day + $this->config->date_first_day;
                 $range['from'] = gmmktime(0, 0, 0, date('n', $time), date('j', $time) - $offset1 - 7, date('Y', $time));
                 $range['to'] = gmmktime(23, 59, 59, date('n', $time), date('j', $time) + $offset2 - 7, date('Y', $time));
                 break;
             case 'last_2weeks':
-                if ($week_day >= cCrudConfig::$date_first_day) {
-                    $offset1 = $week_day - cCrudConfig::$date_first_day;
+                if ($week_day >= $this->config->date_first_day) {
+                    $offset1 = $week_day - $this->config->date_first_day;
                 } else {
-                    $offset1 = 7 - (cCrudConfig::$date_first_day - $week_day);
+                    $offset1 = 7 - ($this->config->date_first_day - $week_day);
                 }
-                $offset2 = 6 - $week_day + cCrudConfig::$date_first_day;
+                $offset2 = 6 - $week_day + $this->config->date_first_day;
                 $range['from'] = gmmktime(0, 0, 0, date('n', $time), date('j', $time) - $offset1 - 14, date('Y', $time));
                 $range['to'] = gmmktime(23, 59, 59, date('n', $time), date('j', $time) + $offset2 - 14, date('Y', $time));
                 break;
@@ -12047,7 +12060,7 @@ class cCrud
     protected function unix2datetime($time, $utc = false)
     {
         if ($time)
-            return $utc ? gmdate($this->date_format['php_d'] . ' ' . $this->date_format['php_t'], $time) : date(cCrudConfig::$php_date_format . ' ' . $this->date_format['php_t'], $time);
+            return $utc ? gmdate($this->date_format['php_d'] . ' ' . $this->date_format['php_t'], $time) : date($this->config->php_date_format . ' ' . $this->date_format['php_t'], $time);
         else
             return '';
     }
@@ -12124,7 +12137,7 @@ class cCrud
                     $out .= $this->is_rtl ? '<small>' . $this->get_table_tooltip() . '</small>' . $title : $title . '<small> ' . $this->get_table_tooltip() . '</small>';
                     break;
             }
-            if (cCrudConfig::$can_minimize) {
+            if ($this->config->can_minimize) {
                 if ($to_show)
                     $out .= '<span class="xcrud-toggle-show xcrud-toggle-down"><i class="' . $this->theme_config('slide_down_icon') . '"></i></span>';
                 else
@@ -12142,7 +12155,7 @@ class cCrud
 
     public function encrypt($obj)
     {
-        if (! cCrudConfig::$alt_encription_key) {
+        if (! $this->config->alt_encription_key) {
             self::error('Please, set <strong>$alt_encription_key</strong> parameter in configuration file');
         }
         $text = json_encode($obj);
@@ -12164,7 +12177,7 @@ class cCrud
         $td = mcrypt_module_open($algoritm, '', MCRYPT_MODE_CFB, '');
         $iv = mcrypt_create_iv(mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
         $ks = mcrypt_enc_get_key_size($td);
-        $key = substr(cCrudConfig::$alt_encription_key, 0, $ks);
+        $key = substr($this->config->alt_encription_key, 0, $ks);
         mcrypt_generic_init($td, $key, $iv);
         $encrypted = mcrypt_generic($td, $text);
         mcrypt_generic_deinit($td);
@@ -12178,7 +12191,7 @@ class cCrud
 
     public function decrypt($text, $iv)
     {
-        if (! cCrudConfig::$alt_encription_key) {
+        if (! $this->config->alt_encription_key) {
             self::error('Please, set <strong>$alt_encription_key</strong> parameter in configuration file');
         }
         if (! is_callable('mcrypt_module_open')) {
@@ -12197,7 +12210,7 @@ class cCrud
         }
         $td = mcrypt_module_open($algoritm, '', MCRYPT_MODE_CFB, '');
         $ks = mcrypt_enc_get_key_size($td);
-        $key = substr(cCrudConfig::$alt_encription_key, 0, $ks);
+        $key = substr($this->config->alt_encription_key, 0, $ks);
         mcrypt_generic_init($td, $key, base64_decode($iv));
         $decrypted = mdecrypt_generic($td, base64_decode($text));
         mcrypt_generic_deinit($td);
@@ -12350,7 +12363,7 @@ class cCrud
 
     public function fieldname_encode($name = '')
     {
-        if (! cCrudConfig::$encode_field_names) {
+        if (! $this->config->encode_field_names) {
             return $name;
         }
         return str_replace(array(
@@ -12366,7 +12379,7 @@ class cCrud
 
     public function fieldname_decode($name = '')
     {
-        if (! cCrudConfig::$encode_field_names) {
+        if (! $this->config->encode_field_names) {
             return $name;
         }
         return str_replace('`', '', base64_decode(str_replace(array(
@@ -12769,7 +12782,7 @@ class cCrud
         } else {
             $name_select = '`' . $this->relation[$name]['rel_name'] . '` AS `name`';
         }
-        $db->query('SELECT `' . $this->relation[$name]['rel_field'] . '` AS `field`,' . $name_select . $this->get_relation_tree_fields($this->relation[$name]) . ' FROM `' . $this->relation[$name]['rel_tbl'] . '` ' . $where . ' GROUP BY `field` ORDER BY ' . $this->get_relation_ordering($this->relation[$name]) . ' LIMIT ' . cCrudConfig::$relation_ajax);
+        $db->query('SELECT `' . $this->relation[$name]['rel_field'] . '` AS `field`,' . $name_select . $this->get_relation_tree_fields($this->relation[$name]) . ' FROM `' . $this->relation[$name]['rel_tbl'] . '` ' . $where . ' GROUP BY `field` ORDER BY ' . $this->get_relation_ordering($this->relation[$name]) . ' LIMIT ' . $this->config->relation_ajax);
         $options = $this->resort_relation_opts($db->result(), $this->relation[$name]);
 
         $results['items'] = array();
@@ -13273,7 +13286,7 @@ class cCrud
                     $out .= $this->is_rtl ? '<small>' . $this->get_table_tooltip() . '</small>' . $title . (($icon) ? '&nbsp;<i class="' . $icon . '"></i>' : '') : (($icon) ? '<i class="' . $icon . '"></i>&nbsp;' : '') . $title . '<small>' . $this->get_table_tooltip() . '</small>';
                     break;
             }
-            if (cCrudConfig::$can_minimize) {
+            if ($this->config->can_minimize) {
                 if ($to_show)
                     $out .= '<span class="xcrud-toggle-show xcrud-toggle-down"><i class="' . $this->theme_config('slide_down_icon') . '"></i></span>';
 
@@ -13742,7 +13755,7 @@ class cCrud
             }
         }
 
-        $view_file = cCrudConfig::$themes_path . '/' . $this->theme . '/' . $this->load_view[$mode];
+        $view_file = $this->config->themes_path . '/' . $this->theme . '/' . $this->load_view[$mode];
         $view_file = $this->check_file($view_file, 'render');
         ob_start();
         include ($view_file);
