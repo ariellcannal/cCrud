@@ -2,7 +2,8 @@
 namespace cCrud\Libraries;
 
 use cCrud\Config\cCrudConfig;
-use cCrud\Libraries\Database;
+use cCrud\Config\Views as ViewsConfig;
+use CodeIgniter\Model;
 use RuntimeException;
 
 // direct access to DB driver and config
@@ -13,8 +14,6 @@ define('CCRUD_PATH', str_replace('\\', '/', dirname(__file__)));
 // trick
 class cCrud
 {
-
-    private $demo_mode = false;
 
     protected static $instance = array();
 
@@ -33,13 +32,27 @@ class cCrud
      */
     protected cCrudConfig $config;
 
+    /**
+     * Model utilizado para todas as consultas ao banco de dados.
+     *
+     * @var Model
+     */
+    protected Model $model;
+
+    /**
+     * Configurações do tema do cCrud.
+     *
+     * @var array<string,string>
+     */
+    protected array $theme_config = [];
+
     public $instance_name;
 
     protected $instance_count;
 
     public $table;
 
-    // ALTERADO PARA PUBLIC, NECESS�RIO NOS HELPERS CALLBACK'S
+    // ALTERADO PARA PUBLIC, NECESSÁRIO NOS HELPERS CALLBACK'S
     protected $table_name;
 
     protected $primary_key;
@@ -138,7 +151,7 @@ class cCrud
 
     public $defaults = array();
 
-    // ALTERADO PARA PUBLIC, NECESS�RIO NOS HELPERS
+    // ALTERADO PARA PUBLIC, NECESSÁRIO NOS HELPERS
     // CALLBACK'S
     protected $limit = 20;
 
@@ -201,8 +214,6 @@ class cCrud
     protected $inner_table_instance = array();
 
     protected $condition = array();
-
-    protected $theme = 'default';
 
     protected $unique = array();
 
@@ -494,11 +505,16 @@ class cCrud
     public $ci = null;
 
     /**
-     * constructor, sets basic xcrud vars (they can be changed by public
-     * pethods)
+     * Construtor que define as variáveis básicas do cCrud,
+     * podendo ser alteradas por métodos públicos.
      */
     protected function __construct()
     {
+        // Verifica se o pacote está sendo utilizado dentro do CodeIgniter 4
+        if (!defined('CI_VERSION') || version_compare(CI_VERSION, '4.0.0', '<')) {
+            throw new \Error('Este pacote requer a execução dentro do CodeIgniter 4.');
+        }
+
         $this->config = class_exists('\\Config\\cCrudConfig') ? new \Config\cCrudConfig() : new cCrudConfig();
 
         $this->config->scripts_url = self::check_url($this->config->scripts_url, true);
@@ -516,7 +532,6 @@ class cCrud
         $this->remove_confirm = $this->config->remove_confirm;
         $this->upload_folder_def = $this->config->upload_folder_def;
 
-        $this->theme = $this->config->theme;
         $this->is_print = $this->config->enable_printout;
         $this->is_title = $this->config->enable_table_title;
         $this->is_csv = $this->config->enable_csv_export;
@@ -529,8 +544,6 @@ class cCrud
         $this->language = \Config\App::$defaultLocale;
 
         $this->search_pattern = $this->config->search_pattern;
-
-        $this->demo_mode = $this->config->demo_mode;
 
         $this->default_tab = $this->config->default_tab;
 
@@ -556,21 +569,34 @@ class cCrud
         return $this->render();
     }
 
-    public static function get_instance($name = false)
+    /**
+     * Retorna uma instância do cCrud utilizando o Model informado.
+     */
+    public static function get_instance(Model $model, $name = false)
     {
         self::init_prepare();
-        if (! $name)
+        if (! $name) {
             $name = sha1(rand() . microtime());
+        }
         if (! isset(self::$instance[$name]) || null === self::$instance[$name]) {
             self::$instance[$name] = new self();
             self::$instance[$name]->instance_name = $name;
-            self::$instance[$name]->ci = &$ci;
         }
         self::$instance[$name]->instance_count = count(self::$instance);
+        self::$instance[$name]->model = $model;
+
+        $returnType = method_exists($model, 'getReturnType') ? $model->getReturnType() : $model->returnType;
+        if (! is_subclass_of($returnType, '\\CodeIgniter\\Entity\\Entity')) {
+            throw new \Error('O Model informado deve utilizar uma Entity CI4 como returnType.');
+        }
+
         return self::$instance[$name];
     }
 
-    public static function get_requested_instance(&$ci)
+    /**
+     * Recupera a instância solicitada via requisição Ajax.
+     */
+    public static function get_requested_instance(Model $model)
     {
         if (isset($_POST['xcrud']['instance']) && isset($_POST['xcrud']['key']) && isset($_POST['xcrud']['task'])) {
             self::init_prepare('post');
@@ -585,8 +611,8 @@ class cCrud
         } else {
             self::erro('wrong_request');
         }
-        $ci = &get_instance();
-        $xcrud_session = $ci->session->userdata('xcrud_session');
+        $session = \Config\Services::session();
+        $xcrud_session = $session->get('xcrud_session');
 
         // var_dump($xcrud_session[$inst_name]);
         // if (isset($xcrud_session[$inst_name]['key']) && $xcrud_session[$inst_name]['key'] == $key) {
@@ -595,7 +621,7 @@ class cCrud
             self::$instance[$inst_name]->is_get = $is_get;
             self::$instance[$inst_name]->ajax_request = true;
             self::$instance[$inst_name]->instance_name = $inst_name;
-            self::$instance[$inst_name]->ci = &$ci;
+            self::$instance[$inst_name]->model = $model;
             self::$instance[$inst_name]->import_vars($key);
             self::$instance[$inst_name]->inner_where();
             return self::$instance[$inst_name]->render();
@@ -665,11 +691,6 @@ class cCrud
     {
         $this->remove_confirm = (bool) $bool;
         return $this;
-    }
-
-    public function theme($theme = 'default')
-    {
-        $this->theme = $theme;
     }
 
     public function limit($limit = 20)
@@ -911,7 +932,7 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         Armazena quem � a nested m�e.
+     *         Armazena quem é a nested mãe.
      */
     /**
      * nested table constructor
@@ -1105,7 +1126,7 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         Inser��o do parametro $alt_task
+     *         Inserção do parâmetro $alt_task
      *         Possibilidade de armazenar mais de uma condição
      */
     public function unset_view($bool = true, $field = false, $operand = false, $value = false, $alt_task = false)
@@ -1218,11 +1239,11 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         Ao atribuir o array de configura��o do bot�o � $this->buttons, a
-     *         chave �
-     *         gravada tamb�m. Isso impede que sejam criados v�rios bot�es
-     *         iguais quando h� mais de
-     *         uma inst�ncia do CRUD na mesma p�gina.
+     *         Ao atribuir o array de configuração do botão à $this->buttons, a
+     *         chave é
+     *         gravada também. Isso impede que sejam criados vários botões
+     *         iguais quando há mais de
+     *         uma instância do CRUD na mesma página.
      */
     public function button($link = '', $name = '', $icon = '', $class = '', $parameters = array(), $conditions = array(), $table_ro = true)
     {
@@ -2178,10 +2199,10 @@ class cCrud
      *
      * @author Ariel Canal
      *         Alterado o path default para os helpers.
-     *         Incluido o par�metro icon.
-     *         Incluido o par�metro button_attr
-     *         Incluido os par�metros conditions.
-     *         Incluido o mode.
+     *         Incluído o parâmetro icon.
+     *         Incluído o parâmetro button_attr
+     *         Incluídos os parâmetros conditions.
+     *         Incluído o mode.
      */
     public function create_action($name = '', $callable = '', $path = 'functions.php', $icon = null, $button_attr = null, $cond_field = null, $cond_operator = null, $cond_value = null, $mode = null)
     {
@@ -2349,7 +2370,6 @@ class cCrud
                     return self::erro('restricted');
                 }
                 $this->_set_field_types('list', $this->config->print_all_fields);
-                $this->theme = 'printout';
                 $this->set_custom_lists();
                 return $this->_list();
                 break;
@@ -2428,7 +2448,6 @@ class cCrud
                 if (! $this->is_print) {
                     return self::erro('restricted');
                 }
-                $this->theme = 'printout';
                 $this->start = 0;
                 $this->limit = 0;
                 return $this->render_custom_datagrid();
@@ -2448,14 +2467,12 @@ class cCrud
     protected function render_custom_datagrid()
     {
         $query = $this->parse_query_params();
-        $db = Database::get_instance($this->connection, $this->ci);
-        $db->query('SELECT COUNT(*) as `count` FROM (SELECT NULL' . $this->total_query . ') counts');
-        $this->sum_row = $db->row();
+        $countQuery = $this->model->db->query('SELECT COUNT(*) as `count` FROM (SELECT NULL' . $this->total_query . ') counts');
+        $this->sum_row = $countQuery->getRowArray();
         $this->result_total = $this->sum_row['count'];
         $order_by = $this->_build_order_by();
         $limit = $this->_build_limit($this->result_total);
-        $db->query($query . ' ' . $order_by . ' ' . $limit);
-        $this->result_list = $db->result();
+        $this->result_list = $this->model->db->query($query . ' ' . $order_by . ' ' . $limit)->getResultArray();
         $this->columns = reset($this->result_list);
         unset($this->columns['primary_key']);
         foreach ($this->columns as $key => $tmp) {
@@ -2482,7 +2499,6 @@ class cCrud
         }
         $this->columns = $this->fields_list;
         $query = $this->parse_query_params();
-        $db = Database::get_instance($this->connection, $this->ci);
         $order_by = $this->_build_order_by();
         $this->_set_column_names();
         ini_set('auto_detect_line_endings', true);
@@ -2497,8 +2513,8 @@ class cCrud
         $output = fopen('php://output', 'w');
         fwrite($output, chr(0xEF) . chr(0xBB) . chr(0xBF)); // bom
         fputcsv($output, $this->columns_names, $this->config->csv_delimiter, $this->config->csv_enclosure);
-        $db->query($query . ' ' . $order_by);
-        foreach ($db->result() as $row) {
+        $queryResult = $this->model->db->query($query . ' ' . $order_by);
+        foreach ($queryResult->getResultArray() as $row) {
             $out = array();
             foreach ($this->columns as $field => $fitem) {
                 $out[] = htmlspecialchars_decode(strip_tags($this->_render_export_item($field, $row[$field], $row['primary_key'], $row)), ENT_QUOTES);
@@ -2572,7 +2588,7 @@ class cCrud
                 $contents .= self::load_css();
             }
             ob_start();
-            include (CCRUD_PATH . '/' . $this->config->themes_path . '/' . $this->theme . '/xcrud_container.php');
+            include APPPATH . 'Views/xcrud/xcrud_container.php';
             $contents .= ob_get_contents();
             ob_end_clean();
             unset($this->data);
@@ -2636,15 +2652,13 @@ class cCrud
         $image = array_search($field, array_reverse($this->upload_to_save));
         if (! $image) {
             list ($tmp1, $tmp2) = explode('.', $field);
-            $db = Database::get_instance($this->connection, $this->ci);
 
             $this->where_pri($this->primary_key, $this->primary_val);
             $where = $this->_build_where();
             $table_join = $this->_build_table_join();
 
-            $db = Database::get_instance($this->connection, $this->ci);
-            $db->query("SELECT `$tmp1`.`$tmp2`\r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where}\r\n LIMIT 1");
-            $row = $db->row();
+            $query = $this->model->db->query("SELECT `$tmp1`.`$tmp2`\r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where}\r\n LIMIT 1");
+            $row = $query->getRowArray();
             $image = $row[$tmp2];
             if (isset($this->upload_config[$field]['blob']) && $this->upload_config[$field]['blob'] === true) {
                 $blob = true;
@@ -2777,7 +2791,6 @@ class cCrud
         if (! $this->is_csv) {
             return self::erro('restricted');
         }
-        $db = Database::get_instance($this->connection, $this->ci);
         $select = $this->_build_select_list(true);
         $table_join = $this->_build_table_join();
         $where = $this->_build_where();
@@ -2790,9 +2803,9 @@ class cCrud
             $headers[] = $this->columns_names[$field];
         }
         // print "SELECT {$select} FROM `{$this->table}` {$table_join} {$where} {$order_by}";exit;
-        $db->query("SELECT {$select} FROM `{$this->table}` {$table_join} {$where} {$order_by}");
-        if ($db->result->num_rows > $this->config->csv_limit)
-            return self::erro('max_records_exceeded');
+        $query = $this->model->db->query("SELECT {$select} FROM `{$this->table}` {$table_join} {$where} {$order_by}");
+        if ($query->getNumRows() > $this->config->csv_limit)
+            return self::error('A quantidade de registros excede o maximo permitido para esta operacao.');
         ini_set('auto_detect_line_endings', true);
         header("Pragma: public");
         header("Expires: 0");
@@ -2976,7 +2989,7 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         EXECUTA A PRIMEIRA TAREFA ALTERNATIVA SE A PRIM�RIA ESTIVER
+     *         EXECUTA A PRIMEIRA TAREFA ALTERNATIVA SE A PRIMÁRIA ESTIVER
      *         BLOQUEADA
      *         compatibilizada com reports
      */
@@ -2989,9 +3002,8 @@ class cCrud
         $select = $this->_build_select_details($mode);
         $where = $this->_build_where();
         $table_join = $this->_build_table_join();
-        $db = Database::get_instance($this->connection, $this->ci);
-        $db->query("SELECT {$select}\r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where}\r\n LIMIT 1");
-        $this->result_row = array_merge((array) $db->row(), $postdata);
+        $query = $this->model->db->query("SELECT {$select}\r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where}\r\n LIMIT 1");
+        $this->result_row = array_merge((array) $query->getRowArray(), $postdata);
 
         // moved here to support conditions for buttons
         if (((! $this->is_edit($this->result_row) || $this->table_ro) && $mode == 'edit') or (! $this->is_view($this->result_row) && $mode == 'view'))
@@ -3068,41 +3080,16 @@ class cCrud
 
     protected function prepare_query_field($val, $key, $action, $no_processing = false)
     {
-        $db = Database::get_instance($this->connection, $this->ci);
-        if ($no_processing) {
-            if (isset($this->no_quotes[$key]) && isset($this->pass_var[$action][$key])) {
-                return $db->escape($val, true);
-            } else {
-                return $db->escape($val, false, $this->field_type[$key], $this->field_null[$key], isset($this->bit_field[$key]));
-            }
-        } else {
-            if (is_array($val)) {
-                return $db->escape(implode(',', $val), false, $this->field_type[$key], $this->field_null[$key], isset($this->bit_field[$key]));
-            } elseif (isset($this->point_field[$key])) {
-                return 'Point(' . $db->escape($val, true, 'point', $this->field_null[$key], isset($this->bit_field[$key])) . ')';
-            } elseif (isset($this->int_field[$key])) {
-                return $db->escape($val, false, 'int', $this->field_null[$key], isset($this->bit_field[$key]));
-            } elseif (isset($this->float_field[$key]) && $this->field_type[$key] == 'price') {
-                $val = str_replace($this->field_attr[$key]['prefix'], '', $val);
-                $val = str_replace($this->field_attr[$key]['suffix'], '', $val);
-                $val = str_replace($this->field_attr[$key]['separator'], '', $val);
-                $val = str_replace($this->field_attr[$key]['point'], '.', $val);
-                return $db->escape($val, false, 'float', $this->field_null[$key], isset($this->bit_field[$key]));
-            } elseif (isset($this->no_quotes[$key]) && isset($this->pass_var[$action][$key])) {
-                return $db->escape($val, true);
-            } else {
-                return $db->escape($val, false, $this->field_type[$key], $this->field_null[$key], isset($this->bit_field[$key]));
-            }
-        }
+        return $this->model->db->escape($val);
     }
 
     /**
      *
      * @author Ariel Canal
-     *         Se um campo est� 'disabled' ou 'readonly', a fun��o ignora ele
+     *         Se um campo está 'disabled' ou 'readonly', a função ignora ele
      *         ao montar a SQL, mesmo que
      *         haja um pass_var[create] para este campo.
-     *         CORRE��O: a fun��o s� ignorar� o campo, se n�o houver
+     *         Correção: a função só ignorará o campo, se não houver
      *         pass_var[create] nele.
      *        
      *         Corrigido a inserção do fk_relation quando há o atributo add_data e mais de um campo para a mesma tabela
@@ -3185,8 +3172,7 @@ class cCrud
         if (! $this->primary_ai && ! isset($postdata[$this->table . '.' . $this->primary_key])) {
             self::erro('no_primary_value');
         }
-        if (! $this->demo_mode)
-            $db->query('INSERT INTO `' . $this->table . '` (' . implode(',', array_keys($set[$this->table])) . ') VALUES (' . implode(',', $set[$this->table]) . ')');
+        $db->query('INSERT INTO `' . $this->table . '` (' . implode(',', array_keys($set[$this->table])) . ') VALUES (' . implode(',', $set[$this->table]) . ')');
         if ($this->primary_ai) {
             $ins_id = $db->insert_id();
             $set[$this->table]['`' . $this->primary_key . '`'] = $ins_id;
@@ -3197,7 +3183,7 @@ class cCrud
         if ($this->join) {
             foreach ($this->join as $alias => $param) {
                 @$set[$alias]['`' . $param['join_field'] . '`'] = $set[$param['table']]['`' . $param['field'] . '`'];
-                if (! $this->demo_mode && ! $param['not_insert']) {
+                if (! $param['not_insert']) {
                     $db->query("INSERT INTO `{$param['join_table']}` (" . implode(',', array_keys($set[$alias])) . ") VALUES (" . implode(',', $set[$alias]) . ")");
                 }
             }
@@ -3258,10 +3244,10 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         Se um campo est� 'disabled' ou 'readonly', a fun��o ignora ele
+     *         Se um campo está 'disabled' ou 'readonly', a função ignora ele
      *         ao montar a SQL, mesmo que
      *         haja um pass_var[create] para este campo.
-     *         CORRE��O: a fun��o s� ignorar� o campo, se n�o houver
+     *         Correção: a função só ignorará o campo, se não houver
      *         pass_var[create] nele.
      *        
      *         Compatibilizado com join_relation
@@ -3326,8 +3312,7 @@ class cCrud
         }
         $this->apply_record_changes($set);
         if (! $this->join && ! $this->join_relation) {
-            if (! $this->demo_mode)
-                $res = $db->query("UPDATE `{$this->table}` SET " . implode(",\r\n", $set) . " WHERE `{$this->primary_key}` = " . $db->escape($primary) . " LIMIT 1");
+            $res = $db->query("UPDATE `{$this->table}` SET " . implode(",\r\n", $set) . " WHERE `{$this->primary_key}` = " . $db->escape($primary) . " LIMIT 1");
         } else {
             // $tables = array('`' . $this->table . '`');
             $joins = array();
@@ -3345,8 +3330,7 @@ class cCrud
                     }
                 }
             }
-            if (! $this->demo_mode)
-                $res = $db->query("UPDATE `{$this->table}` AS `{$this->table}` " . implode(' ', $joins) . " SET " . implode(",\r\n", $set) . " WHERE `{$this->table}`.`{$this->primary_key}` = " . $db->escape($primary));
+            $res = $db->query("UPDATE `{$this->table}` AS `{$this->table}` " . implode(' ', $joins) . " SET " . implode(",\r\n", $set) . " WHERE `{$this->table}`.`{$this->primary_key}` = " . $db->escape($primary));
         }
         if (isset($postdata[$this->table . '.' . $this->primary_key]) && $res)
             $primary = $postdata[$this->table . '.' . $this->primary_key];
@@ -3463,9 +3447,7 @@ class cCrud
                 if (! $this->is_remove($del_row)) {
                     return self::erro('forbidden');
                 }
-                if (! $this->demo_mode) {
-                    $del = $db->query("DELETE FROM `{$this->table}` WHERE `{$this->primary_key}` = " . $db->escape($this->primary_val) . " LIMIT 1");
-                }
+                $del = $db->query("DELETE FROM `{$this->table}` WHERE `{$this->primary_key}` = " . $db->escape($this->primary_val) . " LIMIT 1");
             } else {
                 $tables = array(
                     '`' . $this->table . '`'
@@ -3484,10 +3466,9 @@ class cCrud
                 if (! $this->is_remove($del_row)) {
                     return self::erro('forbidden');
                 }
-                if (! $this->demo_mode)
-                    $del = $db->query("DELETE " . implode(',', $tables) . " FROM `{$this->table}` AS `{$this->table}` " . implode(' ', $joins) . " WHERE `{$this->table}`.`{$this->primary_key}` = " . $db->escape($this->primary_val));
+                $del = $db->query("DELETE " . implode(',', $tables) . " FROM `{$this->table}` AS `{$this->table}` " . implode(' ', $joins) . " WHERE `{$this->table}`.`{$this->primary_key}` = " . $db->escape($this->primary_val));
             }
-            if ($del_row && ! $this->demo_mode) {
+            if ($del_row) {
                 foreach ($del_row as $key => $val) {
                     if ($val && isset($this->upload_config[$key]) && ! isset($this->upload_config[$key]['blob'])) {
                         $this->remove_file($val, $key);
@@ -3592,11 +3573,11 @@ class cCrud
      * save events switcher
      */
     /**
-     * FUN��O ALTERADA DO PADR�O
+     * FUNÇÃO ALTERADA DO PADRÃO
      *
      * @author Ariel Canal
-     *         Fun��o make_upload_process() � chamada tamb�m durante a
-     *         atualiza��o das informa��o, e n�o s� na inser��o.
+     *         Função make_upload_process() é chamada também durante a
+     *         atualização das informações, e não só na inserção.
      */
     protected function _save()
     {
@@ -3997,10 +3978,10 @@ class cCrud
     }
 
     /**
-     * FUN��O ALTERADA DO PADR�O
+     * FUNÇÃO ALTERADA DO PADRÃO
      *
      * @author Ariel Canal
-     *         Corre��o feita na substitui��o do conte�do de $pd.
+     *         Correção feita na substituição do conteúdo de $pd.
      */
     protected function make_upload_process($pd)
     {
@@ -4419,12 +4400,11 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         As condi��es definidas pelo controller e pelos filtros s� s�o
-     *         consideradas caso a task n�o seja edit ou view.
-     *         Isso evita que o formul�rio seja renderizado em branco caso, ap�s
-     *         o
-     *         'save', o registro n�o esteja mais na listagem filtrada pelo
-     *         usu�rio.
+     *         As condições definidas pelo controller e pelos filtros só são
+     *         consideradas caso a task não seja edit ou view.
+     *         Isso evita que o formulário seja renderizado em branco caso, após o
+     *         'save', o registro não esteja mais na listagem filtrada pelo
+     *         usuário.
      */
     /**
      * builds main where condition for query
@@ -4945,7 +4925,7 @@ class cCrud
     }
 
     /**
-     * FUN��O ALTERADA DO PADR�O
+     * FUNÇÃO ALTERADA DO PADRÃO
      * compatibilizada com reports
      */
     /**
@@ -5099,7 +5079,7 @@ class cCrud
 
     protected function _build_limit($total)
     {
-        if ($this->limit != 'all' && $this->theme != 'printout') {
+        if ($this->limit != 'all') {
             if ($this->start > 0 && $this->start >= $this->result_total) {
                 $this->start = $this->result_total > $this->limit ? $this->result_total - $this->limit : 0;
             }
@@ -5567,6 +5547,19 @@ class cCrud
     protected function _set_column_names()
     {
         $subselect_before = $this->subselect_before;
+
+        // Recupera os atributos definidos na Entity para utilizar como labels padrão
+        $entityAttributes = [];
+        $returnType = method_exists($this->model, 'getReturnType') ? $this->model->getReturnType() : $this->model->returnType;
+        if ($returnType && class_exists($returnType)) {
+            $ref = new \ReflectionClass($returnType);
+            if ($ref->hasProperty('attributes')) {
+                $property = $ref->getProperty('attributes');
+                $property->setAccessible(true);
+                $entityAttributes = (array) $property->getValue($ref->newInstance());
+            }
+        }
+
         foreach ($this->columns as $key => $col) {
             if ($name = array_search($key, $subselect_before)) {
                 $this->columns_names[$name] = $this->html_safe($this->labels[$name]);
@@ -5578,6 +5571,8 @@ class cCrud
                 $this->columns_names[$key] = $this->html_safe($this->labels[$key]);
             } elseif ($this->fk_relation && isset($this->fk_relation[$key])) {
                 $this->columns_names[$key] = $this->fk_relation[$key]['label'];
+            } elseif (isset($entityAttributes[$col['field']])) {
+                $this->columns_names[$key] = $this->html_safe($entityAttributes[$col['field']]);
             } else {
                 $this->columns_names[$key] = $this->html_safe($this->_humanize($col['field']));
             }
@@ -5633,7 +5628,7 @@ class cCrud
             }
         }
         $mode = 'list';
-        $view_file = $this->config->themes_path . '/' . $this->theme . '/' . $this->load_view['list'];
+        $view_file = APPPATH . 'Views/xcrud/' . $this->load_view['list'];
         $view_file = $this->check_file($view_file, 'render');
         ob_start();
         include ($view_file);
@@ -5646,7 +5641,7 @@ class cCrud
      *
      * @author Ariel Canal
      *         Se a função field_callback retornar falso, rederiza o field
-     *         padr�o.
+     *         padrão.
      *         Mesmo com Field Calback, cria o campo.
      */
     /**
@@ -5829,7 +5824,7 @@ class cCrud
             }
         }
 
-        $view_file = $this->config->themes_path . '/' . $this->theme . '/' . $this->load_view[$mode];
+        $view_file = APPPATH . 'Views/xcrud/' . $this->load_view[$mode];
         $view_file = $this->check_file($view_file, 'render');
         ob_start();
         include ($view_file);
@@ -5991,7 +5986,7 @@ class cCrud
         }
 
         $slen = mb_strlen($strip_string, \Config\App::$charset);
-        if ($slen <= $len || ($this->config->print_full_texts && $this->theme == 'printout')) {
+        if ($slen <= $len || $this->config->print_full_texts) {
             return $this->output_string($string, $this->strip_tags, $safe);
         }
         if ($wordsafe) {
@@ -6061,9 +6056,11 @@ class cCrud
         }
         $this->condition_restore();
 
-        foreach ($this->params2save() as $item) {
-            $xcrud_session[$inst_name][$item] = $this->{$item};
-        }
+        // Armazena todos os atributos atuais da instância
+        $vars = get_object_vars($this);
+        unset($vars['ci']); // Evita armazenar a instância do CodeIgniter
+
+        $xcrud_session[$inst_name]            = $vars;
         $xcrud_session[$inst_name]['before'] = $this->find_prev_task();
 
         $this->ci->session->set_userdata('xcrud_session', $xcrud_session);
@@ -6087,179 +6084,6 @@ class cCrud
             }
         }
     }
-
-    protected function params2save()
-    {
-        return array(
-            'key',
-            'time',
-            'table',
-            'table_name',
-            'where',
-            'order_by',
-            'relation',
-            'fields_create',
-            'fields_edit',
-            'fields_view',
-            'fields_list',
-            'columns_select',
-            'fields_list_default',
-            'labels',
-            'columns_names',
-            'is_create',
-            'is_edit',
-            'is_remove',
-            'is_csv',
-            'buttons',
-            'validation_required',
-            'validation_pattern',
-            'before_insert',
-            'before_update',
-            'before_remove',
-            'after_insert',
-            'after_update',
-            'after_remove',
-            'field_type',
-            'field_attr',
-            'limit',
-            'limit_list',
-            'column_cut',
-            'column_cut_list',
-            'no_editor',
-            'show_primary_ai_field',
-            'show_primary_ai_column',
-            'disabled',
-            'readonly',
-            'benchmark',
-            'search_pattern',
-            'connection',
-            'remove_confirm',
-            'upload_folder',
-            'upload_config',
-            'pass_var',
-            'reverse_fields',
-            'no_quotes',
-            'inner_table_instance',
-            'inner_where',
-            'unique',
-            'theme',
-            'is_duplicate',
-            'links_label',
-            'emails_label',
-            'sum',
-            'alert_create',
-            'alert_edit',
-            'is_search',
-            'is_print',
-            'is_pagination',
-            'is_limitlist',
-            'is_sortable',
-            'is_list',
-            'subselect',
-            'subselect_before',
-            'subselect_query',
-            'highlight',
-            'highlight_row',
-            'modal',
-            'column_class',
-            'no_select',
-            'is_inner',
-            'join',
-            'fk_relation',
-            'is_title',
-            'is_numbers',
-            'language',
-            'field_params',
-            'mass_alert_create',
-            'mass_alert_edit',
-            'column_callback',
-            'field_callback',
-            'replace_insert',
-            'replace_update',
-            'replace_remove',
-            'send_external_create',
-            'send_external_edit',
-            'column_pattern',
-            'field_tabs',
-            'field_marker',
-            'is_view',
-            'field_tooltip',
-            'table_tooltip',
-            'column_tooltip',
-            'search_columns',
-            'search_default',
-            'column_width',
-            'before',
-            'before_upload',
-            'after_upload',
-            'after_resize',
-            'custom_vars',
-            'tabdesc',
-            'column_name',
-            'upload_to_save',
-            'upload_to_remove',
-            'defaults',
-            'search',
-            'inner_value',
-            'bit_field',
-            'point_field',
-            'buttons_position',
-            'grid_condition',
-            'condition',
-            'hide_button',
-            'set_lang',
-            'table_ro',
-            'grid_restrictions',
-            'load_view',
-            'action',
-            'prefix',
-            'query',
-            'default_tab',
-            'strip_tags',
-            'safe_output',
-            'before_list',
-            'before_create',
-            'before_edit',
-            'before_view',
-            'lists_null_opt',
-            'custom_fields',
-            'date_format',
-            'alphabetical_filter',
-            'alphabetical_field',
-            'alphabetical_index',
-            'custom_filter',
-            'custom_filter_active',
-            'custom_filter_all_label',
-            'totalizers',
-            'start_minimized',
-            'nested_readonly_on_view',
-            'active_tab_id',
-            'parent',
-            'table_always_edit_mode',
-            'record_changes',
-            'custom_lists',
-            'custom_lists_active',
-            'custom_lists_static',
-            'columns_default',
-            'unset_custom_columns',
-            'mass_actions',
-            'opened_tab',
-            'nested_default_render',
-            'nested_default_render_primary',
-            'join_relation',
-            'parameters',
-            'fields_report',
-            'report',
-            'report_reverse',
-            'report_tabs',
-            'report_values',
-            'group_by',
-            'search_lines',
-            'search_submit',
-            'custom_buttons'
-        );
-    }
-
     protected function find_prev_task()
     {
         switch ($this->task) {
@@ -6302,25 +6126,18 @@ class cCrud
             }
         }
 
-        $inst_name = $this->instance_name;
-        $this->ci = &get_instance();
-        $xcrud_session = $this->ci->session->userdata('xcrud_session');
-        foreach ($this->params2save() as $item) {
-            /**
-             *
-             * @author Ariel Canal
-             *         O original contém um erro de
-             *         lógica. Caso o atributo desejado não esteja armazenado
-             *         na sessão, ele atribui NULL no atributo da classe,
-             *         fazendo com que a instância não funcione
-             *         e apresente o erro: Incorrect table name '' SHOW COLUMNS FROM ``
-             *         Correção: Só sobrescreve o atributo inicial pelo da
-             *         sessão, caso este exista, na sessão.
-             */
-            if (isset($xcrud_session[$inst_name][$item])) {
-                $this->{$item} = $xcrud_session[$inst_name][$item];
+        $inst_name      = $this->instance_name;
+        $this->ci       = &get_instance();
+        $xcrud_session  = $this->ci->session->userdata('xcrud_session');
+
+        if (isset($xcrud_session[$inst_name])) {
+            foreach ($xcrud_session[$inst_name] as $propriedade => $valor) {
+                if ($propriedade !== 'ci') {
+                    $this->{$propriedade} = $valor;
+                }
             }
         }
+
         if ($key) {
             $this->key = $key;
         }
@@ -7033,7 +6850,7 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         Fun��o alterada do padr�o.
+     *         Função alterada do padrão.
      *         Compatibilizada com relation AJAX.
      *         Compatibilizada com join_relation.
      */
@@ -8242,12 +8059,10 @@ class cCrud
         if (! $this->cancel_file_saving) {
             switch ($this->task) {
                 case 'save':
-                    if (! $this->demo_mode) {
-                        if ($this->upload_to_remove) {
-                            foreach ($this->upload_to_remove as $file => $field) {
-                                if ($file) {
-                                    $this->remove_file($file, $field);
-                                }
+                    if ($this->upload_to_remove) {
+                        foreach ($this->upload_to_remove as $file => $field) {
+                            if ($file) {
+                                $this->remove_file($file, $field);
                             }
                         }
                     }
@@ -9285,8 +9100,8 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         Inserido o atributo data-after na renderiza��o do bot�o de
-     *         duplica��o
+     *         Inserido o atributo data-after na renderização do botão de
+     *         duplicação
      */
     protected function _render_list_buttons(&$row)
     {
@@ -9634,7 +9449,7 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         Fun��o passou a considerar o atributo data-after do bot�o
+     *         Função passou a considerar o atributo data-after do botão
      */
     protected function _clone_row()
     {
@@ -9709,25 +9524,23 @@ class cCrud
                     $postdata[$field] = $pv['value'];
                 }
             }
-            if (! $this->demo_mode) {
-                if (count($this->upload_config)) {
-                    foreach ($this->upload_config as $field => $attr) {
-                        $postdata[$field] = $this->_clone_file($field, $postdata[$field]);
-                    }
+            if (count($this->upload_config)) {
+                foreach ($this->upload_config as $field => $attr) {
+                    $postdata[$field] = $this->_clone_file($field, $postdata[$field]);
                 }
-                $ins_id = $this->_insert($postdata, true, $columns);
-                if ($this->after_clone && $ins_id) {
-                    $path = $this->check_file($this->after_clone['path'], 'after_clone');
-                    include_once ($path);
-                    if (is_callable($this->after_clone['callable'])) {
-                        call_user_func_array($this->after_clone['callable'], array(
-                            $this->primary_val,
-                            $ins_id,
-                            $this
-                        ));
-                        if ($this->exception) {
-                            return $this->call_exception($postdata);
-                        }
+            }
+            $ins_id = $this->_insert($postdata, true, $columns);
+            if ($this->after_clone && $ins_id) {
+                $path = $this->check_file($this->after_clone['path'], 'after_clone');
+                include_once ($path);
+                if (is_callable($this->after_clone['callable'])) {
+                    call_user_func_array($this->after_clone['callable'], array(
+                        $this->primary_val,
+                        $ins_id,
+                        $this
+                    ));
+                    if ($this->exception) {
+                        return $this->call_exception($postdata);
                     }
                 }
             }
@@ -9843,13 +9656,17 @@ class cCrud
      * @author Ariel Canal
      *         COMPATIBILIZAÇÃO COM A ARQUITETURA DO CODEIGINITER
      */
+    /**
+     * Carrega a configuração visual padrão.
+     */
     protected function _get_theme_config()
-    { // loads theme configuration from
-      // ini file
-        if (is_file(CCRUD_PATH . '/' . $this->config->themes_path . '/xcrud_default/xcrud.ini'))
-            $this->theme_config = parse_ini_file(CCRUD_PATH . '/' . $this->config->themes_path . '/xcrud_default/xcrud.ini');
-        else
-            self::erro('xcrud_ini_missing');
+    {
+        if (class_exists(ViewsConfig::class)) {
+            $config = new ViewsConfig();
+            $this->theme_config = $config->classes;
+        } else {
+            self::error('Arquivo de configuração das views não encontrado.');
+        }
     }
 
     protected function lang($text = '')
@@ -10380,7 +10197,7 @@ class cCrud
         }
 
         /*
-         * ALTERADO DO PADR�O - Compatibiliza��o com array de
+         * ALTERADO DO PADRÃO - Compatibilização com array de
          * grid_restrictions
          */
         if ($this->grid_restrictions) {
@@ -11382,7 +11199,7 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         Renderiza��o da classe xcrud-actions-fixed
+     *         Renderização da classe xcrud-actions-fixed
      */
     protected function render_grid_body($row_tag = array(
         'tag' => 'tr'
@@ -11602,7 +11419,7 @@ class cCrud
      * renders action button for details view
      *
      * @author Ariel Canal
-     *         Adaptada para o funcionamento dos novos par�metros do m�todo
+     *         Adaptada para o funcionamento dos novos parâmetros do método
      *         create_action (icon, button_attr e conditions)
      */
     protected function render_button($name = '', $task = '', $after = '', $class = '', $icon = '', $mode = '', $primary = '')
@@ -12219,7 +12036,7 @@ class cCrud
     }
 
     /*
-     * ALTERADO DO PADR�O - Compatibiliza��o com array de grid_restrictions
+     * ALTERADO DO PADRÃO - Compatibilização com array de grid_restrictions
      */
     protected function is_edit(&$row)
     {
@@ -12243,7 +12060,7 @@ class cCrud
     }
 
     /*
-     * ALTERADO DO PADR�O - Compatibiliza��o com array de grid_restrictions
+     * ALTERADO DO PADRÃO - Compatibilização com array de grid_restrictions
      */
     protected function is_remove(&$row)
     {
@@ -12266,7 +12083,7 @@ class cCrud
     }
 
     /*
-     * ALTERADO DO PADR�O - Compatibiliza��o com array de grid_restrictions
+     * ALTERADO DO PADRÃO - Compatibilização com array de grid_restrictions
      */
     protected function is_duplicate(&$row)
     {
@@ -12289,7 +12106,7 @@ class cCrud
     }
 
     /*
-     * ALTERADO DO PADR�O - Compatibiliza��o com array de grid_restrictions
+     * ALTERADO DO PADRÃO - Compatibilização com array de grid_restrictions
      */
     protected function is_view(&$row)
     {
@@ -12312,7 +12129,7 @@ class cCrud
     }
 
     /*
-     * ALTERADO DO PADR�O - Compatibiliza��o com array de grid_restrictions
+     * ALTERADO DO PADRÃO - Compatibilização com array de grid_restrictions
      */
     protected function is_button($name, &$row)
     {
@@ -12409,9 +12226,9 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         As propriedades readonly_on_* e disabled_on_* n�o existem na
-     *         classe, portando o backup delas, quando acionadas pelo m�todo
-     *         condition() n�o era feito.
+     *         As propriedades readonly_on_* e disabled_on_* não existem na
+     *         classe, portanto o backup delas, quando acionadas pelo método
+     *         condition() não era feito.
      */
     protected function condition_backup($method, $field = null)
     {
@@ -12933,18 +12750,18 @@ class cCrud
                     $modals['customListsEdit']['filtrosAdicionais'] = json_decode($this->custom_lists_active['lpe_filtrosAdicionais'], true);
                 }
 
-                $options['0'] = 'N�o Filtrar';
+                $options['0'] = 'Não Filtrar';
                 $options['='] = 'Igual a';
                 $options['maior'] = 'Maior que';
                 $options['menor'] = 'Menor que';
                 $options['maior_i'] = 'Maior ou igual a';
                 $options['menor_i'] = 'Menor ou igual a';
-                $options['LIKE'] = 'Cont�m';
-                $options['NOT LIKE'] = 'N�o cont�m';
-                $options['IN'] = 'Est� entre';
-                $options['NOT IN'] = 'N�o est� entre';
-                $options['IS NULL'] = '� vazio ou nulo';
-                $options['IS NOT NULL'] = 'N�o � vazio ou nulo';
+                $options['LIKE'] = 'Contém';
+                $options['NOT LIKE'] = 'Não contém';
+                $options['IN'] = 'Está entre';
+                $options['NOT IN'] = 'Não está entre';
+                $options['IS NULL'] = 'É vazio ou nulo';
+                $options['IS NOT NULL'] = 'Não é vazio ou nulo';
 
                 $db = Database::get_instance($this->connection, $this->ci);
                 if ($this->table == "propostas") {
@@ -13111,7 +12928,7 @@ class cCrud
                     $out .= $this->open_tag('div', 'col-md-6 dd', array(
                         'id' => 'nestable_list_1'
                     ));
-                    $out .= $this->open_tag('h3') . 'Colunas Dispon�veis' . $this->close_tag('h3');
+                    $out .= $this->open_tag('h3') . 'Colunas Disponíveis' . $this->close_tag('h3');
                     $out .= $this->open_tag('ol', 'dd-list');
                     foreach ($all_fields as $field => $lbl) {
                         if (! in_array($field, $cfg['cols'])) {
@@ -13753,7 +13570,7 @@ class cCrud
             }
         }
 
-        $view_file = $this->config->themes_path . '/' . $this->theme . '/' . $this->load_view[$mode];
+        $view_file = APPPATH . 'Views/xcrud/' . $this->load_view[$mode];
         $view_file = $this->check_file($view_file, 'render');
         ob_start();
         include ($view_file);

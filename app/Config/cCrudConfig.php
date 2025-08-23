@@ -8,9 +8,6 @@ use CodeIgniter\Config\BaseConfig;
  */
 class cCrudConfig extends BaseConfig
 {
-    // theme
-    public $theme = 'xcrud_default'; // can be 'default', 'bootstrap', 'minimal' or your custom. Theme of xCRUD visual presentation. For using bootstrap you need to load it on your page.
-    
     // scripts
     public $load_bootstrap = false; // turn on, if you want to load bootstrap via xCRUD
     public $load_googlemap = false; // loads google map api for 'POINT' type. Turn off, if your site already uses it.
@@ -141,11 +138,9 @@ class cCrudConfig extends BaseConfig
     // system integration options. NO ANY TRAILING SLASHES!
     // urls (relative to $scripts_url or xcrud's folder, if $scripts_url is not defined)
     public $plugins_uri = 'plugins'; // scripts and libraries
-    public $themes_uri = 'assets/css'; // css, images
     public $lang_uri = 'application/language'; // js files
     public $ajax_uri = 'ajax/xcrud'; // main ajax file or url
     // paths (relative to xcrud's folder)
-    public $themes_path = '../../views'; // php and ini files
     public $lang_path = '../../language/'; // ini files
     // external session
     public $external_session = false; // use only when you use integration with externall session
@@ -155,7 +150,6 @@ class cCrudConfig extends BaseConfig
     
     
     // system
-    public $demo_mode = false; // disables any changing data in database
     public $performance_mode = false; // experimental, disables {field_tags} features
     public $autoclean_timeout = 3600; // in seconds. Do not change, if not sure. Xcrud clears old instances in session when you reload browser tab or open new tab with xcrud. In this case Xcrud can't work in two tabs in the same time. You can increase timeout on your risk.
     

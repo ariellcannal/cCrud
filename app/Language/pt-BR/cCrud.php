@@ -90,5 +90,5 @@ return [
     'not_found' => 'Não encontrado',
     'db_connection_error' => 'Erro de conexão: não foi possível conectar ao banco de dados',
     'db_error' => 'Erro no banco de dados: {0}',
-    'db_error_query' => 'Erro no banco de dados ({2}): {0} Consulta: {1}',
+    'db_error_query' => 'Erro no banco de dados ({2}): {0} Consulta: {1}'
 ];
