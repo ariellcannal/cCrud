@@ -41,4 +41,13 @@ return [
     'mass_apply_confirm' => 'Aplicar ações selecionadas?',
     'mass_apply' => 'Aplicar',
     'total' => 'Total',
+    'db_connection_error' => 'Erro de conexão. Não foi possível conectar ao banco de dados',
+    'db_query_error' => '{0}<pre>{1}</pre>',
+    'security_key_empty' => 'A chave de segurança não pode estar vazia',
+    'instance_name_empty' => 'O nome da instância não pode estar vazio',
+    'wrong_request' => 'Requisição inválida!',
+    'verification_key_outdated' => '<strong>A chave de verificação está desatualizada</strong><br />Isso significa que seu navegador armazenou em cache uma versão anterior desta página com uma chave antiga (por motivos de segurança a chave de verificação é gerada a cada requisição)<br />Por quê? Talvez você tenha pressionado o botão voltar do navegador ou aberto um favorito da sessão anterior.<br /><strong>Apenas recarregue a página, nada aconteceu :)</strong>',
+    'session_creation_failed' => 'xCRUD não pode criar a sessão, pois o output já foi enviado ao navegador. Tente definir a instância do xCRUD antes de iniciar a saída ou utilize session_start() no início do script',
+    'ci4_required' => 'Este pacote requer a execução dentro do CodeIgniter 4.',
+    'model_entity_required' => 'O Model informado deve utilizar uma Entity CI4 como returnType.',
 ];

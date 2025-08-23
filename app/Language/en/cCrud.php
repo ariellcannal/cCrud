@@ -41,4 +41,13 @@ return [
     'mass_apply_confirm' => 'Apply selected actions?',
     'mass_apply' => 'Apply',
     'total' => 'Total',
+    'db_connection_error' => 'Connection error. Can not connect to database',
+    'db_query_error' => '{0}<pre>{1}</pre>',
+    'security_key_empty' => 'Security key cannot be empty',
+    'instance_name_empty' => 'Instance name cannot be empty',
+    'wrong_request' => 'Wrong request!',
+    'verification_key_outdated' => '<strong>The verification key is out of date</strong><br />This means that your browser cached a previous version of this page with an old key (for security reasons the verification key is generated every request)<br />Why? Maybe you pressed the back button in your browser or opened a bookmark from last session. <br /><strong>Just reload the page, nothing happened :)</strong>',
+    'session_creation_failed' => 'xCRUD can not create session, because the output is already sent into browser. Try to define xCRUD instance before the output start or use session_start() at the beginning of your script',
+    'ci4_required' => 'This package requires running inside CodeIgniter 4.',
+    'model_entity_required' => 'The provided model must use a CI4 Entity as returnType.',
 ];
