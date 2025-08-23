@@ -14,8 +14,6 @@ define('CCRUD_PATH', str_replace('\\', '/', dirname(__file__)));
 class cCrud
 {
 
-    private $demo_mode = false;
-
     protected static $instance = array();
 
     protected static $css_loaded = false;
@@ -208,8 +206,6 @@ class cCrud
     protected $inner_table_instance = array();
 
     protected $condition = array();
-
-    protected $theme = 'default';
 
     protected $unique = array();
 
@@ -528,7 +524,6 @@ class cCrud
         $this->remove_confirm = $this->config->remove_confirm;
         $this->upload_folder_def = $this->config->upload_folder_def;
 
-        $this->theme = $this->config->theme;
         $this->is_print = $this->config->enable_printout;
         $this->is_title = $this->config->enable_table_title;
         $this->is_csv = $this->config->enable_csv_export;
@@ -541,8 +536,6 @@ class cCrud
         $this->language = \Config\App::$defaultLocale;
 
         $this->search_pattern = $this->config->search_pattern;
-
-        $this->demo_mode = $this->config->demo_mode;
 
         $this->default_tab = $this->config->default_tab;
 
@@ -693,11 +686,6 @@ class cCrud
     {
         $this->remove_confirm = (bool) $bool;
         return $this;
-    }
-
-    public function theme($theme = 'default')
-    {
-        $this->theme = $theme;
     }
 
     public function limit($limit = 20)
@@ -2377,7 +2365,6 @@ class cCrud
                     return self::error('Restricted');
                 }
                 $this->_set_field_types('list', $this->config->print_all_fields);
-                $this->theme = 'printout';
                 $this->set_custom_lists();
                 return $this->_list();
                 break;
@@ -2456,7 +2443,6 @@ class cCrud
                 if (! $this->is_print) {
                     return self::error('Restricted');
                 }
-                $this->theme = 'printout';
                 $this->start = 0;
                 $this->limit = 0;
                 return $this->render_custom_datagrid();
@@ -2597,7 +2583,7 @@ class cCrud
                 $contents .= self::load_css();
             }
             ob_start();
-            include (CCRUD_PATH . '/' . $this->config->themes_path . '/' . $this->theme . '/xcrud_container.php');
+            include APPPATH . 'Views/xcrud/xcrud_container.php';
             $contents .= ob_get_contents();
             ob_end_clean();
             unset($this->data);
@@ -3181,8 +3167,7 @@ class cCrud
         if (! $this->primary_ai && ! isset($postdata[$this->table . '.' . $this->primary_key])) {
             self::error('Can\'t insert a row. No primary value.');
         }
-        if (! $this->demo_mode)
-            $db->query('INSERT INTO `' . $this->table . '` (' . implode(',', array_keys($set[$this->table])) . ') VALUES (' . implode(',', $set[$this->table]) . ')');
+        $db->query('INSERT INTO `' . $this->table . '` (' . implode(',', array_keys($set[$this->table])) . ') VALUES (' . implode(',', $set[$this->table]) . ')');
         if ($this->primary_ai) {
             $ins_id = $db->insert_id();
             $set[$this->table]['`' . $this->primary_key . '`'] = $ins_id;
@@ -3193,7 +3178,7 @@ class cCrud
         if ($this->join) {
             foreach ($this->join as $alias => $param) {
                 @$set[$alias]['`' . $param['join_field'] . '`'] = $set[$param['table']]['`' . $param['field'] . '`'];
-                if (! $this->demo_mode && ! $param['not_insert']) {
+                if (! $param['not_insert']) {
                     $db->query("INSERT INTO `{$param['join_table']}` (" . implode(',', array_keys($set[$alias])) . ") VALUES (" . implode(',', $set[$alias]) . ")");
                 }
             }
@@ -3322,8 +3307,7 @@ class cCrud
         }
         $this->apply_record_changes($set);
         if (! $this->join && ! $this->join_relation) {
-            if (! $this->demo_mode)
-                $res = $db->query("UPDATE `{$this->table}` SET " . implode(",\r\n", $set) . " WHERE `{$this->primary_key}` = " . $db->escape($primary) . " LIMIT 1");
+            $res = $db->query("UPDATE `{$this->table}` SET " . implode(",\r\n", $set) . " WHERE `{$this->primary_key}` = " . $db->escape($primary) . " LIMIT 1");
         } else {
             // $tables = array('`' . $this->table . '`');
             $joins = array();
@@ -3341,8 +3325,7 @@ class cCrud
                     }
                 }
             }
-            if (! $this->demo_mode)
-                $res = $db->query("UPDATE `{$this->table}` AS `{$this->table}` " . implode(' ', $joins) . " SET " . implode(",\r\n", $set) . " WHERE `{$this->table}`.`{$this->primary_key}` = " . $db->escape($primary));
+            $res = $db->query("UPDATE `{$this->table}` AS `{$this->table}` " . implode(' ', $joins) . " SET " . implode(",\r\n", $set) . " WHERE `{$this->table}`.`{$this->primary_key}` = " . $db->escape($primary));
         }
         if (isset($postdata[$this->table . '.' . $this->primary_key]) && $res)
             $primary = $postdata[$this->table . '.' . $this->primary_key];
@@ -3459,9 +3442,7 @@ class cCrud
                 if (! $this->is_remove($del_row)) {
                     return self::error('Forbidden');
                 }
-                if (! $this->demo_mode) {
-                    $del = $db->query("DELETE FROM `{$this->table}` WHERE `{$this->primary_key}` = " . $db->escape($this->primary_val) . " LIMIT 1");
-                }
+                $del = $db->query("DELETE FROM `{$this->table}` WHERE `{$this->primary_key}` = " . $db->escape($this->primary_val) . " LIMIT 1");
             } else {
                 $tables = array(
                     '`' . $this->table . '`'
@@ -3480,10 +3461,9 @@ class cCrud
                 if (! $this->is_remove($del_row)) {
                     return self::error('Forbidden');
                 }
-                if (! $this->demo_mode)
-                    $del = $db->query("DELETE " . implode(',', $tables) . " FROM `{$this->table}` AS `{$this->table}` " . implode(' ', $joins) . " WHERE `{$this->table}`.`{$this->primary_key}` = " . $db->escape($this->primary_val));
+                $del = $db->query("DELETE " . implode(',', $tables) . " FROM `{$this->table}` AS `{$this->table}` " . implode(' ', $joins) . " WHERE `{$this->table}`.`{$this->primary_key}` = " . $db->escape($this->primary_val));
             }
-            if ($del_row && ! $this->demo_mode) {
+            if ($del_row) {
                 foreach ($del_row as $key => $val) {
                     if ($val && isset($this->upload_config[$key]) && ! isset($this->upload_config[$key]['blob'])) {
                         $this->remove_file($val, $key);
@@ -5095,7 +5075,7 @@ class cCrud
 
     protected function _build_limit($total)
     {
-        if ($this->limit != 'all' && $this->theme != 'printout') {
+        if ($this->limit != 'all') {
             if ($this->start > 0 && $this->start >= $this->result_total) {
                 $this->start = $this->result_total > $this->limit ? $this->result_total - $this->limit : 0;
             }
@@ -5632,7 +5612,7 @@ class cCrud
             }
         }
         $mode = 'list';
-        $view_file = $this->config->themes_path . '/' . $this->theme . '/' . $this->load_view['list'];
+        $view_file = APPPATH . 'Views/xcrud/' . $this->load_view['list'];
         $view_file = $this->check_file($view_file, 'render');
         ob_start();
         include ($view_file);
@@ -5828,7 +5808,7 @@ class cCrud
             }
         }
 
-        $view_file = $this->config->themes_path . '/' . $this->theme . '/' . $this->load_view[$mode];
+        $view_file = APPPATH . 'Views/xcrud/' . $this->load_view[$mode];
         $view_file = $this->check_file($view_file, 'render');
         ob_start();
         include ($view_file);
@@ -5990,7 +5970,7 @@ class cCrud
         }
 
         $slen = mb_strlen($strip_string, \Config\App::$charset);
-        if ($slen <= $len || ($this->config->print_full_texts && $this->theme == 'printout')) {
+        if ($slen <= $len || $this->config->print_full_texts) {
             return $this->output_string($string, $this->strip_tags, $safe);
         }
         if ($wordsafe) {
@@ -8237,12 +8217,10 @@ class cCrud
         if (! $this->cancel_file_saving) {
             switch ($this->task) {
                 case 'save':
-                    if (! $this->demo_mode) {
-                        if ($this->upload_to_remove) {
-                            foreach ($this->upload_to_remove as $file => $field) {
-                                if ($file) {
-                                    $this->remove_file($file, $field);
-                                }
+                    if ($this->upload_to_remove) {
+                        foreach ($this->upload_to_remove as $file => $field) {
+                            if ($file) {
+                                $this->remove_file($file, $field);
                             }
                         }
                     }
@@ -9704,25 +9682,23 @@ class cCrud
                     $postdata[$field] = $pv['value'];
                 }
             }
-            if (! $this->demo_mode) {
-                if (count($this->upload_config)) {
-                    foreach ($this->upload_config as $field => $attr) {
-                        $postdata[$field] = $this->_clone_file($field, $postdata[$field]);
-                    }
+            if (count($this->upload_config)) {
+                foreach ($this->upload_config as $field => $attr) {
+                    $postdata[$field] = $this->_clone_file($field, $postdata[$field]);
                 }
-                $ins_id = $this->_insert($postdata, true, $columns);
-                if ($this->after_clone && $ins_id) {
-                    $path = $this->check_file($this->after_clone['path'], 'after_clone');
-                    include_once ($path);
-                    if (is_callable($this->after_clone['callable'])) {
-                        call_user_func_array($this->after_clone['callable'], array(
-                            $this->primary_val,
-                            $ins_id,
-                            $this
-                        ));
-                        if ($this->exception) {
-                            return $this->call_exception($postdata);
-                        }
+            }
+            $ins_id = $this->_insert($postdata, true, $columns);
+            if ($this->after_clone && $ins_id) {
+                $path = $this->check_file($this->after_clone['path'], 'after_clone');
+                include_once ($path);
+                if (is_callable($this->after_clone['callable'])) {
+                    call_user_func_array($this->after_clone['callable'], array(
+                        $this->primary_val,
+                        $ins_id,
+                        $this
+                    ));
+                    if ($this->exception) {
+                        return $this->call_exception($postdata);
                     }
                 }
             }
@@ -9838,13 +9814,17 @@ class cCrud
      * @author Ariel Canal
      *         COMPATIBILIZAÇÃO COM A ARQUITETURA DO CODEIGINITER
      */
+    /**
+     * Carrega a configuração visual padrão.
+     */
     protected function _get_theme_config()
-    { // loads theme configuration from
-      // ini file
-        if (is_file(CCRUD_PATH . '/' . $this->config->themes_path . '/xcrud_default/xcrud.ini'))
-            $this->theme_config = parse_ini_file(CCRUD_PATH . '/' . $this->config->themes_path . '/xcrud_default/xcrud.ini');
-        else
-            self::error('xcrud.ini does not exist in your theme folder');
+    {
+        $caminho = APPPATH . 'Views/xcrud/xcrud.ini';
+        if (is_file($caminho)) {
+            $this->theme_config = parse_ini_file($caminho);
+        } else {
+            self::error('Arquivo xcrud.ini não encontrado.');
+        }
     }
 
     protected function lang($text = '')
@@ -13748,7 +13728,7 @@ class cCrud
             }
         }
 
-        $view_file = $this->config->themes_path . '/' . $this->theme . '/' . $this->load_view[$mode];
+        $view_file = APPPATH . 'Views/xcrud/' . $this->load_view[$mode];
         $view_file = $this->check_file($view_file, 'render');
         ob_start();
         include ($view_file);
