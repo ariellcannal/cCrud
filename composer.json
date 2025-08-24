@@ -1,8 +1,9 @@
 {
-    "name": "ccrud/ccrud",
+    "name": "ariellcannal/ccrud",
     "description": "cCrud",
     "license": "MIT",
     "type": "library",
+    "version": "dev-main",
     "require": {
         "php": "^8.2",
         "codeigniter4/translations": "~4.5",
