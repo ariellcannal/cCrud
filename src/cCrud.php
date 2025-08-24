@@ -3616,8 +3616,9 @@ class cCrud
      * FUNÇÃO ALTERADA DO PADRÃO
      *
      * @author Ariel Canal
-     *         Função make_upload_process() é chamada também durante a
-     *         atualização das informações, e não só na inserção.
+     *         Função make_upload_process() é chamada apenas uma vez após os
+     *         callbacks e durante a atualização das informações, e não só na
+     *         inserção.
      */
     protected function _save()
     {
@@ -3668,8 +3669,7 @@ class cCrud
                 }
             }
 
-            $pd = new PostData($postdata, $this);
-            $this->make_upload_process($pd);
+            $pd = new cCrudPostdata($postdata, $this);
             $postdata = $pd->to_array();
 
             if ($this->alert_create) {
@@ -3721,8 +3721,6 @@ class cCrud
                 }
             }
 
-            $this->make_upload_process($pd);
-
             if ($this->replace_insert) {
                 $path = $this->check_file($this->replace_insert['path'], 'replace_insert');
                 include_once ($path);
@@ -3755,6 +3753,7 @@ class cCrud
                 }
             }
 
+            // Processa upload apenas após todos os callbacks
             $this->make_upload_process($pd);
 
             if ($this->send_external_create) {
@@ -6115,7 +6114,6 @@ class cCrud
             }
             unset($_SESSION['lists']['cCrud_session']);
             if (! $res) {
-                self::erro('memcache_invalid_parameters');
                 // Parâmetros inválidos ou armazenamento falhou
                 throw new RuntimeException(lang('cCrud.memcache_invalid_parameters'));
             }
