@@ -13629,13 +13629,18 @@ class cCrudPostdata
         return $this;
     }
 
-    public function get($name)
+    /**
+     * Retorna o valor de um campo enviado.
+     *
+     * @param string $name Nome do campo.
+     *
+     * @return mixed|null Valor do campo ou null se não existir.
+     */
+    public function get(string $name): mixed
     {
         $fdata = $this->xcrud->_parse_field_names($name, 'cCrudPostdata');
         $fname = key($fdata) /*$fdata[0]['table'] . '.' . $fdata[0]['field']*/;
-        $value = (isset($this->postdata[$fname]) ? $this->postdata[$fname] : false);
-        return /* new cCrudPostdata_item */
-        ($value);
+        return $this->postdata[$fname] ?? null;
     }
 
     public function to_array()
