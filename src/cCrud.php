@@ -141,18 +141,6 @@ class cCrud
 
     protected $disabled = array();
 
-    protected $before_insert = array();
-
-    protected $before_update = array();
-
-    protected $before_remove = array();
-
-    protected $after_insert = array();
-
-    protected $after_update = array();
-
-    protected $after_remove = array();
-
     protected $field_type = array();
 
     protected $field_attr = array();
@@ -1841,90 +1829,6 @@ class cCrud
      * @author Ariel Canal
      *         COMPATIBILIZAÇÃO COM A ARQUITETURA DO CODEIGINITER
      */
-    public function before_insert($callable = '', $path = 'functions.php')
-    {
-        if ($callable && $path) {
-            $this->before_insert['callable'] = $callable;
-            $this->before_insert['path'] = "/../../helpers/" . $path;
-        }
-        return $this;
-    }
-
-    /**
-     *
-     * @author Ariel Canal
-     *         COMPATIBILIZAÇÃO COM A ARQUITETURA DO CODEIGINITER
-     */
-    public function before_update($callable = '', $path = 'functions.php')
-    {
-        if ($callable && $path) {
-            $this->before_update['callable'] = $callable;
-            $this->before_update['path'] = "/../../helpers/" . $path;
-        }
-        return $this;
-    }
-
-    /**
-     *
-     * @author Ariel Canal
-     *         COMPATIBILIZAÇÃO COM A ARQUITETURA DO CODEIGINITER
-     */
-    public function before_remove($callable = '', $path = 'functions.php')
-    {
-        if ($callable && $path) {
-            $this->before_remove['callable'] = $callable;
-            $this->before_remove['path'] = "/../../helpers/" . $path;
-        }
-        return $this;
-    }
-
-    /**
-     *
-     * @author Ariel Canal
-     *         COMPATIBILIZAÇÃO COM A ARQUITETURA DO CODEIGINITER
-     */
-    public function after_insert($callable = '', $path = 'functions.php')
-    {
-        if ($callable && $path) {
-            $this->after_insert['callable'] = $callable;
-            $this->after_insert['path'] = "/../../helpers/" . $path;
-        }
-        return $this;
-    }
-
-    /**
-     *
-     * @author Ariel Canal
-     *         COMPATIBILIZAÇÃO COM A ARQUITETURA DO CODEIGINITER
-     */
-    public function after_update($callable = '', $path = 'functions.php')
-    {
-        if ($callable && $path) {
-            $this->after_update['callable'] = $callable;
-            $this->after_update['path'] = "/../../helpers/" . $path;
-        }
-        return $this;
-    }
-
-    /**
-     *
-     * @author Ariel Canal
-     *         COMPATIBILIZAÇÃO COM A ARQUITETURA DO CODEIGINITER
-     */
-    public function after_remove($callable = '', $path = 'functions.php')
-    {
-        if ($callable && $path) {
-            $this->after_remove['callable'] = $callable;
-            $this->after_remove['path'] = "/../../helpers/" . $path;
-        }
-        return $this;
-    }
-
-    /**
-     *
-     * @author Ariel Canal
-     *         COMPATIBILIZAÇÃO COM A ARQUITETURA DO CODEIGINITER
-     */
     public function after_upload($callable = '', $path = 'functions.php')
     {
         if ($callable && $path) {
@@ -3427,21 +3331,6 @@ class cCrud
         if ($this->table_ro)
             // Operação de remoção não permitida
             throw new RuntimeException(lang('cCrud.forbidden'));
-        if ($this->before_remove) {
-            $path = $this->check_file($this->before_remove['path'], 'before_remove');
-            include_once ($path);
-            if (is_callable($this->before_remove['callable'])) {
-                call_user_func_array($this->before_remove['callable'], array(
-                    $this->primary_val,
-                    $this
-                ));
-                if ($this->exception) {
-                    $this->task = 'list';
-                    $this->primary_val = null;
-                    return false;
-                }
-            }
-        }
         if ($this->replace_remove) {
             $path = $this->check_file($this->replace_remove['path'], 'replace_remove');
             include_once ($path);
@@ -3536,16 +3425,6 @@ class cCrud
                 }
             }
             // end of remove case
-        }
-        if ($this->after_remove) {
-            $path = $this->check_file($this->after_remove['path'], 'after_remove');
-            include_once ($path);
-            if (is_callable($this->after_remove['callable'])) {
-                call_user_func_array($this->after_remove['callable'], array(
-                    $this->primary_val,
-                    $this
-                ));
-            }
         }
         $this->task = 'list';
         $this->primary_val = null;
@@ -3705,21 +3584,6 @@ class cCrud
                 }
             }
 
-            if ($this->before_insert) {
-                $path = $this->check_file($this->before_insert['path'], 'before_insert');
-                include_once ($path);
-                if (is_callable($this->before_insert['callable'])) {
-                    call_user_func_array($this->before_insert['callable'], array(
-                        $pd,
-                        $this
-                    ));
-                    $postdata = $pd->to_array();
-                    if ($this->exception) {
-                        return $this->call_exception($postdata);
-                    }
-                }
-            }
-
             if ($this->replace_insert) {
                 $path = $this->check_file($this->replace_insert['path'], 'replace_insert');
                 include_once ($path);
@@ -3736,22 +3600,6 @@ class cCrud
             } else {
                 $this->primary_val = $this->_insert($postdata);
             }
-            if ($this->after_insert) {
-                $path = $this->check_file($this->after_insert['path'], 'after_insert');
-                include_once ($path);
-                if (is_callable($this->after_insert['callable'])) {
-                    call_user_func_array($this->after_insert['callable'], array(
-                        $pd,
-                        $this->primary_val,
-                        $this
-                    ));
-                    $postdata = $pd->to_array();
-                    if ($this->exception) {
-                        return $this->call_exception($postdata);
-                    }
-                }
-            }
-
             // Processa upload apenas após todos os callbacks
             $this->make_upload_process($pd);
 
@@ -3867,22 +3715,6 @@ class cCrud
                 }
             }
 
-            if ($this->before_update) {
-                $path = $this->check_file($this->before_update['path'], 'before_update');
-                include_once ($path);
-                if (is_callable($this->before_update['callable'])) {
-                    call_user_func_array($this->before_update['callable'], array(
-                        $pd,
-                        $this->primary_val,
-                        $this
-                    ));
-                    $postdata = $pd->to_array();
-
-                    if ($this->exception) {
-                        return $this->call_exception($postdata);
-                    }
-                }
-            }
             if ($this->replace_update) {
                 $path = $this->check_file($this->replace_update['path'], 'replace_update');
                 include_once ($path);
@@ -3899,21 +3731,6 @@ class cCrud
                 }
             } else
                 $this->primary_val = $this->_update($postdata, $this->primary_val);
-            if ($this->after_update) {
-                $path = $this->check_file($this->after_update['path'], 'after_update');
-                include_once ($path);
-                if (is_callable($this->after_update['callable'])) {
-                    call_user_func_array($this->after_update['callable'], array(
-                        $pd,
-                        $this->primary_val,
-                        $this
-                    ));
-                    $postdata = $pd->to_array();
-                    if ($this->exception) {
-                        return $this->call_exception($postdata);
-                    }
-                }
-            }
             if ($this->send_external_edit) {
                 if (! $this->send_external_edit['where_field'] or $postdata[$this->send_external_edit['where_field']] == $this->send_external_edit['where_val']) {
                     foreach ($this->send_external_edit['data'] as $key => $value) {
@@ -13256,22 +13073,6 @@ class cCrud
                     return $this->call_exception($postdata);
                 }
                 $this->_set_field_types('edit', true);
-                if ($this->before_update) {
-                    $path = $this->check_file($this->before_update['path'], 'before_update');
-                    include_once ($path);
-                    if (is_callable($this->before_update['callable'])) {
-                        call_user_func_array($this->before_update['callable'], array(
-                            $pd,
-                            $this->_post('mass_list', array()),
-                            $this
-                        ));
-                        $postdata = $pd->to_array();
-                        
-                        if ($this->exception) {
-                            return $this->call_exception($postdata);
-                        }
-                    }
-                }
                 foreach ($this->result_list as $key => $row) {
                     if (in_array($row['primary_key'], $this->_post('mass_list', array())) && $this->is_edit($row)) {
                         $this->_update($postdata, $row['primary_key']);
