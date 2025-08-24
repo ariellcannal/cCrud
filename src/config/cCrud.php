@@ -6,7 +6,7 @@ use CodeIgniter\Config\BaseConfig;
 /**
  * Configurações padrão do cCrud.
  */
-class cCrudConfig extends BaseConfig
+class cCrud extends BaseConfig
 {
     // scripts
     public $load_bootstrap = false; // turn on, if you want to load bootstrap via xCRUD
