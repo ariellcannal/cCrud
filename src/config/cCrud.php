@@ -8,28 +8,52 @@ use CodeIgniter\Config\BaseConfig;
  */
 class cCrud extends BaseConfig
 {
-    // scripts
-    public $load_bootstrap = false; // turn on, if you want to load bootstrap via cCrud
-    public $load_googlemap = false; // loads google map api for 'POINT' type. Turn off, if your site already uses it.
-    public $load_jquery = false; // loads jQuery, turn it off if you already have jQuery on your page. jQuery version must be at least 1.7. If your jQuery loads in the bottom of page, you must activate $manual_load and use  cCrud::load_css() & cCrud::load_js() on your page.
-    public $load_jquery_ui = false; // jQueryUI, turn it on if you already have jQueryUI on your page (datepicker and slider widgets are mandatory).
-    public $load_jcrop = false; // disable, if your page already uses jCrop
-    public $jquery_no_conflict = false; // Includes jQuery.noConflict(). Use according to jQuery documentation.
-    public $manual_load = false; // Allows you to disable cCruds css and js output, but you can use cCrud::load_css() & cCrud::load_js() in your code manually.
+    public bool $manual_load = false; // permite desativar a saída automática de CSS e JS
+
+    /**
+     * Bibliotecas CSS a serem carregadas via CDN.
+     *
+     * @var string[]
+     */
+    public array $css_libs = [
+        'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
+        'https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.min.css',
+        'https://cdnjs.cloudflare.com/ajax/libs/Jcrop/0.9.15/jquery.Jcrop.min.css',
+        'https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/alertify.min.css',
+        'https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/themes/bootstrap.min.css',
+    ];
+
+    /**
+     * Bibliotecas JavaScript a serem carregadas via CDN.
+     *
+     * @var string[]
+     */
+    public array $js_libs = [
+        'https://code.jquery.com/jquery-3.7.1.min.js',
+        'https://code.jquery.com/ui/1.13.2/jquery-ui.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/Jcrop/0.9.15/jquery.Jcrop.min.js',
+        'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js',
+        'https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js',
+        'https://maps.googleapis.com/maps/api/js',
+        'https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/alertify.min.js',
+    ];
+
+    /**
+     * Endpoint utilizado para as requisições AJAX do cCrud.
+     *
+     * @var string
+     */
+    public string $ajax_uri = 'ajax';
 
     
     // editor
-    public $editor_url = '/plugins/ckeditor/ckeditor.js'; // URL path to editor script, if you want to use the visual editor.
-    //public $editor_url = 'assets/js/plugins/tinymce/tinymce.min.js'; // URL path to editor script, if you want to use the visual editor.
-    public $editor_init_url = ''; //  URL path to your custom initialization file for editor.
-    public $force_editor = false; // Forced initialization of editor, even if the path is not specified. Check this if you're already using editor on your page.
-    public $auto_editor_insertion = true; // inserts visual editor on textarea fields.
+    public bool $force_editor = false; // força a inicialização do editor visual
+    public bool $auto_editor_insertion = true; // insere automaticamente o editor em textareas
     
     
     // grid settings
     public $show_primary_ai_field = false; // Show primary auto-increment field in create/edit view.
     public $show_primary_ai_column = false; // Show primary auto-increment column in list view.
-    public $can_minimize = false; // allows 'minimize' arrow in grid
     public $remove_confirm = true; // Show confirmation dialog on remove action.
     public $column_cut = 100; // Sets the maximum number of characters in the column.
     public $limit = 25; // default limit of rows per page
@@ -129,18 +153,6 @@ class cCrud extends BaseConfig
     public $maps_api_key = '';
     
     
-    // cCrud folder url
-    public $scripts_url = ''; // URL to the cCrud folder, not real path, without a trailing slash, can be relative, e.g. 'some_folder/cCrud' or absolute, e.g. 'http://www.your_site.com/some_folder/cCrud'. If empty - will be detected automatically
-    public $urls2abs = true; // makes relative urls to absolute. Turn off if you have some troubles with relative urls.
-    
-    
-    // system integration options. NO ANY TRAILING SLASHES!
-    // urls (relative to $scripts_url or cCrud's folder, if $scripts_url is not defined)
-    public $plugins_uri = 'plugins'; // scripts and libraries
-    public $lang_uri = 'application/language'; // js files
-    public $ajax_uri = 'ajax'; // main ajax file ou url
-    // paths (relative to cCrud's folder)
-    public $lang_path = '../../language/'; // ini files
     // external session
     public $external_session = false; // use only when you use integration with externall session
     // loading events
