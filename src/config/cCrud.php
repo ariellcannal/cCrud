@@ -104,12 +104,6 @@ class cCrud extends BaseConfig
     public $nested_in_tab = true; // Nested will be displayed in tab if tabs are active
     public $relation_ajax = 5000; // number of register to trasnform relation in ajax.
     
-    // alert settings
-    public $email_from = 'mailer@example.com'; // email from address
-    public $email_from_name = ''; // email from name
-    public $email_enable_html = true; // enables html in email letters
-
-    
     // remote request options (call_page() methods)
     public $use_browser_info = false; // allow to use your browser cookie, referer, user agent for http request to some file or url. BE CAREFUL: DON'T USE IT FOR REQUESTS TO EXTERNAL SITES!!!
 
@@ -153,9 +147,9 @@ class cCrud extends BaseConfig
     public $maps_api_key = '';
     
     
-    // external session
-    public $external_session = false; // use only when you use integration with externall session
-    // loading events
+    public $urls2abs = true; // makes relative urls to absolute. Turn off if you have some troubles with relative urls.
+
+  // loading events
     public $before_construct = false; // callable param, runs before instance creation
     public $after_render = false; // callable param, runs after instance was rendered
     
@@ -164,14 +158,6 @@ class cCrud extends BaseConfig
     public $performance_mode = false; // experimental, disables {field_tags} features
     public $autoclean_timeout = 3600; // in seconds. Do not change, if not sure. cCrud clears old instances in session when you reload browser tab or open new tab with cCrud. In this case cCrud can't work in two tabs in the same time. You can increase timeout on your risk.
     
-    
-    // anti XSS
-    public $auto_xss_filtering = false; // enable all cCrud's POST and GET data filtering
-    public $xss_disalowed_attibutes = array('on\w*', /*'style',*/ 'xmlns', 'formaction'); // Remove bad attributes such as style, onclick and xmlns
-    public $xss_naughty_html = 'alert|applet|audio|basefont|base|behavior|bgsound|blink|body|embed|expression|form|frameset|frame|head|html|ilayer|input|isindex|layer|link|meta|object|plaintext|script|textarea|title|video|xml|xss'; // If a tag containing any of the words in the list below is found, the tag gets converted to entities.
-    public $xss_naughty_scripts = 'alert|cmd|passthru|eval|exec|expression|system|fopen|fsockopen|file|file_get_contents|readfile|unlink'; // imilar to above, only instead of looking for tags it looks for PHP and JavaScript commands that are disallowed.  Rather than removing the code, it simply converts the parenthesis to entities rendering the code un-executable.
-
-
     /**
      * Instância da configuração carregada.
      *

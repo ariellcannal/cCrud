@@ -6,7 +6,6 @@ use cCrud\Config\Views as ViewsConfig;
 use CodeIgniter\Model;
 use CodeIgniter\I18n\Time;
 use Config\Services;
-use CodeIgniter\Encryption\EncrypterInterface;
 use CodeIgniter\Session\Session;
 use CodeIgniter\HTTP\ResponseInterface;
 use cCrud\Postdata;
@@ -232,10 +231,6 @@ class cCrud
 
     protected $sum = array();
 
-    protected $alert_create;
-
-    protected $alert_edit;
-
     protected $subselect = array();
 
     protected $subselect_before = array();
@@ -263,9 +258,6 @@ class cCrud
 
     protected $field_params = array();
 
-    protected $mass_alert_create = array();
-
-    protected $mass_alert_edit = array();
 
     protected $column_callback = array();
 
@@ -708,57 +700,14 @@ class cCrud
     /**
      * Prepara a sessão para o cCrud.
      *
-     * @param string|false $method Método da requisição (post|get)
-     *
      * @return void
      */
-    protected static function initPrepare($method = false)
+    protected static function initPrepare(): void
     {
-        $session = config('Session');
-        $config  = cCrudConfig::instance();
-        $request = Services::request();
-        switch ($method) {
-            case 'post':
-                $postData = $request->getPost('cCrud');
-                $sess_name = ($config->dynamic_session && is_array($postData) && ! empty($postData['sess_name'])) ? $postData['sess_name'] : $session->cookieName;
-                break;
-            case 'get':
-                $getData  = $request->getGet('cCrud');
-                $sess_name = ($config->dynamic_session && is_array($getData) && ! empty($getData['sess_name'])) ? $getData['sess_name'] : $session->cookieName;
-                break;
-            default:
-                $sess_name = $session->cookieName;
-                break;
-        }
-        self::sessionStart($sess_name);
+        $config = cCrudConfig::instance();
+        Services::session();
         if (is_callable($config->before_construct)) {
             call_user_func($config->before_construct);
-        }
-    }
-
-    /**
-     * Inicia a sessão do CodeIgniter.
-     *
-     * @param string|false $sess_name Nome customizado da sessão
-     *
-     * @return void
-     *
-     * @throws RuntimeException Quando os cabeçalhos já foram enviados
-     */
-    public static function sessionStart($sess_name = false)
-    {
-        if (! session_id()) {
-            if (! headers_sent()) {
-                if ($sess_name) {
-                    $sessionConfig = new \Config\Session();
-                    $sessionConfig->cookieName = $sess_name;
-                    service('session', $sessionConfig);
-                } else {
-                    session();
-                }
-            } else {
-                throw new RuntimeException(lang('cCrud.session_creation_failed'));
-            }
         }
     }
 
@@ -1797,87 +1746,6 @@ class cCrud
     }
 
 
-    public function alert($column = '', $cc = '', $subject = '', $message = '', $link = false, $field = false, $value = false, $mode = 'all')
-    {
-        if ($cc) {
-            if (! is_array($cc))
-                $cc = $this->parse_comma_separated($cc);
-        }
-        if ($mode == 'all' or $mode == 'create')
-            $this->alert_create[] = array(
-                'column' => $column,
-                'cc' => $cc,
-                'subject' => $subject,
-                'message' => $message,
-                'link' => $link,
-                'field' => $field,
-                'value' => $value
-            );
-        if ($mode == 'all' or $mode == 'edit')
-            $this->alert_edit[] = array(
-                'column' => $column,
-                'cc' => $cc,
-                'subject' => $subject,
-                'message' => $message,
-                'link' => $link,
-                'field' => $field,
-                'value' => $value
-            );
-        return $this;
-    }
-
-    public function alert_create($column = '', $cc = '', $subject = '', $message = '', $link = false, $field = false, $value = false)
-    {
-        return $this->alert($column, $cc, $subject, $message, $link, $field, $value, 'create');
-    }
-
-    public function alert_edit($column = '', $cc = '', $subject = '', $message = '', $link = false, $field = false, $value = false)
-    {
-        return $this->alert($column, $cc, $subject, $message, $link, $field, $value, 'edit');
-    }
-
-    // NEEDS TO BE REWRITTEN
-    public function mass_alert($email_table = '', $email_column = '', $emeil_where = '', $subject = '', $message = '', $link = false, $field = false, $value = false, $mode = 'all')
-    {
-        $table = $this->_get_table('mass_alert');
-        $field = $this->table . '.' . $field;
-        if ($mode == 'all' or $mode == 'create')
-            $this->mass_alert_create[] = array(
-                'email_table' => $email_table,
-                'email_column' => $email_column,
-                'where' => $emeil_where,
-                'subject' => $subject,
-                'message' => $message,
-                'link' => $link,
-                'field' => $field,
-                'value' => $value,
-                'table' => $table
-            );
-        if ($mode == 'all' or $mode == 'edit')
-            $this->mass_alert_edit[] = array(
-                'email_table' => $email_table,
-                'email_column' => $email_column,
-                'where' => $emeil_where,
-                'subject' => $subject,
-                'message' => $message,
-                'link' => $link,
-                'field' => $field,
-                'value' => $value,
-                'table' => $table
-            );
-
-        return $this;
-    }
-
-    public function mass_alert_create($email_table = '', $email_column = '', $emeil_where = '', $subject = '', $message = '', $link = false, $field = false, $value = false)
-    {
-        return $this->mass_alert($email_table, $email_column, $emeil_where, $subject, $message, $link, $field, $value, 'create');
-    }
-
-    public function mass_alert_edit($email_table = '', $email_column = '', $emeil_where = '', $subject = '', $message = '', $link = false, $field = false, $value = false)
-    {
-        return $this->mass_alert($email_table, $email_column, $emeil_where, $subject, $message, $link, $field, $value, 'edit');
-    }
 
     public function send_external($path, $data = array(), $method = 'include', $mode = 'all', $where_field = '', $where_val = '')
     {
@@ -3779,39 +3647,6 @@ class cCrud
             $pd = new Postdata($postdata, $this);
             $postdata = $pd->toArray();
 
-            if ($this->alert_create) {
-                foreach ($this->alert_create as $alert) {
-                    if ($alert['field'] && $pd->get($alert['field']) != $alert['value'])
-                        continue;
-
-                    $send_to = $pd->get($alert['column']) ? $pd->get($alert['column']) : $alert['column'];
-                    if (! $send_to or ! preg_match('/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/', $send_to))
-                        continue;
-                    $alert['message'] = $this->replace_text_variables($alert['message'], $postdata);
-                    if ($this->config->email_enable_html)
-                        $message = $alert['message'] . '<br /><br />' . "\r\n" . ($alert['link'] ? '<a href="' . $alert['link'] . '" target="_blank">' . $alert['link'] . '</a>' : '');
-                    else
-                        $message = $alert['message'] . "\r\n\r\n" . ($alert['link'] ? $alert['link'] : '');
-                    $this->send_email($send_to, $alert['subject'], $message, $alert['cc'], $this->config->email_enable_html);
-                }
-            }
-            if ($this->mass_alert_create) {
-                foreach ($this->mass_alert_create as $alert) {
-                    if ($alert['field'] && isset($postdata[$alert['field']]) && $postdata[$alert['field']] != $alert['value'])
-                        continue;
-                    $alert['message'] = $this->replace_text_variables($alert['message'], $postdata);
-                    $alert['where'] = $this->replace_text_variables($alert['where'], $postdata);
-                    if ($this->config->email_enable_html)
-                        $message = $alert['message'] . '<br /><br />' . "\r\n" . ($alert['link'] ? '<a href="' . $alert['link'] . '" target="_blank">' . $alert['link'] . '</a>' : '');
-                    else
-                        $message = $alert['message'] . "\r\n\r\n" . ($alert['link'] ? $alert['link'] : '');
-                    $db = $this->model->db;
-                    $query = $db->query("SELECT `{$alert['email_column']}` FROM `{$alert['email_table']}`" . ($alert['where'] ? ' WHERE ' . $alert['where'] : ''));
-                    foreach ($query->getResultArray() as $row) {
-                        $this->send_email($row[$alert['email_column']], $alert['subject'], $message, array(), $this->config->email_enable_html);
-                    }
-                }
-            }
 
             if ($this->replace_insert) {
                 $path = $this->check_file($this->replace_insert['path'], 'replace_insert');
@@ -3911,38 +3746,6 @@ class cCrud
             $this->make_upload_process($pd);
             $postdata = $pd->toArray();
 
-            if ($this->alert_edit) {
-                foreach ($this->alert_edit as $alert) {
-                    if ($alert['field'] && $pd->get($alert['field']) != $alert['value'])
-                        continue;
-                    $send_to = $pd->get($alert['column']) ? $pd->get($alert['column']) : $alert['column'];
-                    if (! $send_to or ! preg_match('/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/', $send_to))
-                        continue;
-                    $alert['message'] = $this->replace_text_variables($alert['message'], $postdata);
-                    if ($this->config->email_enable_html)
-                        $message = $alert['message'] . '<br /><br />' . "\r\n" . ($alert['link'] ? '<a href="' . $alert['link'] . '" target="_blank">' . $alert['link'] . '</a>' : '');
-                    else
-                        $message = $alert['message'] . "\r\n\r\n" . ($alert['link'] ? $alert['link'] : '');
-                    $this->send_email($send_to, $alert['subject'], $message, $alert['cc'], $this->config->email_enable_html);
-                }
-            }
-            if ($this->mass_alert_edit) {
-                foreach ($this->mass_alert_edit as $alert) {
-                    if ($alert['field'] && isset($postdata[$alert['field']]) && $postdata[$alert['field']] != $alert['value'])
-                        continue;
-                    $alert['message'] = $this->replace_text_variables($alert['message'], $postdata);
-                    $alert['where'] = $this->replace_text_variables($alert['where'], $postdata);
-                    if ($this->config->email_enable_html)
-                        $message = $alert['message'] . '<br /><br />' . "\r\n" . ($alert['link'] ? '<a href="' . $alert['link'] . '" target="_blank">' . $alert['link'] . '</a>' : '');
-                    else
-                        $message = $alert['message'] . "\r\n\r\n" . ($alert['link'] ? $alert['link'] : '');
-                    $db = $this->model->db;
-                    $query = $db->query("SELECT `{$alert['email_column']}` FROM `{$alert['email_table']}`" . ($alert['where'] ? ' WHERE ' . $alert['where'] : ''));
-                    foreach ($query->getResultArray() as $row) {
-                        $this->send_email($row[$alert['email_column']], $alert['subject'], $message, array(), $this->config->email_enable_html);
-                    }
-                }
-            }
 
             if ($this->replace_update) {
                 $path = $this->check_file($this->replace_update['path'], 'replace_update');
@@ -6150,29 +5953,6 @@ class cCrud
         $cCrud_session[$inst_name]['before'] = $this->find_prev_task();
 
         $this->session->set('cCrud_session', $cCrud_session);
-        if ($this->config->alt_session) {
-            // Criptografa dados da sessão com o encrypter do CodeIgniter
-            $encrypter   = $this->getEncrypter();
-            $sessionData = ['cCrud_session' => $cCrud_session];
-            $data        = $encrypter->encrypt(json_encode($sessionData));
-            if (class_exists('Memcache')) {
-                $mc = new Memcache();
-                $mc->connect($this->config->mc_host, $this->config->mc_port);
-                $res = $mc->set(self::$sess_id, $data, false, $this->config->alt_lifetime * 60);
-            } elseif (class_exists('Memcached')) {
-                $mc = new Memcached();
-                $mc->connect($this->config->mc_host, $this->config->mc_port);
-                $res = $mc->set(self::$sess_id, $data, $this->config->alt_lifetime * 60);
-            } else {
-                // Memcache(d) não está disponível
-                throw new RuntimeException(lang('cCrud.memcache_not_available'));
-            }
-            $this->session->remove('cCrud_session');
-            if (! $res) {
-                // Parâmetros inválidos ou armazenamento falhou
-                throw new RuntimeException(lang('cCrud.memcache_invalid_parameters'));
-            }
-        }
     }
 
     protected function find_prev_task()
@@ -6195,38 +5975,6 @@ class cCrud
 
     public function import_vars($key = false)
     {
-        if ($this->config->alt_session) {
-            if (class_exists('Memcache')) {
-                $mc = new Memcache();
-                $mc->connect($this->config->mc_host, $this->config->mc_port);
-                $data = $mc->get(self::$sess_id);
-            } elseif (class_exists('Memcached')) {
-                $mc = new Memcached();
-                $mc->connect($this->config->mc_host, $this->config->mc_port);
-                $data = $mc->get(self::$sess_id);
-            } else {
-                // Memcache(d) não está disponível
-                throw new RuntimeException(lang('cCrud.memcache_not_available'));
-            }
-
-            if (! $data) {
-                // Dados alternativos inexistentes
-                throw new RuntimeException(lang('cCrud.alternative_session_data_not_exist'));
-            }
-
-            // Descriptografa dados da sessão usando o encrypter do CodeIgniter
-            $encrypter   = $this->getEncrypter();
-            $sessionData = json_decode($encrypter->decrypt($data), true);
-            unset($data);
-
-            if (! $sessionData || ! isset($sessionData['cCrud_session'])) {
-                // Dados alternativos inválidos
-                throw new RuntimeException(lang('cCrud.alternative_session_data_invalid'));
-            }
-
-            $this->session->set('cCrud_session', $sessionData['cCrud_session']);
-        }
-
         $inst_name     = $this->instance_name;
         $cCrud_session = $this->session->get('cCrud_session');
 
@@ -9425,9 +9173,6 @@ class cCrud
         if ($crop) {
             $params['cCrud']['crop'] = $crop;
         }
-        if ($this->config->dynamic_session) {
-            $params['cCrud']['sess_name'] = session_name();
-        }
         $ajaxUri = '/' . trim($this->config->ajax_uri, '/');
         return $ajaxUri . '?' . http_build_query($params);
     }
@@ -9575,16 +9320,6 @@ class cCrud
                 $fields[] = "`{$val['table']}`.`{$val['field']}` AS `$key`";
         }
         return implode(',', $fields);
-    }
-
-    protected function send_email($to, $subject = '(No subject)', $message = '', $cc = array(), $html = true)
-    {
-        $header = 'MIME-Version: 1.0' . "\r\n" . 'Content-type: text/' . ($html ? 'html' : 'plain') . '; charset=UTF-8' . "\r\n" . 'From: ' . $this->config->email_from_name . ' <' . $this->config->email_from . ">\r\n";
-        if ($cc)
-            $header .= 'Cc: ' . implode(',', $cc) . "\r\n";
-        if ($html)
-            $message = '<!DOCTYPE HTML><html><head><meta http-equiv="content-type" content="text/html; charset=utf-8" /><title>' . $subject . '</title></head><body>' . $message . '</body></html>';
-        mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $message, $header);
     }
 
     protected function _cell_attrib($field, $value, $order, &$row, $is_sum = false, $row_color = false, $row_class = false)
@@ -11454,12 +11189,6 @@ class cCrud
             'name' => 'task',
             'value' => $this->task
         ));
-        if ($this->config->dynamic_session) {
-            $out .= $this->single_tag($tag, '', array(
-                'name' => 'sess_name',
-                'value' => session_name()
-            ));
-        }
         if ($this->primary_val) {
             $out .= $this->single_tag($tag, '', array(
                 'name' => 'primary',
@@ -11997,28 +11726,6 @@ class cCrud
     protected function get_id()
     {
         return 'id="xc_' . base_convert(time() + rand(), 10, 36) . '"';
-    }
-
-    /**
-     * Obtém instância do encrypter configurado.
-     *
-     * @return EncrypterInterface
-     */
-    protected function getEncrypter(): EncrypterInterface
-    {
-        if (! $this->config->alt_encription_key) {
-            // Chave de encriptação alternativa não definida
-            throw new RuntimeException(lang('cCrud.set_alt_encription_key'));
-        }
-
-        if (! extension_loaded('openssl')) {
-            // Extensão OpenSSL não disponível
-            throw new RuntimeException(lang('cCrud.openssl_not_available'));
-        }
-
-        return Services::encrypter([
-            'key' => $this->config->alt_encription_key,
-        ]);
     }
 
     /*
