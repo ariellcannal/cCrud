@@ -159,6 +159,48 @@ class cCrud extends BaseConfig
     public $xss_disalowed_attibutes = array('on\w*', /*'style',*/ 'xmlns', 'formaction'); // Remove bad attributes such as style, onclick and xmlns
     public $xss_naughty_html = 'alert|applet|audio|basefont|base|behavior|bgsound|blink|body|embed|expression|form|frameset|frame|head|html|ilayer|input|isindex|layer|link|meta|object|plaintext|script|textarea|title|video|xml|xss'; // If a tag containing any of the words in the list below is found, the tag gets converted to entities.
     public $xss_naughty_scripts = 'alert|cmd|passthru|eval|exec|expression|system|fopen|fsockopen|file|file_get_contents|readfile|unlink'; // imilar to above, only instead of looking for tags it looks for PHP and JavaScript commands that are disallowed.  Rather than removing the code, it simply converts the parenthesis to entities rendering the code un-executable.
-    
+
+
+    /**
+     * Instância da configuração carregada.
+     *
+     * @var self|null
+     */
+    private static ?self $instance = null;
+
+    /**
+     * Retorna a instância das configurações, aplicando sobrecargas
+     * definidas pelo consumidor do pacote.
+     *
+     * @return self Configurações do cCrud
+     */
+    public static function instance(): self
+    {
+        if (self::$instance !== null) {
+            return self::$instance;
+        }
+
+        // Inicia com a configuração base
+        $config = new self();
+
+        // Carrega configurações personalizadas da aplicação, se existirem
+        if (defined('APPPATH')) {
+            $path = rtrim(APPPATH, '\\/') . '/cCrud.php';
+            if (is_file($path)) {
+                $appConfig = require $path;
+                if (is_array($appConfig)) {
+                    foreach ($appConfig as $key => $value) {
+                        if (property_exists($config, $key)) {
+                            $config->$key = $value;
+                        }
+                    }
+                }
+            }
+        }
+
+        self::$instance = $config;
+
+        return self::$instance;
+    }
 
 }

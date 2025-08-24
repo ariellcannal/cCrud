@@ -517,7 +517,7 @@ class cCrud
             throw new RuntimeException(lang('cCrud.ci4_required'));
         }
 
-        $this->config = class_exists('\Config\cCrud') ? new \Config\cCrud() : new cCrudConfig();
+        $this->config = cCrudConfig::instance();
 
         $this->config->scripts_url = self::check_url($this->config->scripts_url, true);
         $this->config->editor_url = self::check_url($this->config->editor_url);
@@ -655,7 +655,7 @@ class cCrud
     protected static function init_prepare($method = false)
     {
         $session = config('Session');
-        $config  = config('cCrud\cCrud');
+        $config  = cCrudConfig::instance();
         switch ($method) {
             case 'post':
                 $sess_name = ($config->dynamic_session && isset($_POST['xcrud']['sess_name']) && $_POST['xcrud']['sess_name']) ? $_POST['xcrud']['sess_name'] : $session->cookieName;
@@ -9664,7 +9664,6 @@ class cCrud
      */
     protected static function _get_language_static()
     {
-        $config = config('cCrud\cCrud');
         self::$lang_arr = lang('cCrud', [], \Config\App::$defaultLocale);
         if (! self::$lang_arr) {
             self::$lang_arr = lang('cCrud', [], 'en');
@@ -9823,7 +9822,7 @@ class cCrud
     public static function load_css()
     {
         $out    = '';
-        $config = config('cCrud\cCrud');
+        $config = cCrudConfig::instance();
 
         if (! self::$js_loaded && ! self::$instance) {
             $config->scripts_url     = self::check_url($config->scripts_url, true);
@@ -9863,7 +9862,7 @@ class cCrud
             $language = \Config\App::$defaultLocale;
             self::_get_language_static();
         }
-        $config = config('cCrud\cCrud');
+        $config = cCrudConfig::instance();
 
         if (! self::$css_loaded && ! self::$instance) {
             $config->scripts_url     = self::check_url($config->scripts_url, true);
