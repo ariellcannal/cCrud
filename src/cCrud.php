@@ -3267,16 +3267,6 @@ class cCrud
         return $ins_id;
     }
 
-    protected function make_fk_remove($rel, $primary)
-    {
-        $db = $this->model->db;
-    }
-
-    protected function make_fk_insert($rel, $val, $primary)
-    {
-        $db = $this->model->db;
-    }
-
     /**
      *
      * @author Ariel Canal
