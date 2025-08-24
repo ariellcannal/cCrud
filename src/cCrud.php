@@ -116,7 +116,7 @@ class cCrud
 
     protected $columns_names = array();
 
-    protected $is_create = true;
+    public $is_create = true;
 
     protected $is_edit = true;
 
@@ -124,11 +124,11 @@ class cCrud
 
     protected $is_remove = true;
 
-    protected $is_csv = true;
+    public $is_csv = true;
 
-    protected $is_search = true;
+    public $is_search = true;
 
-    protected $is_print = true;
+    public $is_print = true;
 
     protected $is_title = true;
 
@@ -136,7 +136,7 @@ class cCrud
 
     protected $is_duplicate = false;
 
-    protected $is_inner = false;
+    public $is_inner = false;
 
     protected $is_pagination = true;
 
@@ -148,7 +148,7 @@ class cCrud
 
     protected $buttons_position = 'right';
 
-    protected $buttons = array();
+    public $buttons = array();
 
     protected $custom_buttons = array();
 
@@ -193,8 +193,6 @@ class cCrud
         '%',
         '%'
     );
-
-    protected $start_minimized = false;
 
     protected $remove_confirm = false;
 
@@ -388,11 +386,16 @@ class cCrud
 
     public $table_ro = false;
 
-    protected $load_view = array(
-        'list' => 'list.php',
+    /**
+     * Lista de views utilizadas nos diferentes modos.
+     *
+     * @var array<string,string>
+     */
+    protected $views = array(
+        'list'   => 'list.php',
         'create' => 'detail.php',
-        'edit' => 'detail.php',
-        'view' => 'detail.php',
+        'edit'   => 'detail.php',
+        'view'   => 'detail.php',
         'report' => 'report.php'
     );
 
@@ -425,7 +428,6 @@ class cCrud
 
     protected static $sess_id = null;
 
-    protected $is_rtl = true;
 
     protected $strip_tags = true;
 
@@ -541,7 +543,6 @@ class cCrud
         $this->show_primary_ai_column = $this->config->show_primary_ai_column;
 
         $this->benchmark = $this->config->benchmark;
-        $this->start_minimized = $this->config->start_minimized;
         $this->remove_confirm = $this->config->remove_confirm;
         $this->upload_folder_def = $this->config->upload_folder_def;
 
@@ -560,7 +561,6 @@ class cCrud
 
         $this->default_tab = $this->config->default_tab;
 
-        $this->is_rtl = $this->config->is_rtl;
 
         $this->strip_tags = $this->config->strip_tags;
         $this->safe_output = $this->config->safe_output;
@@ -798,19 +798,6 @@ class cCrud
     {
         $content = file_get_contents(CCRUD_PATH . '/views/cCrud.js');
         return Services::response()->setContentType('application/javascript')->setBody($content);
-    }
-
-    /**
-     * Define se o componente inicia minimizado.
-     *
-     * @param bool $bool Verdadeiro para iniciar minimizado
-     *
-     * @return self
-     */
-    public function startMinimized($bool = true)
-    {
-        $this->start_minimized = (bool) $bool;
-        return $this;
     }
 
     /**
@@ -2347,12 +2334,14 @@ class cCrud
     }
 
     /**
+     * Define uma view personalizada para o modo informado.
      *
-     * @author Ariel Canal
-     *         COMPATIBILIZAÇÃO COM CONDEIGNITER
-     *        
+     * @param string $mode Modo de funcionamento do cCrud
+     * @param string $file Caminho da view personalizada
+     *
+     * @return $this
      */
-    public function load_view($mode = '', $file = '')
+    public function setView($mode = '', $file = '')
     {
         if ($mode && $file) {
             switch ($mode) {
@@ -2360,7 +2349,7 @@ class cCrud
                 case 'create':
                 case 'edit':
                 case 'view':
-                    $this->load_view[$mode] = '../' . $file;
+                    $this->views[$mode] = '../' . $file;
                     break;
                 default:
                     // Modo informado é inválido
@@ -2755,36 +2744,56 @@ class cCrud
     }
 
     /**
-     * main output
+     * Gera o conteúdo final a ser enviado ao navegador.
+     *
+     * @param string $content Conteúdo principal renderizado
+     *
+     * @return string
      */
-    protected function render_output()
+    protected function render_output(string $content)
     {
         if ($this->ajax_request) {
-            $contents = $this->render_control_fields() . $this->data;
+            $contents = $this->render_control_fields() . $content;
             $this->after_render();
         } else {
             $contents = '';
             if (! self::$css_loaded && ! $this->config->manual_load) {
                 $contents .= self::load_css();
             }
-            ob_start();
-            include __DIR__ . '/views/container.php';
-            $contents .= ob_get_contents();
-            ob_end_clean();
-            unset($this->data);
+
+            $viewPath = __DIR__ . '/views';
+            $renderer = Services::renderer($viewPath);
+            $contents .= $renderer->setVars([
+                'cCrud'    => $this,
+                'content' => $content
+            ])->render('container.php');
+
             if (! self::$js_loaded && ! $this->config->manual_load) {
                 $contents .= self::load_js();
             }
             $this->after_render();
         }
+
         if (in_array($this->task, [
             'create',
             'edit'
         ])) {
             return $this->open_tag('form') . $contents . $this->close_tag('form');
-        } else {
-            return $contents;
         }
+
+        return $contents;
+    }
+
+    /**
+     * Envia o conteúdo renderizado para a resposta HTTP.
+     *
+     * @param string $output Conteúdo final
+     *
+     * @return ResponseInterface
+     */
+    protected function set_output(string $output): ResponseInterface
+    {
+        return Services::response()->setBody($output);
     }
 
     protected function after_render()
@@ -2806,14 +2815,6 @@ class cCrud
         if (is_callable($this->config->after_render)) {
             call_user_func($this->config->after_render);
         }
-    }
-
-    /**
-     * returns current view into main container
-     */
-    protected function render_view()
-    {
-        return $this->render_control_fields() . $this->data;
     }
 
     /**
@@ -5703,13 +5704,14 @@ class cCrud
             }
         }
         $mode = 'list';
-        $view_file = __DIR__ . '/views/' . $this->load_view['list'];
+        $view_file = __DIR__ . '/views/' . $this->views['list'];
         $view_file = $this->check_file($view_file, 'render');
-        ob_start();
-        include ($view_file);
-        $this->data = ob_get_contents();
-        ob_end_clean();
-        return $this->render_output();
+        $viewPath = dirname($view_file);
+        $renderer = Services::renderer($viewPath);
+        $content = $renderer->setVar('cCrud', $this)->render(basename($view_file));
+
+        $output = $this->render_output($content);
+        return $this->set_output($output);
     }
 
     /**
@@ -5899,12 +5901,17 @@ class cCrud
             }
         }
 
-        $view_file = __DIR__ . '/views/' . $this->load_view[$mode];
+        $view_file = __DIR__ . '/views/' . $this->views[$mode];
         $view_file = $this->check_file($view_file, 'render');
-        ob_start();
-        include ($view_file);
-        $this->data = $this->render_search_hidden() . ob_get_contents();
-        ob_end_clean();
+        $viewPath = dirname($view_file);
+        $renderer = Services::renderer($viewPath);
+        $content = $renderer->setVars([
+            'cCrud' => $this,
+            'mode' => $mode,
+            'title' => $this->get_var('title')
+        ])->render(basename($view_file));
+
+        $content = $this->render_search_hidden() . $content;
         /*
          * if ($this->inner_table_instance && ($mode == 'view' or $mode ==
          * 'edit')) // restoring nested objects
@@ -5925,7 +5932,6 @@ class cCrud
          * {
          * $instance->table_ro = false;
          * }
-         * //$this->data .= '<div class="cCrud-nested-container
          * cCrud-container"><div class="cCrud-ajax" id="cCrud-ajax-' .
          * // base_convert(rand(), 10, 36) . '">' . $instance->render('list') .
          * '</div></div>';
@@ -5939,9 +5945,11 @@ class cCrud
          * }
          */
         if ($this->nested_rendered) {
-            $this->data .= implode('', $this->nested_rendered);
+            $content .= implode('', $this->nested_rendered);
         }
-        return $this->render_output();
+
+        $output = $this->render_output($content);
+        return $this->set_output($output);
     }
 
     /**
@@ -7396,16 +7404,13 @@ class cCrud
         $out .= $this->open_tag('span', $this->theme_config('upload_button'), array(
             'class' => 'cCrud-add-file'
         ));
-        if (! $this->is_rtl && $this->theme_config('upload_button_icon')) {
+        if ($this->theme_config('upload_button_icon')) {
             $out .= $this->open_tag('i', $this->theme_config('upload_button_icon')) . $this->close_tag('i') . ' ';
         }
         if ($value) {
             $out .= $this->lang('replace_file');
         } else {
             $out .= $this->lang('add_file');
-        }
-        if ($this->is_rtl && $this->theme_config('upload_button_icon')) {
-            $out .= ' ' . $this->open_tag('i', $this->theme_config('upload_button_icon')) . $this->close_tag('i');
         }
         $attr = array(
             'id' => 'xfupl' . rand(),
@@ -7430,16 +7435,13 @@ class cCrud
         $out .= $this->open_tag('span', $this->theme_config('upload_button'), array(
             'class' => 'cCrud-add-file'
         ));
-        if (! $this->is_rtl && $this->theme_config('upload_button_icon')) {
+        if ($this->theme_config('upload_button_icon')) {
             $out .= $this->open_tag('i', $this->theme_config('upload_button_icon')) . $this->close_tag('i') . ' ';
         }
         if ($value) {
             $out .= $this->lang('replace_image');
         } else {
             $out .= $this->lang('add_image');
-        }
-        if ($this->is_rtl && $this->theme_config('upload_button_icon')) {
-            $out .= ' ' . $this->open_tag('i', $this->theme_config('upload_button_icon')) . $this->close_tag('i');
         }
         $attr = array(
             'id' => 'xfupl' . rand(),
@@ -7469,13 +7471,10 @@ class cCrud
             'data-field' => $name
         );
         $out .= $this->open_tag('a', $this->theme_config('remove_button'), $attr);
-        if (! $this->is_rtl && $this->theme_config('remove_button_icon')) {
+        if ($this->theme_config('remove_button_icon')) {
             $out .= $this->open_tag('i', $this->theme_config('remove_button_icon')) . $this->close_tag('i') . ' ';
         }
         $out .= $this->lang('remove');
-        if ($this->is_rtl && $this->theme_config('remove_button_icon')) {
-            $out .= ' ' . $this->open_tag('i', $this->theme_config('remove_button_icon')) . $this->close_tag('i');
-        }
         $out .= $this->close_tag('a');
         return $out;
     }
@@ -10010,8 +10009,7 @@ class cCrud
             'date_first_day' => $config->date_first_day,
             'date_format' => $config->date_format,
             'time_format' => $config->time_format,
-            'lang' => self::$lang_arr,
-            'rtl' => $config->is_rtl ? 1 : 0
+            'lang' => self::$lang_arr
         );
         $out .= '
             <script type="text/javascript">
@@ -10554,9 +10552,36 @@ class cCrud
         return $out;
     }
 
-    protected function render_fields_list($mode, $container = 'table', $row = 'tr', $label = 'td', $field = 'td', $tabs_block = 'div', $tabs_head = 'ul', $tabs_row = 'li', $tabs_link = 'a', $tabs_content = 'div', $tabs_pane = 'div')
+    /**
+     * Renderiza a lista de campos
+     *
+     * @param string              $mode        Modo atual
+     * @param string|array|null   $container   Tag do contêiner
+     * @param string|array|null   $row         Tag da linha
+     * @param string|array|null   $label       Tag do rótulo
+     * @param string|array|null   $field       Tag do campo
+     * @param string|array|null   $tabs_block  Tag do bloco de abas
+     * @param string|array|null   $tabs_head   Tag do cabeçalho das abas
+     * @param string|array|null   $tabs_row    Tag da linha das abas
+     * @param string|array|null   $tabs_link   Tag do link das abas
+     * @param string|array|null   $tabs_content Tag do conteúdo das abas
+     * @param string|array|null   $tabs_pane   Tag do painel das abas
+     *
+     * @return string
+     */
+    public function render_fields_list($mode, $container = null, $row = null, $label = null, $field = null, $tabs_block = null, $tabs_head = null, $tabs_row = null, $tabs_link = null, $tabs_content = null, $tabs_pane = null)
     {
         $out = '';
+        $container   = $container   ?? $this->theme_config('fields_list_container_tag');
+        $row         = $row         ?? $this->theme_config('fields_list_row_tag');
+        $label       = $label       ?? $this->theme_config('fields_list_label_tag');
+        $field       = $field       ?? $this->theme_config('fields_list_field_tag');
+        $tabs_block  = $tabs_block  ?? $this->theme_config('fields_list_tabs_block_tag');
+        $tabs_head   = $tabs_head   ?? $this->theme_config('fields_list_tabs_head_tag');
+        $tabs_row    = $tabs_row    ?? $this->theme_config('fields_list_tabs_row_tag');
+        $tabs_link   = $tabs_link   ?? $this->theme_config('fields_list_tabs_link_tag');
+        $tabs_content = $tabs_content ?? $this->theme_config('fields_list_tabs_content_tag');
+        $tabs_pane   = $tabs_pane   ?? $this->theme_config('fields_list_tabs_pane_tag');
         $tabs_out = array();
         $raw_out = array();
         foreach ($this->fields_output as $key => $item) {
@@ -10883,7 +10908,12 @@ class cCrud
      *         Compatibilização com os plugins JS
      *         search constructor and renderer
      */
-    protected function render_search()
+    /**
+     * Renderiza o bloco de busca
+     *
+     * @return string
+     */
+    public function render_search()
     {
         $out = '';
         $phrase = '';
@@ -11259,16 +11289,24 @@ class cCrud
         return $out;
     }
 
-    protected function render_grid_head($row = array(
-        'tag' => 'tr'
-    ), $item = array(
-        'tag' => 'th'
-    ), $arrows = array(
-        'asc' => '&uarr; ',
-        'desc' => '&darr; '
-    ))
+    /**
+     * Renderiza o cabeçalho do grid
+     *
+     * @param array|null $row    Tag da linha
+     * @param array|null $item   Tag da célula
+     * @param array|null $arrows Ícones das setas
+     *
+     * @return string
+     */
+    public function render_grid_head($row = null, $item = null, $arrows = null)
     {
         $out = '';
+        $row = $row ?? ['tag' => $this->theme_config('grid_head_row_tag')];
+        $item = $item ?? ['tag' => $this->theme_config('grid_head_item_tag')];
+        $arrows = $arrows ?? [
+            'asc'  => $this->theme_config('grid_head_arrows_asc'),
+            'desc' => $this->theme_config('grid_head_arrows_desc')
+        ];
         $out .= $this->open_tag($row, 'cCrud-th');
         if (count($this->mass_actions)) {
             $out .= $this->open_tag($item).$this->open_tag('div',  'cCrud-mass-checkbox-container cCrud-mass-checkbox-header ' . $this->theme_config('mass_checkbox_header_container')) . $this->single_tag('input', 'cCrud-mass-checkbox cCrud-mass-checkbox-header ' . $this->theme_config('mass_checkbox_header_input'), array(
@@ -11328,13 +11366,19 @@ class cCrud
      * @author Ariel Canal
      *         Renderização da classe cCrud-actions-fixed
      */
-    protected function render_grid_body($row_tag = array(
-        'tag' => 'tr'
-    ), $item = array(
-        'tag' => 'td'
-    ))
+    /**
+     * Renderiza o corpo do grid
+     *
+     * @param array|null $row_tag Tag da linha
+     * @param array|null $item    Tag da célula
+     *
+     * @return string
+     */
+    public function render_grid_body($row_tag = null, $item = null)
     {
         $out = '';
+        $row_tag = $row_tag ?? ['tag' => $this->theme_config('grid_body_row_tag')];
+        $item    = $item    ?? ['tag' => $this->theme_config('grid_body_item_tag')];
         $i = 0;
         if ($this->result_list) {
             foreach ($this->result_list as $key => $row) {
@@ -11409,13 +11453,19 @@ class cCrud
         return $out;
     }
 
-    protected function render_grid_footer($row = array(
-        'tag' => 'tr'
-    ), $item = array(
-        'tag' => 'td'
-    ))
+    /**
+     * Renderiza o rodapé do grid
+     *
+     * @param array|null $row  Tag da linha
+     * @param array|null $item Tag da célula
+     *
+     * @return string
+     */
+    public function render_grid_footer($row = null, $item = null)
     {
         $out = '';
+        $row  = $row  ?? ['tag' => $this->theme_config('grid_footer_row_tag')];
+        $item = $item ?? ['tag' => $this->theme_config('grid_footer_item_tag')];
         if ($this->sum && $this->result_list) {
             $out .= $this->open_tag($row, 'cCrud-tf');
             if (count($this->mass_actions)) {
@@ -11450,15 +11500,33 @@ class cCrud
         return $out;
     }
 
-    protected function render_limitlist()
+    /**
+     * Renderiza a lista de limites
+     *
+     * @param int|null $limit Limite de registros
+     *
+     * @return string
+     */
+    public function render_limitlist($limit = null)
     {
+        if ($limit !== null) {
+            $this->limit = $limit;
+        }
         if ($this->is_limitlist) {
             return $this->getLimitList($this->limit);
         }
         return '';
     }
 
-    protected function render_pagination($numbers = 10, $offsets = 2)
+    /**
+     * Renderiza a paginação
+     *
+     * @param int $numbers Quantidade de páginas
+     * @param int $offsets Deslocamento
+     *
+     * @return string
+     */
+    public function render_pagination($numbers = 10, $offsets = 2)
     {
         if ($this->is_pagination) {
             return $this->_pagination($this->result_total, $this->start, $this->limit, $numbers, $offsets);
@@ -11466,7 +11534,14 @@ class cCrud
         return '';
     }
 
-    protected function render_benchmark($tag = array(
+    /**
+     * Renderiza informações de desempenho
+     *
+     * @param array $tag Tag de contêiner
+     *
+     * @return string
+     */
+    public function render_benchmark($tag = array(
         'tag' => 'span'
     ))
     {
@@ -11543,15 +11618,23 @@ class cCrud
     }
 
     /**
-     * renders action button for details view
+     * Renderiza um botão de ação
      *
-     * @author Ariel Canal
-     *         Adaptada para o funcionamento dos novos parâmetros do método
-     *         create_action (icon, button_attr e conditions)
+     * @param string      $name    Nome do botão
+     * @param string      $task    Tarefa executada
+     * @param string      $after   Tarefa posterior
+     * @param string|null $class   Classe CSS
+     * @param string|null $icon    Ícone do botão
+     * @param string      $mode    Modos permitidos
+     * @param string      $primary Valor primário
+     *
+     * @return string
      */
-    protected function render_button($name = '', $task = '', $after = '', $class = '', $icon = '', $mode = '', $primary = '')
+    public function render_button($name = '', $task = '', $after = '', $class = null, $icon = null, $mode = '', $primary = '')
     {
         $out = '';
+        $class = $class ?? $this->theme_config('grid_default');
+        $icon  = $icon ?? $this->theme_config('grid_default_icon');
         if (is_array($name) && isset($this->custom_buttons[$name['label']])) {
             // custom_buttons
             $button = $name;
@@ -11567,7 +11650,7 @@ class cCrud
                 $tag['class'] = $button['class'];
             }
             $out .= $this->open_tag($tag);
-            if ($button['icon'] && ! $this->is_rtl) {
+            if ($button['icon']) {
                 $out .= $this->open_tag(array(
                     'tag' => 'i',
                     'class' => $button['icon']
@@ -11576,12 +11659,6 @@ class cCrud
             $out .= $this->open_tag(array(
                 'tag' => 'span'
             )) . $button['label'] . $this->close_tag('span');
-            if ($button['icon'] && $this->is_rtl) {
-                $out .= ' ' . $this->open_tag(array(
-                    'tag' => 'i',
-                    'class' => $button['icon']
-                )) . $this->close_tag('i');
-            }
             $out .= $this->close_tag($tag);
             return $out;
         } elseif (isset($this->{'is_' . $after}) && ! $this->{'is_' . $after}) {
@@ -11649,7 +11726,7 @@ class cCrud
                 }
             }
             $out .= $this->open_tag($tag, 'cCrud-action');
-            if ($icon && ! $this->is_rtl) {
+            if ($icon) {
                 $out .= $this->open_tag(array(
                     'tag' => 'i',
                     'class' => $icon
@@ -11658,40 +11735,54 @@ class cCrud
             $out .= $this->open_tag(array(
                 'tag' => 'span'
             )) . $this->lang($name) . $this->close_tag('span');
-            if ($icon && $this->is_rtl) {
-                $out .= ' ' . $this->open_tag(array(
-                    'tag' => 'i',
-                    'class' => $icon
-                )) . $this->close_tag('i');
-            }
             $out .= $this->close_tag($tag);
         }
         return $out;
     }
 
-    protected function add_button($class = '', $icon = '')
+    /**
+     * Renderiza o botão de inclusão
+     */
+    public function add_button($class = null, $icon = null)
     {
+        $class = $class ?? $this->theme_config('add_button_class');
+        $icon  = $icon ?? $this->theme_config('add_button_icon');
         if ($this->is_create && ! isset($this->hide_button['add']) && ! $this->table_ro) {
             return $this->render_button('add', 'create', '', $class, $icon);
         }
     }
 
-    protected function csv_button($class = '', $icon = '')
+    /**
+     * Renderiza o botão de exportação CSV
+     */
+    public function csv_button($class = null, $icon = null)
     {
+        $class = $class ?? $this->theme_config('csv_button_class');
+        $icon  = $icon ?? $this->theme_config('csv_button_icon');
         if ($this->is_csv && ! isset($this->hide_button['csv'])) {
-            return $this->render_button('export_csv', 'csv', '', $class . ' cCrud-in-new-window', $icon);
+            return $this->render_button('export_csv', 'csv', '', trim($class . ' cCrud-in-new-window'), $icon);
         }
     }
 
-    protected function print_button($class = '', $icon = '')
+    /**
+     * Renderiza o botão de impressão
+     */
+    public function print_button($class = null, $icon = null)
     {
+        $class = $class ?? $this->theme_config('print_button_class');
+        $icon  = $icon ?? $this->theme_config('print_button_icon');
         if ($this->is_print && ! isset($this->hide_button['print'])) {
-            return $this->render_button('print', 'print', '', $class . ' cCrud-in-new-window', $icon);
+            return $this->render_button('print', 'print', '', trim($class . ' cCrud-in-new-window'), $icon);
         }
     }
 
-    protected function refresh_button($class = '', $icon = '')
+    /**
+     * Renderiza o botão de atualização
+     */
+    public function refresh_button($class = null, $icon = null)
     {
+        $class = $class ?? $this->theme_config('refresh_button_class');
+        $icon  = $icon ?? $this->theme_config('refresh_button_icon');
         if ($this->task == "list") {
             return $this->render_button('refresh', 'list', '', $class, $icon);
         }
@@ -12000,10 +12091,9 @@ class cCrud
         $out = '';
         if ($this->is_title) {
             $attr = array();
-            if ($to_show && ! $this->start_minimized)
-                $attr['style'] = 'display:none;';
-            if ($to_show)
+            if ($to_show) {
                 $attr['class'] = 'cCrud-main-tab';
+            }
             if ($replace_title)
                 $title = $replace_title;
             else
@@ -12011,16 +12101,16 @@ class cCrud
             $out .= $this->open_tag($tag, '', $attr);
             switch ($mode) {
                 case 'create':
-                    $out .= $this->is_rtl ? '<small>' . $this->lang('add') . ' - </small>' . $title : $title . '<small> - ' . $this->lang('add') . '</small>';
+                    $out .= $title . '<small> - ' . $this->lang('add') . '</small>';
                     break;
                 case 'edit':
-                    $out .= $this->is_rtl ? '<small>' . $this->lang('edit') . ' - </small>' . $title : $title . '<small> - ' . $this->lang('edit') . '</small>';
+                    $out .= $title . '<small> - ' . $this->lang('edit') . '</small>';
                     break;
                 case 'view':
-                    $out .= $this->is_rtl ? '<small>' . $this->lang('view') . ' - </small>' . $title : $title . '<small> - ' . $this->lang('view') . '</small>';
+                    $out .= $title . '<small> - ' . $this->lang('view') . '</small>';
                     break;
                 default:
-                    $out .= $this->is_rtl ? '<small>' . $this->get_table_tooltip() . '</small>' . $title : $title . '<small> ' . $this->get_table_tooltip() . '</small>';
+                    $out .= $title . '<small> ' . $this->get_table_tooltip() . '</small>';
                     break;
             }
             if ($this->config->can_minimize) {
@@ -13144,37 +13234,6 @@ class cCrud
                 $out = $this->renderTableName($mode, $tag, $to_show, $icon, $replace_title);
             }
             return $out;
-
-            $attr = array();
-            if ($to_show && ! $this->start_minimized)
-                $attr['style'] = 'display:none;';
-            if ($to_show)
-                $attr['class'] = 'cCrud-main-tab';
-            $attr['data-toggle'] = 'modal';
-            $attr['data-target'] = '#customLists';
-            $out .= $this->open_tag($tag, '', $attr);
-            switch ($mode) {
-                case 'create':
-                    $out .= $this->is_rtl ? '<small>' . $this->lang('add') . ' - </small>' . $title . (($icon) ? '&nbsp;<i class="' . $icon . '"></i>' : '') : (($icon) ? '<i class="' . $icon . '"></i>&nbsp;' : '') . $title . '<small> - ' . $this->lang('add') . '</small>';
-                    break;
-                case 'edit':
-                    $out .= $this->is_rtl ? '<small>' . $this->lang('edit') . ' - </small>' . $title . (($icon) ? '&nbsp;<i class="' . $icon . '"></i>' : '') : (($icon) ? '<i class="' . $icon . '"></i>&nbsp;' : '') . $title . '<small> - ' . $this->lang('edit') . '</small>';
-                    break;
-                case 'view':
-                    $out .= $this->is_rtl ? '<small>' . $this->lang('view') . ' - </small>' . $title . (($icon) ? '&nbsp;<i class="' . $icon . '"></i>' : '') : (($icon) ? '<i class="' . $icon . '"></i>&nbsp;' : '') . $title . '<small> - ' . $this->lang('view') . '</small>';
-                    break;
-                default:
-                    $out .= $this->is_rtl ? '<small>' . $this->get_table_tooltip() . '</small>' . $title . (($icon) ? '&nbsp;<i class="' . $icon . '"></i>' : '') : (($icon) ? '<i class="' . $icon . '"></i>&nbsp;' : '') . $title . '<small>' . $this->get_table_tooltip() . '</small>';
-                    break;
-            }
-            if ($this->config->can_minimize) {
-                if ($to_show)
-                    $out .= '<span class="cCrud-toggle-show cCrud-toggle-down"><i class="' . $this->theme_config('slide_down_icon') . '"></i></span>';
-
-                else
-                    $out .= '<span class="cCrud-toggle-show cCrud-toggle-up"><i class="' . $this->theme_config('slide_up_icon') . '"></i></span>';
-            }
-            $out .= $this->close_tag($tag);
         }
         return $out;
     }
@@ -13621,14 +13680,20 @@ class cCrud
             }
         }
 
-        $view_file = __DIR__ . '/views/' . $this->load_view[$mode];
+        $view_file = __DIR__ . '/views/' . $this->views[$mode];
         $view_file = $this->check_file($view_file, 'render');
-        ob_start();
-        include ($view_file);
-        $this->data = $this->render_search_hidden() . ob_get_contents();
-        ob_end_clean();
+        $viewPath = dirname($view_file);
+        $renderer = Services::renderer($viewPath);
+        $content = $renderer->setVars([
+            'cCrud' => $this,
+            'mode' => $mode,
+            'title' => $this->get_var('title')
+        ])->render(basename($view_file));
 
-        return $this->render_output();
+        $content = $this->render_search_hidden() . $content;
+
+        $output = $this->render_output($content);
+        return $this->set_output($output);
     }
 
     private function _save_report_values()

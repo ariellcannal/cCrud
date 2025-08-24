@@ -1,8 +1,8 @@
-<div class="cCrud<?php echo $this->is_rtl ? ' cCrud_rtl' : ''?>">
-    <?php echo $this->renderTableName(false, 'div', true)?>
-    <div class="cCrud-container"<?php echo ($this->start_minimized) ? ' style="display:none;"' : '' ?>>
+<div class="cCrud">
+    <?php echo $cCrud->renderTableName(false, 'div', true)?>
+    <div class="cCrud-container">
         <div class="cCrud-ajax">
-            <?php echo $this->render_view() ?>
+            <?php echo $content ?>
         </div>
         <div class="cCrud-overlay"></div>
     </div>

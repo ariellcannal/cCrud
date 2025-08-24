@@ -293,22 +293,3 @@ h2{
     display: block;
     width: 100%;
 }
-
-/* RTL */
-.cCrud.cCrud_rtl{
-    direction: rtl;
-}
-.cCrud.cCrud_rtl .cCrud-list .cCrud-row:hover td.cCrud-actions-fixed{
-    right: auto;
-    left: 1px;
-}
-.cCrud.cCrud_rtl .cCrud-toggle-show{
-    float: left;
-}
-.cCrud.cCrud_rtl .cCrud-button > i{
-    margin-right: auto;
-    margin-left: 4px;
-}
-.cCrud.cCrud_rtl .cCrud-details-table td:first-child {
-    text-align: left;
-}

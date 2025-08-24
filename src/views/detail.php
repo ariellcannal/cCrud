@@ -1,24 +1,24 @@
-<?php if ($this->get_var('custom_head') != false)
-        require APPPATH . 'Views/' . ltrim($this->get_var('custom_head'), '/'); ?>
+<?php if ($cCrud->get_var('custom_head') != false)
+        require APPPATH . 'Views/' . ltrim($cCrud->get_var('custom_head'), '/'); ?>
 	
 <?php require $_SERVER['DOCUMENT_ROOT'].'/application/views/cCrud_default/_blocos/replace_title.php';?>
-<?php if($this->is_inner)
-	include 'nested/cCrud_detail_view.php';
+<?php if($cCrud->is_inner)
+        include 'nested/cCrud_detail_view.php';
 else{
 ?>
 <div class="page-header">
-	<?php echo $this->renderTableName($mode,array('tag'=>'h1','class'=>'page-title'),false,$title); ?>
+        <?php echo $cCrud->renderTableName($mode,array('tag'=>'h1','class'=>'page-title'),false,$title); ?>
     <div class="page-header-actions cCrud-top-actions">
-    	<div class="btn-group">
-    	<?php
-    	echo $this->render_button('return','list','','btn btn-warning');
-	    require $_SERVER['DOCUMENT_ROOT'].'/application/views/cCrud_default/_blocos/buttons_links.php';
-	    foreach($this->buttons as $k=>$btn){
-	    	//echo $this->render_button($k,$k,'edit',$btn['class'],$btn['icon']);
-	    }
-	    echo $this->render_button('save_edit','save',($this->get_var('after_task')!="")?$this->get_var('after_task'):'edit','btn btn-success','','create,edit');
-	    ?>
-	    </div>
+        <div class="btn-group">
+        <?php
+        echo $cCrud->render_button('return','list','','btn btn-warning');
+            require $_SERVER['DOCUMENT_ROOT'].'/application/views/cCrud_default/_blocos/buttons_links.php';
+            foreach($cCrud->buttons as $k=>$btn){
+                //echo $cCrud->render_button($k,$k,'edit',$btn['class'],$btn['icon']);
+            }
+            echo $cCrud->render_button('save_edit','save',($cCrud->get_var('after_task')!="")?$cCrud->get_var('after_task'):'edit','btn btn-success','','create,edit');
+            ?>
+            </div>
     </div>
 </div>
 <div class="page-content padding-30 container-fluid">
@@ -49,13 +49,13 @@ else{
 				$tabs_head = array('tag'=>'ul','data-plugin'=>'nav-tabs','role'=>'tablist');
 				$tabs_row = array('tag'=>'li','role'=>'presentation');
 				$tabs_link = array('tag'=>'a','data-toggle'=>'tab','role'=>'tab');
-				echo $this->render_fields_list($mode,$container,$row,$label,$field,$tabs_block,$tabs_head,$tabs_row,$tabs_link,$tabs_content,$tabs_pane);
-				?>
-			</div>
-			<div class="cCrud-nav">
-			    <?php echo $this->render_benchmark(); ?>
-			</div>
-		</div>
-	</div>
+                                echo $cCrud->render_fields_list($mode,$container,$row,$label,$field,$tabs_block,$tabs_head,$tabs_row,$tabs_link,$tabs_content,$tabs_pane);
+                                ?>
+                        </div>
+                        <div class="cCrud-nav">
+                            <?php echo $cCrud->render_benchmark(); ?>
+                        </div>
+                </div>
+        </div>
 </div>
 <?php }?>

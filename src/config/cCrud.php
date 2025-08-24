@@ -30,7 +30,6 @@ class cCrud extends BaseConfig
     public $show_primary_ai_field = false; // Show primary auto-increment field in create/edit view.
     public $show_primary_ai_column = false; // Show primary auto-increment column in list view.
     public $can_minimize = false; // allows 'minimize' arrow in grid
-    public $start_minimized = false; // Start all cCrud instances minimized.
     public $remove_confirm = true; // Show confirmation dialog on remove action.
     public $column_cut = 100; // Sets the maximum number of characters in the column.
     public $limit = 25; // default limit of rows per page

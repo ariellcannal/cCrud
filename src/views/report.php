@@ -1,13 +1,13 @@
-<?php if ($this->get_var('custom_head') != false)
-        require APPPATH . 'Views/' . ltrim($this->get_var('custom_head'), '/'); ?>
+<?php if ($cCrud->get_var('custom_head') != false)
+        require APPPATH . 'Views/' . ltrim($cCrud->get_var('custom_head'), '/'); ?>
 	
 <?php require $_SERVER['DOCUMENT_ROOT'].'/application/views/cCrud_default/_blocos/replace_title.php';?>
 <div class="page-header">
-	<?php echo $this->renderTableName($mode,array('tag'=>'h1','class'=>'page-title'),false,$title); ?>
+        <?php echo $cCrud->renderTableName($mode,array('tag'=>'h1','class'=>'page-title'),false,$title); ?>
 	<p class="page-description">Preencha os parâmetros abaixo:</p>
     <div class="page-header-actions cCrud-top-actions">
     	<div class="btn-group">
-    	<?php echo $this->render_button('make_report','make_report','','btn btn-success','');?>
+        <?php echo $cCrud->render_button('make_report','make_report','','btn btn-success','');?>
 	    </div>
     </div>
 </div>
@@ -41,11 +41,11 @@
 					$tabs_head = array('tag'=>'ul','data-plugin'=>'nav-tabs','role'=>'tablist');
 					$tabs_row = array('tag'=>'li','role'=>'presentation');
 					$tabs_link = array('tag'=>'a','data-toggle'=>'tab','role'=>'tab');
-					echo $this->render_fields_list($mode,$container,$row,$label,$field,$tabs_block,$tabs_head,$tabs_row,$tabs_link,$tabs_content,$tabs_pane);
+                                        echo $cCrud->render_fields_list($mode,$container,$row,$label,$field,$tabs_block,$tabs_head,$tabs_row,$tabs_link,$tabs_content,$tabs_pane);
 					?>
 				</div>
 				<div class="cCrud-nav">
-				    <?php echo $this->render_benchmark(); ?>
+                                    <?php echo $cCrud->render_benchmark(); ?>
 				</div>
 			</div>
 		</div>
