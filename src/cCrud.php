@@ -7,7 +7,6 @@ use CodeIgniter\Model;
 use CodeIgniter\I18n\Time;
 use Config\Services;
 use CodeIgniter\Encryption\EncrypterInterface;
-use CodeIgniter\Config\Services;
 use CodeIgniter\Session\Session;
 use RuntimeException;
 
@@ -2981,7 +2980,7 @@ class cCrud
             $path = $this->check_file($this->before_create['path'], 'before_create');
             include_once ($path);
             if (is_callable($this->before_create['callable'])) {
-                $postdata = new cCrudPostdata($this->result_row, $this);
+                $postdata = new PostData($this->result_row, $this);
                 call_user_func_array($this->before_create['callable'], array(
                     $postdata,
                     $this
@@ -3057,7 +3056,7 @@ class cCrud
             $path = $this->check_file($this->{$callback_method}['path'], $callback_method);
             include_once ($path);
             if (is_callable($this->{$callback_method}['callable'])) {
-                $postdata = new cCrudPostdata($this->result_row, $this);
+                $postdata = new PostData($this->result_row, $this);
                 call_user_func_array($this->{$callback_method}['callable'], array(
                     $postdata,
                     $this->primary_val,
@@ -3669,7 +3668,7 @@ class cCrud
                 }
             }
 
-            $pd = new cCrudPostdata($postdata, $this);
+            $pd = new PostData($postdata, $this);
             $this->make_upload_process($pd);
             $postdata = $pd->to_array();
 
@@ -3833,7 +3832,7 @@ class cCrud
                 }
             }
 
-            $pd = new cCrudPostdata($postdata, $this);
+            $pd = new PostData($postdata, $this);
             $this->make_upload_process($pd);
             $postdata = $pd->to_array();
 
@@ -6115,15 +6114,8 @@ class cCrud
                 throw new RuntimeException(lang('cCrud.memcache_not_available'));
             }
             unset($_SESSION['lists']['cCrud_session']);
-                if (! $res) {
-                    // Parâmetros inválidos ou armazenamento falhou
-                    throw new RuntimeException(lang('cCrud.memcache_invalid_parameters'));
-                }
-            unset($_SESSION['lists']['cCrud_session']);
             if (! $res) {
                 self::erro('memcache_invalid_parameters');
-
-            if (! $res) {
                 // Parâmetros inválidos ou armazenamento falhou
                 throw new RuntimeException(lang('cCrud.memcache_invalid_parameters'));
             }
@@ -13230,7 +13222,7 @@ class cCrud
             if ($this->_post('mass_task') == 'edit') {
                 $postdata = $this->_post('postdata');
                 $postdata = $this->check_postdata($postdata, true);
-                $pd = new cCrudPostdata($postdata, $this);
+                $pd = new PostData($postdata, $this);
                 $postdata = $pd->to_array();
                 // Validação dos dados em massa utilizando o Model
                 if (! $this->model->validate($postdata)) {
@@ -13596,13 +13588,31 @@ class cCrud
     }
 }
 
-class cCrudPostdata
+/**
+ * Responsável por gerenciar os dados de POST.
+ */
+class PostData
 {
-
+    /**
+     * Instância principal do cCrud.
+     *
+     * @var cCrud
+     */
     private $xcrud = null;
 
+    /**
+     * Dados recebidos via POST.
+     *
+     * @var array
+     */
     private $postdata = array();
 
+    /**
+     * Construtor.
+     *
+     * @param array $postdata Dados de POST.
+     * @param cCrud $xcrud    Instância do cCrud.
+     */
     public function __construct($postdata, $xcrud)
     {
         $this->xcrud = $xcrud;
@@ -13610,9 +13620,17 @@ class cCrudPostdata
         unset($postdata);
     }
 
+    /**
+     * Define um valor para o campo.
+     *
+     * @param string $name  Nome do campo.
+     * @param mixed  $value Valor a ser definido.
+     *
+     * @return self
+     */
     public function set($name, $value)
     {
-        $fdata = $this->xcrud->_parse_field_names($name, 'cCrudPostdata');
+        $fdata = $this->xcrud->_parse_field_names($name, 'PostData');
         foreach ($fdata as $key => $fitem) {
             $this->postdata[$key] = $value;
         }
@@ -13620,26 +13638,50 @@ class cCrudPostdata
         return $this;
     }
 
+    /**
+     * Remove um campo.
+     *
+     * @param string $name Nome do campo.
+     *
+     * @return self
+     */
     public function del($name)
     {
-        $fdata = $this->xcrud->_parse_field_names($name, 'cCrudPostdata');
+        $fdata = $this->xcrud->_parse_field_names($name, 'PostData');
         foreach ($fdata as $key => $fitem) {
             unset($this->postdata[$key]);
         }
         return $this;
     }
 
+    /**
+     * Recupera o valor de um campo.
+     *
+     * @param string $name Nome do campo.
+     *
+     * @return mixed
+     */
     public function get($name)
     {
-        $fdata = $this->xcrud->_parse_field_names($name, 'cCrudPostdata');
+        $fdata = $this->xcrud->_parse_field_names($name, 'PostData');
         $fname = key($fdata) /*$fdata[0]['table'] . '.' . $fdata[0]['field']*/;
         $value = (isset($this->postdata[$fname]) ? $this->postdata[$fname] : false);
-        return /* new cCrudPostdata_item */
+        return /* nova instância de PostDataItem */
         ($value);
     }
 
+    /**
+     * Retorna os dados como array.
+     *
+     * @return array
+     */
     public function to_array()
     {
         return $this->postdata;
     }
 }
+
+/**
+ * Alias para compatibilidade retroativa.
+ */
+class_alias(PostData::class, __NAMESPACE__ . '\\cCrudPostdata');
