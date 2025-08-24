@@ -7,7 +7,6 @@ use CodeIgniter\Model;
 use CodeIgniter\I18n\Time;
 use Config\Services;
 use CodeIgniter\Encryption\EncrypterInterface;
-use CodeIgniter\Config\Services;
 use CodeIgniter\Session\Session;
 use RuntimeException;
 
@@ -6115,20 +6114,14 @@ class cCrud
                 throw new RuntimeException(lang('cCrud.memcache_not_available'));
             }
             unset($_SESSION['lists']['cCrud_session']);
-                if (! $res) {
-                    // Parâmetros inválidos ou armazenamento falhou
-                    throw new RuntimeException(lang('cCrud.memcache_invalid_parameters'));
-                }
-            unset($_SESSION['lists']['cCrud_session']);
             if (! $res) {
                 self::erro('memcache_invalid_parameters');
-
-            if (! $res) {
                 // Parâmetros inválidos ou armazenamento falhou
                 throw new RuntimeException(lang('cCrud.memcache_invalid_parameters'));
             }
         }
     }
+
     protected function find_prev_task()
     {
         switch ($this->task) {
@@ -13596,34 +13589,71 @@ class cCrud
     }
 }
 
+/**
+ * Classe responsável por manipular dados enviados via POST.
+ * Oferece métodos auxiliares para manipular, consultar e converter
+ * os valores recebidos, mantendo a consistência do cCrud.
+ */
 class cCrudPostdata
 {
 
+    /**
+     * Referência ao objeto principal do cCrud.
+     *
+     * @var cCrud|null
+     */
     private $xcrud = null;
 
+    /**
+     * Dados recebidos via POST.
+     *
+     * @var array<string,mixed>
+     */
     private $postdata = array();
 
+    /**
+     * Inicializa a classe com os dados do formulário.
+     *
+     * @param array<string,mixed> $postdata Dados do formulário.
+     * @param cCrud               $xcrud    Instância principal do cCrud.
+     */
     public function __construct($postdata, $xcrud)
     {
         $this->xcrud = $xcrud;
         $this->postdata = $postdata;
-        unset($postdata);
     }
 
+    /**
+     * Define um valor para um campo de POST.
+     *
+     * Se o nome representar múltiplos campos, todos receberão o mesmo valor.
+     *
+     * @param string $name  Nome do campo.
+     * @param mixed  $value Valor a ser atribuído.
+     *
+     * @return self
+     */
     public function set($name, $value)
     {
         $fdata = $this->xcrud->_parse_field_names($name, 'cCrudPostdata');
-        foreach ($fdata as $key => $fitem) {
+        foreach ($fdata as $key => $_) {
             $this->postdata[$key] = $value;
         }
-        $this->xcrud->unlock_field($name);
+        $this->xcrud->unlock_field($name); // Garante que o campo possa ser reutilizado
         return $this;
     }
 
+    /**
+     * Remove um campo do conjunto de dados do POST.
+     *
+     * @param string $name Nome do campo a ser removido.
+     *
+     * @return self
+     */
     public function del($name)
     {
         $fdata = $this->xcrud->_parse_field_names($name, 'cCrudPostdata');
-        foreach ($fdata as $key => $fitem) {
+        foreach ($fdata as $key => $_) {
             unset($this->postdata[$key]);
         }
         return $this;
@@ -13643,8 +13673,13 @@ class cCrudPostdata
         return $this->postdata[$fname] ?? null;
     }
 
+    /**
+     * Converte os dados armazenados em array.
+     *
+     * @return array Dados do POST processados.
+     */
     public function to_array()
     {
-        return $this->postdata;
+        return $this->postdata; // Entrega os dados para manipulação externa
     }
 }
