@@ -3,7 +3,7 @@
 	
 <?php require $_SERVER['DOCUMENT_ROOT'].'/application/views/xcrud_default/_blocos/replace_title.php';?>
 <div class="page-header">
-	<?php echo $this->render_table_name($mode,array('tag'=>'h1','class'=>'page-title'),false,$title); ?>
+	<?php echo $this->renderTableName($mode,array('tag'=>'h1','class'=>'page-title'),false,$title); ?>
 	<p class="page-description">Preencha os parâmetros abaixo:</p>
     <div class="page-header-actions xcrud-top-actions">
     	<div class="btn-group">

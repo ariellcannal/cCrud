@@ -7,7 +7,7 @@
 else{
 ?>
 <div class="page-header">
-	<?php echo $this->render_table_name($mode,array('tag'=>'h1','class'=>'page-title'),false,$title); ?>
+	<?php echo $this->renderTableName($mode,array('tag'=>'h1','class'=>'page-title'),false,$title); ?>
     <div class="page-header-actions xcrud-top-actions">
     	<div class="btn-group">
     	<?php

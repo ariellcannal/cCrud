@@ -1,6 +1,6 @@
 <?php require $_SERVER['DOCUMENT_ROOT'].'/application/views/xcrud_default/_blocos/replace_title.php';?>
 <div class="panel-heading">
-	<?php echo $this->render_table_name($mode,array('tag'=>'h3','class'=>'panel-title padding-0 padding-bottom-10'),false,$title); ?>
+	<?php echo $this->renderTableName($mode,array('tag'=>'h3','class'=>'panel-title padding-0 padding-bottom-10'),false,$title); ?>
     <div class="page-header-actions">
     	<div class="xcrud-top-actions btn-group">
     	<?php
