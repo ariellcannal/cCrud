@@ -7,7 +7,6 @@ use CodeIgniter\Model;
 use CodeIgniter\I18n\Time;
 use Config\Services;
 use CodeIgniter\Encryption\EncrypterInterface;
-use CodeIgniter\Config\Services;
 use CodeIgniter\Session\Session;
 use RuntimeException;
 
@@ -3617,8 +3616,9 @@ class cCrud
      * FUNÇÃO ALTERADA DO PADRÃO
      *
      * @author Ariel Canal
-     *         Função make_upload_process() é chamada também durante a
-     *         atualização das informações, e não só na inserção.
+     *         Função make_upload_process() é chamada apenas uma vez após os
+     *         callbacks e durante a atualização das informações, e não só na
+     *         inserção.
      */
     protected function _save()
     {
@@ -3670,7 +3670,6 @@ class cCrud
             }
 
             $pd = new cCrudPostdata($postdata, $this);
-            $this->make_upload_process($pd);
             $postdata = $pd->to_array();
 
             if ($this->alert_create) {
@@ -3722,8 +3721,6 @@ class cCrud
                 }
             }
 
-            $this->make_upload_process($pd);
-
             if ($this->replace_insert) {
                 $path = $this->check_file($this->replace_insert['path'], 'replace_insert');
                 include_once ($path);
@@ -3756,6 +3753,7 @@ class cCrud
                 }
             }
 
+            // Processa upload apenas após todos os callbacks
             $this->make_upload_process($pd);
 
             if ($this->send_external_create) {
@@ -6115,20 +6113,13 @@ class cCrud
                 throw new RuntimeException(lang('cCrud.memcache_not_available'));
             }
             unset($_SESSION['lists']['cCrud_session']);
-                if (! $res) {
-                    // Parâmetros inválidos ou armazenamento falhou
-                    throw new RuntimeException(lang('cCrud.memcache_invalid_parameters'));
-                }
-            unset($_SESSION['lists']['cCrud_session']);
-            if (! $res) {
-                self::erro('memcache_invalid_parameters');
-
             if (! $res) {
                 // Parâmetros inválidos ou armazenamento falhou
                 throw new RuntimeException(lang('cCrud.memcache_invalid_parameters'));
             }
         }
     }
+
     protected function find_prev_task()
     {
         switch ($this->task) {
