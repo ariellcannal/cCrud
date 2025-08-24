@@ -4,6 +4,8 @@ namespace cCrud;
 use cCrud\Config\cCrud as cCrudConfig;
 use cCrud\Config\Views as ViewsConfig;
 use CodeIgniter\Model;
+use Config\Services;
+use CodeIgniter\Encryption\EncrypterInterface;
 use RuntimeException;
 
 // direct access to DB driver and config
@@ -6128,7 +6130,9 @@ class cCrud
 
         $this->ci->session->set_userdata('xcrud_session', $xcrud_session);
         if ($this->config->alt_session) {
-            $data = $this->encrypt($_SESSION['lists']['xcrud_session']);
+            // Criptografa dados da sessão com o encrypter do CodeIgniter
+            $encrypter = $this->getEncrypter();
+            $data = $encrypter->encrypt(json_encode($_SESSION['lists']['xcrud_session']));
 
             if (class_exists('Memcache')) {
                 $mc = new Memcache();
@@ -6142,15 +6146,12 @@ class cCrud
                 // Memcache(d) não está disponível
                 throw new RuntimeException(lang('cCrud.memcache_not_available'));
             }
-            unset($_SESSION['lists']['xcrud_session']);
-                if (! $res) {
-                    // Parâmetros inválidos ou armazenamento falhou
-                    throw new RuntimeException(lang('cCrud.memcache_invalid_parameters'));
-                }
-            unset($_SESSION['lists']['xcrud_session']);
-            if (! $res) {
-                self::erro('memcache_invalid_parameters');
 
+            unset($_SESSION['lists']['xcrud_session']);
+
+            if (! $res) {
+                // Parâmetros inválidos ou armazenamento falhou
+                throw new RuntimeException(lang('cCrud.memcache_invalid_parameters'));
             }
         }
     }
@@ -6187,16 +6188,21 @@ class cCrud
                 // Memcache(d) não está disponível
                 throw new RuntimeException(lang('cCrud.memcache_not_available'));
             }
-                if (! $data) {
-                    // Dados alternativos inexistentes
-                    throw new RuntimeException(lang('cCrud.alternative_session_data_not_exist'));
-                }
-            $_SESSION['lists']['xcrud_session'] = $this->decrypt($data[0], $data[1]);
+
+            if (! $data) {
+                // Dados alternativos inexistentes
+                throw new RuntimeException(lang('cCrud.alternative_session_data_not_exist'));
+            }
+
+            // Descriptografa dados da sessão usando o encrypter do CodeIgniter
+            $encrypter = $this->getEncrypter();
+            $_SESSION['lists']['xcrud_session'] = json_decode($encrypter->decrypt($data), true);
             unset($data);
-                if (! $_SESSION['lists']['xcrud_session']) {
-                    // Dados alternativos inválidos
-                    throw new RuntimeException(lang('cCrud.alternative_session_data_invalid'));
-                }
+
+            if (! $_SESSION['lists']['xcrud_session']) {
+                // Dados alternativos inválidos
+                throw new RuntimeException(lang('cCrud.alternative_session_data_invalid'));
+            }
         }
 
         $inst_name      = $this->instance_name;
@@ -12063,77 +12069,26 @@ class cCrud
         return 'id="xc_' . base_convert(time() + rand(), 10, 36) . '"';
     }
 
-    public function encrypt($obj)
+    /**
+     * Obtém instância do encrypter configurado.
+     *
+     * @return EncrypterInterface
+     */
+    protected function getEncrypter(): EncrypterInterface
     {
         if (! $this->config->alt_encription_key) {
             // Chave de encriptação alternativa não definida
             throw new RuntimeException(lang('cCrud.set_alt_encription_key'));
         }
-        $text = json_encode($obj);
 
-        if (! is_callable('mcrypt_module_open')) {
-            // Módulo mcrypt não encontrado
-            throw new RuntimeException(lang('cCrud.mcrypt_module_not_found'));
+        if (! extension_loaded('openssl')) {
+            // Extensão OpenSSL não disponível
+            throw new RuntimeException(lang('cCrud.openssl_not_available'));
         }
-        if (defined('MCRYPT_TWOFISH') && mcrypt_module_self_test(MCRYPT_TWOFISH)) {
-            $algoritm = MCRYPT_TWOFISH;
-        } elseif (defined('MCRYPT_RIJNDAEL_256') && mcrypt_module_self_test(MCRYPT_RIJNDAEL_256)) {
-            $algoritm = MCRYPT_RIJNDAEL_256;
-        } elseif (defined('MCRYPT_SERPENT') && mcrypt_module_self_test(MCRYPT_SERPENT)) {
-            $algoritm = MCRYPT_SERPENT;
-        } elseif (defined('MCRYPT_BLOWFISH') && mcrypt_module_self_test(MCRYPT_BLOWFISH)) {
-            $algoritm = MCRYPT_BLOWFISH;
-        } else {
-            // Algoritmo de criptografia não suportado
-            throw new RuntimeException(lang('cCrud.mcrypt_algorithm_not_found'));
-        }
-        $td = mcrypt_module_open($algoritm, '', MCRYPT_MODE_CFB, '');
-        $iv = mcrypt_create_iv(mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
-        $ks = mcrypt_enc_get_key_size($td);
-        $key = substr($this->config->alt_encription_key, 0, $ks);
-        mcrypt_generic_init($td, $key, $iv);
-        $encrypted = mcrypt_generic($td, $text);
-        mcrypt_generic_deinit($td);
-        mcrypt_module_close($td);
 
-        return array(
-            base64_encode($encrypted),
-            base64_encode($iv)
-        );
-    }
-
-    public function decrypt($text, $iv)
-    {
-        if (! $this->config->alt_encription_key) {
-            // Chave de encriptação alternativa não definida
-            throw new RuntimeException(lang('cCrud.set_alt_encription_key'));
-        }
-        if (! is_callable('mcrypt_module_open')) {
-            // Módulo mcrypt não encontrado
-            throw new RuntimeException(lang('cCrud.mcrypt_module_not_found'));
-        }
-        if (defined('MCRYPT_TWOFISH') && mcrypt_module_self_test(MCRYPT_TWOFISH)) {
-            $algoritm = MCRYPT_TWOFISH;
-        } elseif (defined('MCRYPT_RIJNDAEL_256') && mcrypt_module_self_test(MCRYPT_RIJNDAEL_256)) {
-            $algoritm = MCRYPT_RIJNDAEL_256;
-        } elseif (defined('MCRYPT_SERPENT') && mcrypt_module_self_test(MCRYPT_SERPENT)) {
-            $algoritm = MCRYPT_SERPENT;
-        } elseif (defined('MCRYPT_BLOWFISH') && mcrypt_module_self_test(MCRYPT_BLOWFISH)) {
-            $algoritm = MCRYPT_BLOWFISH;
-        } else {
-            // Algoritmo de criptografia não suportado
-            throw new RuntimeException(lang('cCrud.mcrypt_algorithm_not_found'));
-        }
-        $td = mcrypt_module_open($algoritm, '', MCRYPT_MODE_CFB, '');
-        $ks = mcrypt_enc_get_key_size($td);
-        $key = substr($this->config->alt_encription_key, 0, $ks);
-        mcrypt_generic_init($td, $key, base64_decode($iv));
-        $decrypted = mdecrypt_generic($td, base64_decode($text));
-        mcrypt_generic_deinit($td);
-        mcrypt_module_close($td);
-
-        $obj = json_decode($decrypted, true);
-        return $obj;
+        return Services::encrypter([
+            'key' => $this->config->alt_encription_key,
+        ]);
     }
 
     /*

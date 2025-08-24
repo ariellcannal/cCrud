@@ -91,8 +91,7 @@ return [
     'cannot_create_directory' => 'Não é possível criar o diretório {0}',
     'file_path_incorrect' => 'Caminho do arquivo incorreto!',
     'set_alt_encription_key' => 'Defina o parâmetro <strong>$alt_encription_key</strong> no arquivo de configuração',
-    'mcrypt_module_not_found' => '<strong>mcrypt_module</strong> não encontrado',
-    'mcrypt_algorithm_not_found' => 'MCRYPT - Algoritmo suportado não encontrado',
+    'openssl_not_available' => 'Extensão <strong>OpenSSL</strong> não disponível',
     'class_not_exist' => 'Classe "{0}" não existe!',
     'file_not_exist' => 'Arquivo "{0}.php" não existe!',
     'not_found' => 'Não encontrado'
