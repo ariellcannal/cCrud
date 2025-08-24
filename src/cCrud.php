@@ -8,6 +8,7 @@ use CodeIgniter\I18n\Time;
 use Config\Services;
 use CodeIgniter\Encryption\EncrypterInterface;
 use CodeIgniter\Session\Session;
+use CodeIgniter\HTTP\ResponseInterface;
 use cCrud\Postdata;
 use RuntimeException;
 
@@ -27,6 +28,13 @@ class cCrud
     protected static $js_loaded = false;
 
     protected static $classes = array();
+
+    /**
+     * Indica se a rota Ajax já foi registrada.
+     *
+     * @var bool
+     */
+    protected static bool $ajaxRouteRegistered = false;
 
     protected $ajax_request = false;
 
@@ -571,10 +579,27 @@ class cCrud
             'php_t' => $this->config->php_time_format
         );
         $this->nested_readonly_on_view = $this->config->nested_readonly_on_view;
+
+        // garante o registro da rota Ajax do cCrud
+        self::registerAjaxRoute();
     }
 
     protected function __clone()
     {}
+
+    /**
+     * Registra a rota de processamento Ajax do cCrud.
+     *
+     * @return void
+     */
+    private static function registerAjaxRoute(): void
+    {
+        if (self::$ajaxRouteRegistered === false) {
+            // registra a rota apenas uma vez
+            Services::routes()->post('ccrud/ajax', 'cCrud::ajax', ['namespace' => 'cCrud']);
+            self::$ajaxRouteRegistered = true;
+        }
+    }
 
     public function __toString()
     {
@@ -713,6 +738,20 @@ class cCrud
                 throw new RuntimeException(lang('cCrud.session_creation_failed'));
             }
         }
+    }
+
+    /**
+     * Processa requisições Ajax encaminhadas ao cCrud.
+     *
+     * @return ResponseInterface Resposta HTTP contendo o resultado da operação
+     */
+    public function ajax(): ResponseInterface
+    {
+        // obtém a resposta processada pela instância solicitada
+        $output = self::get_requested_instance($this->model);
+
+        // retorna o conteúdo como uma resposta HTTP
+        return Services::response()->setBody($output);
     }
 
     public function connection($user = '', $pass = '', $table = '', $host = 'localhost', $encode = 'utf8')
