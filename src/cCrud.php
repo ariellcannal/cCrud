@@ -2980,7 +2980,7 @@ class cCrud
             $path = $this->check_file($this->before_create['path'], 'before_create');
             include_once ($path);
             if (is_callable($this->before_create['callable'])) {
-                $postdata = new cCrudPostdata($this->result_row, $this);
+                $postdata = new PostData($this->result_row, $this);
                 call_user_func_array($this->before_create['callable'], array(
                     $postdata,
                     $this
@@ -3056,7 +3056,7 @@ class cCrud
             $path = $this->check_file($this->{$callback_method}['path'], $callback_method);
             include_once ($path);
             if (is_callable($this->{$callback_method}['callable'])) {
-                $postdata = new cCrudPostdata($this->result_row, $this);
+                $postdata = new PostData($this->result_row, $this);
                 call_user_func_array($this->{$callback_method}['callable'], array(
                     $postdata,
                     $this->primary_val,
@@ -3668,7 +3668,7 @@ class cCrud
                 }
             }
 
-            $pd = new cCrudPostdata($postdata, $this);
+            $pd = new PostData($postdata, $this);
             $this->make_upload_process($pd);
             $postdata = $pd->to_array();
 
@@ -3832,7 +3832,7 @@ class cCrud
                 }
             }
 
-            $pd = new cCrudPostdata($postdata, $this);
+            $pd = new PostData($postdata, $this);
             $this->make_upload_process($pd);
             $postdata = $pd->to_array();
 
@@ -13223,7 +13223,7 @@ class cCrud
             if ($this->_post('mass_task') == 'edit') {
                 $postdata = $this->_post('postdata');
                 $postdata = $this->check_postdata($postdata, true);
-                $pd = new cCrudPostdata($postdata, $this);
+                $pd = new PostData($postdata, $this);
                 $postdata = $pd->to_array();
                 // Validação dos dados em massa utilizando o Model
                 if (! $this->model->validate($postdata)) {
@@ -13668,7 +13668,7 @@ class cCrudPostdata
      */
     public function get(string $name): mixed
     {
-        $fdata = $this->xcrud->_parse_field_names($name, 'cCrudPostdata');
+        $fdata = $this->xcrud->_parse_field_names($name, 'PostData');
         $fname = key($fdata) /*$fdata[0]['table'] . '.' . $fdata[0]['field']*/;
         return $this->postdata[$fname] ?? null;
     }
@@ -13683,3 +13683,8 @@ class cCrudPostdata
         return $this->postdata; // Entrega os dados para manipulação externa
     }
 }
+
+/**
+ * Alias para compatibilidade retroativa.
+ */
+class_alias(PostData::class, __NAMESPACE__ . '\\cCrudPostdata');
