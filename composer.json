@@ -13,7 +13,8 @@
     },
     "autoload": {
         "psr-4": {
-            "cCrud\\": "app/"
+            "cCrud\\": "src/",
+            "cCrud\\Config\\": "src/config/"
         }
     },
     "minimum-stability": "dev",

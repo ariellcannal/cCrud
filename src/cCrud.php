@@ -1,7 +1,7 @@
 <?php
-namespace cCrud\Libraries;
+namespace cCrud;
 
-use cCrud\Config\cCrudConfig;
+use cCrud\Config\cCrud as cCrudConfig;
 use cCrud\Config\Views as ViewsConfig;
 use CodeIgniter\Model;
 use RuntimeException;
@@ -380,11 +380,11 @@ class cCrud
     public $table_ro = false;
 
     protected $load_view = array(
-        'list' => 'xcrud_list_view.php',
-        'create' => 'xcrud_detail_view.php',
-        'edit' => 'xcrud_detail_view.php',
-        'view' => 'xcrud_detail_view.php',
-        'report' => 'xcrud_report_view.php'
+        'list' => 'list.php',
+        'create' => 'detail.php',
+        'edit' => 'detail.php',
+        'view' => 'detail.php',
+        'report' => 'report.php'
     );
 
     protected $grid_restrictions = array();
@@ -517,7 +517,7 @@ class cCrud
             throw new RuntimeException(lang('cCrud.ci4_required'));
         }
 
-        $this->config = class_exists('\\Config\\cCrudConfig') ? new \Config\cCrudConfig() : new cCrudConfig();
+        $this->config = class_exists('\Config\cCrud') ? new \Config\cCrud() : new cCrudConfig();
 
         $this->config->scripts_url = self::check_url($this->config->scripts_url, true);
         $this->config->editor_url = self::check_url($this->config->editor_url);
@@ -655,7 +655,7 @@ class cCrud
     protected static function init_prepare($method = false)
     {
         $session = config('Session');
-        $config  = config('cCrudConfig');
+        $config  = config('cCrud\cCrud');
         switch ($method) {
             case 'post':
                 $sess_name = ($config->dynamic_session && isset($_POST['xcrud']['sess_name']) && $_POST['xcrud']['sess_name']) ? $_POST['xcrud']['sess_name'] : $session->cookieName;
@@ -2611,7 +2611,7 @@ class cCrud
                 $contents .= self::load_css();
             }
             ob_start();
-            include APPPATH . 'Views/xcrud/xcrud_container.php';
+            include __DIR__ . '/views/container.php';
             $contents .= ob_get_contents();
             ob_end_clean();
             unset($this->data);
@@ -5652,7 +5652,7 @@ class cCrud
             }
         }
         $mode = 'list';
-        $view_file = APPPATH . 'Views/xcrud/' . $this->load_view['list'];
+        $view_file = __DIR__ . '/views/' . $this->load_view['list'];
         $view_file = $this->check_file($view_file, 'render');
         ob_start();
         include ($view_file);
@@ -5848,7 +5848,7 @@ class cCrud
             }
         }
 
-        $view_file = APPPATH . 'Views/xcrud/' . $this->load_view[$mode];
+        $view_file = __DIR__ . '/views/' . $this->load_view[$mode];
         $view_file = $this->check_file($view_file, 'render');
         ob_start();
         include ($view_file);
@@ -9664,7 +9664,7 @@ class cCrud
      */
     protected static function _get_language_static()
     {
-        $config = config('cCrudConfig');
+        $config = config('cCrud\cCrud');
         self::$lang_arr = lang('cCrud', [], \Config\App::$defaultLocale);
         if (! self::$lang_arr) {
             self::$lang_arr = lang('cCrud', [], 'en');
@@ -9823,7 +9823,7 @@ class cCrud
     public static function load_css()
     {
         $out    = '';
-        $config = config('cCrudConfig');
+        $config = config('cCrud\cCrud');
 
         if (! self::$js_loaded && ! self::$instance) {
             $config->scripts_url     = self::check_url($config->scripts_url, true);
@@ -9863,7 +9863,7 @@ class cCrud
             $language = \Config\App::$defaultLocale;
             self::_get_language_static();
         }
-        $config = config('cCrudConfig');
+        $config = config('cCrud\cCrud');
 
         if (! self::$css_loaded && ! self::$instance) {
             $config->scripts_url     = self::check_url($config->scripts_url, true);
@@ -13590,7 +13590,7 @@ class cCrud
             }
         }
 
-        $view_file = APPPATH . 'Views/xcrud/' . $this->load_view[$mode];
+        $view_file = __DIR__ . '/views/' . $this->load_view[$mode];
         $view_file = $this->check_file($view_file, 'render');
         ob_start();
         include ($view_file);
