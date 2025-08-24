@@ -13597,8 +13597,7 @@ class cCrud
 }
 
 /**
- * Responsável por encapsular os dados enviados via POST.
- *
+ * Classe responsável por manipular dados enviados via POST.
  * Oferece métodos auxiliares para manipular, consultar e converter
  * os valores recebidos, mantendo a consistência do cCrud.
  */
@@ -13613,26 +13612,22 @@ class cCrudPostdata
     private $xcrud = null;
 
     /**
-     * Armazena os dados do POST processados.
+     * Dados recebidos via POST.
      *
-     * @var array
+     * @var array<string,mixed>
      */
     private $postdata = array();
 
     /**
-     * Construtor da classe.
+     * Inicializa a classe com os dados do formulário.
      *
-     * Recebe os dados do POST e mantém uma referência ao objeto cCrud
-     * para reutilizar seus utilitários internos.
-     *
-     * @param array $postdata Dados recebidos via POST.
-     * @param cCrud $xcrud    Instância principal do cCrud.
+     * @param array<string,mixed> $postdata Dados do formulário.
+     * @param cCrud               $xcrud    Instância principal do cCrud.
      */
     public function __construct($postdata, $xcrud)
     {
-        $this->xcrud = $xcrud; // Guarda a referência para chamadas futuras
-        $this->postdata = $postdata; // Clona os dados do POST para uso interno
-        unset($postdata); // Remove a variável original para liberar memória
+        $this->xcrud = $xcrud;
+        $this->postdata = $postdata;
     }
 
     /**
