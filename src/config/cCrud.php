@@ -139,7 +139,7 @@ class cCrud extends BaseConfig
     // urls (relative to $scripts_url or xcrud's folder, if $scripts_url is not defined)
     public $plugins_uri = 'plugins'; // scripts and libraries
     public $lang_uri = 'application/language'; // js files
-    public $ajax_uri = 'ajax/xcrud'; // main ajax file or url
+    public $ajax_uri = 'ajax'; // main ajax file ou url
     // paths (relative to xcrud's folder)
     public $lang_path = '../../language/'; // ini files
     // external session
