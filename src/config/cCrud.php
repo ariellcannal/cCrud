@@ -80,12 +80,6 @@ class cCrud extends BaseConfig
     public $nested_in_tab = true; // Nested will be displayed in tab if tabs are active
     public $relation_ajax = 5000; // number of register to trasnform relation in ajax.
     
-    // alert settings
-    public $email_from = 'mailer@example.com'; // email from address
-    public $email_from_name = ''; // email from name
-    public $email_enable_html = true; // enables html in email letters
-
-    
     // remote request options (call_page() methods)
     public $use_browser_info = false; // allow to use your browser cookie, referer, user agent for http request to some file or url. BE CAREFUL: DON'T USE IT FOR REQUESTS TO EXTERNAL SITES!!!
 
@@ -141,8 +135,6 @@ class cCrud extends BaseConfig
     public $ajax_uri = 'ajax'; // main ajax file ou url
     // paths (relative to cCrud's folder)
     public $lang_path = '../../language/'; // ini files
-    // external session
-    public $external_session = false; // use only when you use integration with externall session
     // loading events
     public $before_construct = false; // callable param, runs before instance creation
     public $after_render = false; // callable param, runs after instance was rendered
