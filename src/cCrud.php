@@ -7,7 +7,6 @@ use CodeIgniter\Model;
 use CodeIgniter\I18n\Time;
 use Config\Services;
 use CodeIgniter\Encryption\EncrypterInterface;
-use CodeIgniter\Config\Services;
 use CodeIgniter\Session\Session;
 use RuntimeException;
 
@@ -6115,20 +6114,14 @@ class cCrud
                 throw new RuntimeException(lang('cCrud.memcache_not_available'));
             }
             unset($_SESSION['lists']['cCrud_session']);
-                if (! $res) {
-                    // Parâmetros inválidos ou armazenamento falhou
-                    throw new RuntimeException(lang('cCrud.memcache_invalid_parameters'));
-                }
-            unset($_SESSION['lists']['cCrud_session']);
             if (! $res) {
                 self::erro('memcache_invalid_parameters');
-
-            if (! $res) {
                 // Parâmetros inválidos ou armazenamento falhou
                 throw new RuntimeException(lang('cCrud.memcache_invalid_parameters'));
             }
         }
     }
+
     protected function find_prev_task()
     {
         switch ($this->task) {
@@ -13642,9 +13635,9 @@ class cCrudPostdata
      */
     public function set($name, $value)
     {
-        $fdata = $this->xcrud->_parse_field_names($name, 'cCrudPostdata'); // Interpreta nomes compostos
-        foreach ($fdata as $key => $fitem) {
-            $this->postdata[$key] = $value; // Aplica o valor a cada campo correspondente
+        $fdata = $this->xcrud->_parse_field_names($name, 'cCrudPostdata');
+        foreach ($fdata as $key => $_) {
+            $this->postdata[$key] = $value;
         }
         $this->xcrud->unlock_field($name); // Garante que o campo possa ser reutilizado
         return $this;
@@ -13659,9 +13652,9 @@ class cCrudPostdata
      */
     public function del($name)
     {
-        $fdata = $this->xcrud->_parse_field_names($name, 'cCrudPostdata'); // Mapeia os nomes reais dos campos
-        foreach ($fdata as $key => $fitem) {
-            unset($this->postdata[$key]); // Exclui cada campo identificado
+        $fdata = $this->xcrud->_parse_field_names($name, 'cCrudPostdata');
+        foreach ($fdata as $key => $_) {
+            unset($this->postdata[$key]);
         }
         return $this;
     }
