@@ -6,7 +6,6 @@ use cCrud\Config\Views as ViewsConfig;
 use CodeIgniter\Model;
 use CodeIgniter\I18n\Time;
 use Config\Services;
-use CodeIgniter\Encryption\EncrypterInterface;
 use CodeIgniter\Session\Session;
 use CodeIgniter\HTTP\ResponseInterface;
 use cCrud\Postdata;
@@ -231,10 +230,6 @@ class cCrud
 
     protected $sum = array();
 
-    protected $alert_create;
-
-    protected $alert_edit;
-
     protected $subselect = array();
 
     protected $subselect_before = array();
@@ -262,9 +257,6 @@ class cCrud
 
     protected $field_params = array();
 
-    protected $mass_alert_create = array();
-
-    protected $mass_alert_edit = array();
 
     protected $column_callback = array();
 
@@ -530,10 +522,6 @@ class cCrud
 
         $this->config = cCrudConfig::instance();
 
-        $this->config->scripts_url = self::check_url($this->config->scripts_url, true);
-        $this->config->editor_url = self::check_url($this->config->editor_url);
-        $this->config->editor_init_url = self::check_url($this->config->editor_init_url);
-
         $this->limit = $this->config->limit;
         $this->limit_list = $this->config->limit_list;
         $this->column_cut = $this->config->column_cut;
@@ -587,7 +575,9 @@ class cCrud
     {
         if (self::$routesRegistered === false) {
             // registra as rotas apenas uma vez
-            Services::routes()->post('ajax', 'cCrud::ajax', ['namespace' => 'cCrud']);
+            $config    = cCrudConfig::instance();
+            $ajaxRoute = trim($config->ajax_uri, '/');
+            Services::routes()->post($ajaxRoute, 'cCrud::ajax', ['namespace' => 'cCrud']);
             Services::routes()->get('cCrud.css', 'cCrud::css', ['namespace' => 'cCrud']);
             Services::routes()->get('cCrud.js', 'cCrud::js', ['namespace' => 'cCrud']);
             self::$routesRegistered = true;
@@ -706,56 +696,14 @@ class cCrud
     /**
      * Prepara a sessão para o cCrud.
      *
-     * @param string|false $method Método da requisição (post|get)
-     *
      * @return void
      */
-    protected static function initPrepare($method = false)
+    protected static function initPrepare(): void
     {
-        $session = config('Session');
-        $config  = cCrudConfig::instance();
-        $request = Services::request();
-        switch ($method) {
-            case 'post':
-                $postData = $request->getPost('cCrud');
-                $sess_name = ($config->dynamic_session && is_array($postData) && ! empty($postData['sess_name'])) ? $postData['sess_name'] : $session->cookieName;
-                break;
-            case 'get':
-                $getData  = $request->getGet('cCrud');
-                $sess_name = ($config->dynamic_session && is_array($getData) && ! empty($getData['sess_name'])) ? $getData['sess_name'] : $session->cookieName;
-                break;
-            default:
-                $sess_name = $session->cookieName;
-                break;
-        }
-        self::sessionStart($sess_name);
+        $config = cCrudConfig::instance();
+        Services::session();
         if (is_callable($config->before_construct)) {
             call_user_func($config->before_construct);
-        }
-    }
-
-    /**
-     * Inicia a sessão do CodeIgniter.
-     *
-     * @param string|false $sess_name Nome customizado da sessão
-     *
-     * @return void
-     *
-     */
-    public static function sessionStart($sess_name = false)
-    {
-        if (! session_id()) {
-            if (! headers_sent()) {
-                if ($sess_name) {
-                    $sessionConfig = new \Config\Session();
-                    $sessionConfig->cookieName = $sess_name;
-                    service('session', $sessionConfig);
-                } else {
-                    session();
-                }
-            } else {
-                return Services::response()->setStatusCode(500)->setBody(lang('cCrud.session_creation_failed'));
-            }
         }
     }
 
@@ -1794,87 +1742,6 @@ class cCrud
     }
 
 
-    public function alert($column = '', $cc = '', $subject = '', $message = '', $link = false, $field = false, $value = false, $mode = 'all')
-    {
-        if ($cc) {
-            if (! is_array($cc))
-                $cc = $this->parse_comma_separated($cc);
-        }
-        if ($mode == 'all' or $mode == 'create')
-            $this->alert_create[] = array(
-                'column' => $column,
-                'cc' => $cc,
-                'subject' => $subject,
-                'message' => $message,
-                'link' => $link,
-                'field' => $field,
-                'value' => $value
-            );
-        if ($mode == 'all' or $mode == 'edit')
-            $this->alert_edit[] = array(
-                'column' => $column,
-                'cc' => $cc,
-                'subject' => $subject,
-                'message' => $message,
-                'link' => $link,
-                'field' => $field,
-                'value' => $value
-            );
-        return $this;
-    }
-
-    public function alert_create($column = '', $cc = '', $subject = '', $message = '', $link = false, $field = false, $value = false)
-    {
-        return $this->alert($column, $cc, $subject, $message, $link, $field, $value, 'create');
-    }
-
-    public function alert_edit($column = '', $cc = '', $subject = '', $message = '', $link = false, $field = false, $value = false)
-    {
-        return $this->alert($column, $cc, $subject, $message, $link, $field, $value, 'edit');
-    }
-
-    // NEEDS TO BE REWRITTEN
-    public function mass_alert($email_table = '', $email_column = '', $emeil_where = '', $subject = '', $message = '', $link = false, $field = false, $value = false, $mode = 'all')
-    {
-        $table = $this->_get_table('mass_alert');
-        $field = $this->table . '.' . $field;
-        if ($mode == 'all' or $mode == 'create')
-            $this->mass_alert_create[] = array(
-                'email_table' => $email_table,
-                'email_column' => $email_column,
-                'where' => $emeil_where,
-                'subject' => $subject,
-                'message' => $message,
-                'link' => $link,
-                'field' => $field,
-                'value' => $value,
-                'table' => $table
-            );
-        if ($mode == 'all' or $mode == 'edit')
-            $this->mass_alert_edit[] = array(
-                'email_table' => $email_table,
-                'email_column' => $email_column,
-                'where' => $emeil_where,
-                'subject' => $subject,
-                'message' => $message,
-                'link' => $link,
-                'field' => $field,
-                'value' => $value,
-                'table' => $table
-            );
-
-        return $this;
-    }
-
-    public function mass_alert_create($email_table = '', $email_column = '', $emeil_where = '', $subject = '', $message = '', $link = false, $field = false, $value = false)
-    {
-        return $this->mass_alert($email_table, $email_column, $emeil_where, $subject, $message, $link, $field, $value, 'create');
-    }
-
-    public function mass_alert_edit($email_table = '', $email_column = '', $emeil_where = '', $subject = '', $message = '', $link = false, $field = false, $value = false)
-    {
-        return $this->mass_alert($email_table, $email_column, $emeil_where, $subject, $message, $link, $field, $value, 'edit');
-    }
 
     public function send_external($path, $data = array(), $method = 'include', $mode = 'all', $where_field = '', $where_val = '')
     {
@@ -3776,39 +3643,6 @@ class cCrud
             $pd = new Postdata($postdata, $this);
             $postdata = $pd->toArray();
 
-            if ($this->alert_create) {
-                foreach ($this->alert_create as $alert) {
-                    if ($alert['field'] && $pd->get($alert['field']) != $alert['value'])
-                        continue;
-
-                    $send_to = $pd->get($alert['column']) ? $pd->get($alert['column']) : $alert['column'];
-                    if (! $send_to or ! preg_match('/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/', $send_to))
-                        continue;
-                    $alert['message'] = $this->replace_text_variables($alert['message'], $postdata);
-                    if ($this->config->email_enable_html)
-                        $message = $alert['message'] . '<br /><br />' . "\r\n" . ($alert['link'] ? '<a href="' . $alert['link'] . '" target="_blank">' . $alert['link'] . '</a>' : '');
-                    else
-                        $message = $alert['message'] . "\r\n\r\n" . ($alert['link'] ? $alert['link'] : '');
-                    $this->send_email($send_to, $alert['subject'], $message, $alert['cc'], $this->config->email_enable_html);
-                }
-            }
-            if ($this->mass_alert_create) {
-                foreach ($this->mass_alert_create as $alert) {
-                    if ($alert['field'] && isset($postdata[$alert['field']]) && $postdata[$alert['field']] != $alert['value'])
-                        continue;
-                    $alert['message'] = $this->replace_text_variables($alert['message'], $postdata);
-                    $alert['where'] = $this->replace_text_variables($alert['where'], $postdata);
-                    if ($this->config->email_enable_html)
-                        $message = $alert['message'] . '<br /><br />' . "\r\n" . ($alert['link'] ? '<a href="' . $alert['link'] . '" target="_blank">' . $alert['link'] . '</a>' : '');
-                    else
-                        $message = $alert['message'] . "\r\n\r\n" . ($alert['link'] ? $alert['link'] : '');
-                    $db = $this->model->db;
-                    $query = $db->query("SELECT `{$alert['email_column']}` FROM `{$alert['email_table']}`" . ($alert['where'] ? ' WHERE ' . $alert['where'] : ''));
-                    foreach ($query->getResultArray() as $row) {
-                        $this->send_email($row[$alert['email_column']], $alert['subject'], $message, array(), $this->config->email_enable_html);
-                    }
-                }
-            }
 
             if ($this->replace_insert) {
                 $path = $this->check_file($this->replace_insert['path'], 'replace_insert');
@@ -3908,38 +3742,6 @@ class cCrud
             $this->make_upload_process($pd);
             $postdata = $pd->toArray();
 
-            if ($this->alert_edit) {
-                foreach ($this->alert_edit as $alert) {
-                    if ($alert['field'] && $pd->get($alert['field']) != $alert['value'])
-                        continue;
-                    $send_to = $pd->get($alert['column']) ? $pd->get($alert['column']) : $alert['column'];
-                    if (! $send_to or ! preg_match('/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/', $send_to))
-                        continue;
-                    $alert['message'] = $this->replace_text_variables($alert['message'], $postdata);
-                    if ($this->config->email_enable_html)
-                        $message = $alert['message'] . '<br /><br />' . "\r\n" . ($alert['link'] ? '<a href="' . $alert['link'] . '" target="_blank">' . $alert['link'] . '</a>' : '');
-                    else
-                        $message = $alert['message'] . "\r\n\r\n" . ($alert['link'] ? $alert['link'] : '');
-                    $this->send_email($send_to, $alert['subject'], $message, $alert['cc'], $this->config->email_enable_html);
-                }
-            }
-            if ($this->mass_alert_edit) {
-                foreach ($this->mass_alert_edit as $alert) {
-                    if ($alert['field'] && isset($postdata[$alert['field']]) && $postdata[$alert['field']] != $alert['value'])
-                        continue;
-                    $alert['message'] = $this->replace_text_variables($alert['message'], $postdata);
-                    $alert['where'] = $this->replace_text_variables($alert['where'], $postdata);
-                    if ($this->config->email_enable_html)
-                        $message = $alert['message'] . '<br /><br />' . "\r\n" . ($alert['link'] ? '<a href="' . $alert['link'] . '" target="_blank">' . $alert['link'] . '</a>' : '');
-                    else
-                        $message = $alert['message'] . "\r\n\r\n" . ($alert['link'] ? $alert['link'] : '');
-                    $db = $this->model->db;
-                    $query = $db->query("SELECT `{$alert['email_column']}` FROM `{$alert['email_table']}`" . ($alert['where'] ? ' WHERE ' . $alert['where'] : ''));
-                    foreach ($query->getResultArray() as $row) {
-                        $this->send_email($row[$alert['email_column']], $alert['subject'], $message, array(), $this->config->email_enable_html);
-                    }
-                }
-            }
 
             if ($this->replace_update) {
                 $path = $this->check_file($this->replace_update['path'], 'replace_update');
@@ -6147,29 +5949,6 @@ class cCrud
         $cCrud_session[$inst_name]['before'] = $this->find_prev_task();
 
         $this->session->set('cCrud_session', $cCrud_session);
-        if ($this->config->alt_session) {
-            // Criptografa dados da sessão com o encrypter do CodeIgniter
-            $encrypter   = $this->getEncrypter();
-            $sessionData = ['cCrud_session' => $cCrud_session];
-            $data        = $encrypter->encrypt(json_encode($sessionData));
-            if (class_exists('Memcache')) {
-                $mc = new Memcache();
-                $mc->connect($this->config->mc_host, $this->config->mc_port);
-                $res = $mc->set(self::$sess_id, $data, false, $this->config->alt_lifetime * 60);
-            } elseif (class_exists('Memcached')) {
-                $mc = new Memcached();
-                $mc->connect($this->config->mc_host, $this->config->mc_port);
-                $res = $mc->set(self::$sess_id, $data, $this->config->alt_lifetime * 60);
-            } else {
-                // Memcache(d) não está disponível
-                return Services::response()->setStatusCode(503)->setBody(lang('cCrud.memcache_not_available'));
-            }
-            $this->session->remove('cCrud_session');
-            if (! $res) {
-                // Parâmetros inválidos ou armazenamento falhou
-                return Services::response()->setStatusCode(400)->setBody(lang('cCrud.memcache_invalid_parameters'));
-            }
-        }
     }
 
     protected function find_prev_task()
@@ -6192,38 +5971,6 @@ class cCrud
 
     public function import_vars($key = false)
     {
-        if ($this->config->alt_session) {
-            if (class_exists('Memcache')) {
-                $mc = new Memcache();
-                $mc->connect($this->config->mc_host, $this->config->mc_port);
-                $data = $mc->get(self::$sess_id);
-            } elseif (class_exists('Memcached')) {
-                $mc = new Memcached();
-                $mc->connect($this->config->mc_host, $this->config->mc_port);
-                $data = $mc->get(self::$sess_id);
-            } else {
-                // Memcache(d) não está disponível
-                return Services::response()->setStatusCode(503)->setBody(lang('cCrud.memcache_not_available'));
-            }
-
-            if (! $data) {
-                // Dados alternativos inexistentes
-                return Services::response()->setStatusCode(404)->setBody(lang('cCrud.alternative_session_data_not_exist'));
-            }
-
-            // Descriptografa dados da sessão usando o encrypter do CodeIgniter
-            $encrypter   = $this->getEncrypter();
-            $sessionData = json_decode($encrypter->decrypt($data), true);
-            unset($data);
-
-            if (! $sessionData || ! isset($sessionData['cCrud_session'])) {
-                // Dados alternativos inválidos
-                return Services::response()->setStatusCode(400)->setBody(lang('cCrud.alternative_session_data_invalid'));
-            }
-
-            $this->session->set('cCrud_session', $sessionData['cCrud_session']);
-        }
-
         $inst_name     = $this->instance_name;
         $cCrud_session = $this->session->get('cCrud_session');
 
@@ -9393,112 +9140,17 @@ class cCrud
         return json_encode($data);
     }
 
-    public static function check_url($url, $scr_url = false)
-    {
-        if (! $url && ! $scr_url)
-            return false;
-        $url     = rtrim($url, '/');
-        $request = Services::request();
-        $host    = trim($request->getServer('HTTP_HOST'), '/');
-        $https   = $request->getServer('HTTPS');
-        $scheme  = (! $https or strtolower($https) == 'off' or strtolower($https) == 'no') ? 'http://' : 'https://';
-        // some troubles with sym links between private and public
-        $documentRoot = $request->getServer('DOCUMENT_ROOT');
-        $doc_root = trim(str_replace('\\', '/', str_replace(array(
-            '/public_html',
-            '/private_html'
-        ), '', $documentRoot)), '/');
-        $file_dir = trim(str_replace('\\', '/', str_replace(array(
-            '/public_html',
-            '/private_html'
-        ), '', dirname(__file__))), '/');
-
-        $curr_host = $scheme . $host;
-        $is_full_url = mb_strpos($url, '://') === false ? false : true;
-        if ($is_full_url) { // www fix
-            $curr_www = preg_match('/:\/\/www\./u', $curr_host) ? true : false;
-            $url_www = preg_match('/:\/\/www\./u', $url) ? true : false;
-            if ($curr_www != $url_www) {
-                if ($curr_www) {
-                    $url = preg_replace('/(:\/\/)/u', '$1www.', $url, 1);
-                } else {
-                    $url = preg_replace('/(:\/\/)www\./u', '$1', $url, 1);
-                }
-            }
-        } elseif ($this->config->urls2abs) {
-            if (mb_substr($url, 0, 1) == '/' or mb_substr($url, 0, 2) == './') {
-                $url = $curr_host . ltrim($url, '.');
-            } elseif ($scr_url && ! $url) {
-                // $script_uri = ltrim(mb_substr($file_dir, mb_strpos($file_dir,
-                // $doc_root) + mb_strlen($doc_root)), '/');
-
-                $file_dir = explode('/', $file_dir);
-                $max_root = array();
-                $file_dir = array_reverse($file_dir);
-                foreach ($file_dir as $segment) {
-
-                    if (mb_substr($doc_root, - mb_strlen($segment) - 1, mb_strlen($segment) + 1) != '/' . $segment) {
-                        array_unshift($max_root, $segment);
-                    } else {
-                        break;
-                    }
-                }
-                $script_uri = implode('/', $max_root);
-
-                // $script_uri = trim(str_replace(str_replace('\\', '/',
-                // $document_root), '', str_replace('\\', '/', $file_dir)),
-                // '/');
-                $url = $curr_host . '/' . $script_uri;
-            } else {
-                // $script_uri = ltrim(mb_substr($file_dir, mb_strpos($file_dir,
-                // $doc_root) + mb_strlen($doc_root)), '/');
-                $file_dir = explode('/', $file_dir);
-                $max_root = array();
-                $file_dir = array_reverse($file_dir);
-                foreach ($file_dir as $segment) {
-
-                    if (mb_substr($doc_root, - mb_strlen($segment) - 1, mb_strlen($segment) + 1) != '/' . $segment) {
-                        array_unshift($max_root, $segment);
-                    } else {
-                        break;
-                    }
-                }
-                $script_uri = implode('/', $max_root);
-
-                // $script_uri = trim(str_replace(str_replace('\\', '/',
-                // $document_root), '', str_replace('\\', '/', $file_dir)),
-                // '/');
-                $request_uri = trim($request->getServer('REQUEST_URI'), '/');
-
-                $script_uri_a = /*explode('/', $script_uri)*/ $max_root;
-                $request_uri_a = explode('/', $request_uri);
-                $count = count($request_uri_a);
-                $new_url = array();
-                for ($i = 0; $i < $count; ++ $i) {
-                    if (isset($script_uri_a[$i]) && $script_uri_a[$i] == $request_uri_a[$i]) {
-                        $new_url[] = $request_uri_a[$i];
-                    } else {
-                        break;
-                    }
-                }
-                if (dirname($request_uri) != $script_uri) {
-                    foreach (explode('/', ltrim($url, '/')) as $segment) {
-                        if ($segment == '..') {
-                            array_pop($new_url);
-                        } else {
-                            $new_url[] = $segment;
-                        }
-                    }
-                }
-                if ($new_url) {
-                    $url = $curr_host . '/' . implode('/', $new_url);
-                }
-            }
-        } // echo $url.'<br />';
-
-        return $url;
-    }
-
+    /**
+     * Gera o link para acesso a arquivos armazenados.
+     *
+     * @param string     $field        Campo associado ao arquivo.
+     * @param int|string $primary_val  Valor da chave primária.
+     * @param mixed      $thumb        Identificador da miniatura, se houver.
+     * @param bool       $crop         Define se deve aplicar recorte.
+     * @param bool|string $filename    Nome do arquivo, quando definido.
+     *
+     * @return string URL para o arquivo.
+     */
     protected function file_link($field, $primary_val, $thumb = false, $crop = false, $filename = false)
     {
         $params = array(
@@ -9517,10 +9169,8 @@ class cCrud
         if ($crop) {
             $params['cCrud']['crop'] = $crop;
         }
-        if ($this->config->dynamic_session) {
-            $params['cCrud']['sess_name'] = session_name();
-        }
-        return $this->config->scripts_url . '/' . $this->config->ajax_uri . '?' . http_build_query($params);
+        $ajaxUri = '/' . trim($this->config->ajax_uri, '/');
+        return $ajaxUri . '?' . http_build_query($params);
     }
 
     protected function real_file_link($filename, $params, $is_details = false)
@@ -9666,16 +9316,6 @@ class cCrud
                 $fields[] = "`{$val['table']}`.`{$val['field']}` AS `$key`";
         }
         return implode(',', $fields);
-    }
-
-    protected function send_email($to, $subject = '(No subject)', $message = '', $cc = array(), $html = true)
-    {
-        $header = 'MIME-Version: 1.0' . "\r\n" . 'Content-type: text/' . ($html ? 'html' : 'plain') . '; charset=UTF-8' . "\r\n" . 'From: ' . $this->config->email_from_name . ' <' . $this->config->email_from . ">\r\n";
-        if ($cc)
-            $header .= 'Cc: ' . implode(',', $cc) . "\r\n";
-        if ($html)
-            $message = '<!DOCTYPE HTML><html><head><meta http-equiv="content-type" content="text/html; charset=utf-8" /><title>' . $subject . '</title></head><body>' . $message . '</body></html>';
-        mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $message, $header);
     }
 
     protected function _cell_attrib($field, $value, $order, &$row, $is_sum = false, $row_color = false, $row_class = false)
@@ -9907,20 +9547,13 @@ class cCrud
     }
 
     /**
+     * Carrega estilos CSS configurados.
      *
-     * @author Ariel Canal
-     *         COMPATIBILIZAÇÃO COM A ARQUITETURA DO CODEIGINITER
+     * @return string HTML com as tags de estilo
      */
-    public static function load_css()
+    public static function load_css(): string
     {
-        $out    = '';
         $config = cCrudConfig::instance();
-
-        if (! self::$js_loaded && ! self::$instance) {
-            $config->scripts_url     = self::check_url($config->scripts_url, true);
-            $config->editor_url      = self::check_url($config->editor_url);
-            $config->editor_init_url = self::check_url($config->editor_init_url);
-        }
 
         if (self::$css_loaded) {
             // Estilos já carregados anteriormente
@@ -9928,84 +9561,55 @@ class cCrud
         }
 
         self::$css_loaded = true;
-        if ($config->load_bootstrap) {
-            $out .= '<link href="' . $config->scripts_url . '/' . $config->plugins_uri . '/bootstrap/css/bootstrap.min.css?' . time() . '" rel="stylesheet" type="text/css" />';
+
+        $out = '';
+        foreach ($config->css_libs as $lib) {
+            $out .= '<link href="' . $lib . '" rel="stylesheet" type="text/css" />';
         }
-        if ($config->load_jquery_ui)
-            $out .= '<link href="' . $config->scripts_url . '/' . $config->plugins_uri . '/jquery-ui/jquery-ui.min.css?' . time() . '" rel="stylesheet" type="text/css" />';
-        if ($config->load_jcrop)
-            $out .= '<link href="' . $config->scripts_url . '/' . $config->plugins_uri . '/jcrop/jquery.Jcrop.min.css?' . time() . '" rel="stylesheet" type="text/css" />';
+
         $out .= '<link href="/cCrud.css" rel="stylesheet" type="text/css" />';
 
         return $out;
     }
 
     /**
+     * Carrega scripts JavaScript configurados.
      *
-     * @author Ariel Canal
-     *         COMPATIBILIZAÇÃO COM A ARQUITETURA DO CODEIGINITER
+     * @return string HTML com as tags de script
      */
-    public static function load_js()
+    public static function load_js(): string
     {
-        $out = '';
         if (self::$instance) {
             $instance = reset(self::$instance);
-            $language = $instance->language;
             $instance->_get_language();
         } else {
-            $language = \Config\App::$defaultLocale;
             self::_get_language_static();
+            $instance = null; // usado apenas para obter o nome da tabela
         }
         $config = cCrudConfig::instance();
-
-        if (! self::$css_loaded && ! self::$instance) {
-            $config->scripts_url     = self::check_url($config->scripts_url, true);
-            $config->editor_url      = self::check_url($config->editor_url);
-            $config->editor_init_url = self::check_url($config->editor_init_url);
-        }
 
         if (self::$js_loaded) {
             // Scripts já carregados anteriormente
             return Services::response()->setStatusCode(409)->setBody(lang('cCrud.scripts_already_rendered'));
         }
         self::$js_loaded = true;
-        if ($config->load_jquery)
-            $out .= '<script src="' . $config->scripts_url . '/' . $config->plugins_uri . '/jquery.min.js"></script>';
-        if ($config->jquery_no_conflict) {
-            $out .= '
-            <script type="text/javascript">
-            <!--
-            
-            jQuery.noConflict();
-            
-            -->
-            </script>';
-        }
-        if ($config->load_jquery_ui)
-            $out .= '<script src="' . $config->scripts_url . '/' . $config->plugins_uri . '/jquery-ui/jquery-ui.min.js?' . time() . '"></script>';
-        if ($config->load_jcrop) {
-            $out .= '<script src="' . $config->scripts_url . '/' . $config->plugins_uri . '/jcrop/jquery.Jcrop.min.js?' . time() . '"></script>';
-        }
-        if ($config->load_bootstrap)
-            $out .= '<script src="' . $config->scripts_url . '/' . $config->plugins_uri . '/bootstrap/js/bootstrap.min.js?' . time() . '"></script>';
 
-        if ($config->editor_url)
-            $out .= '<script src="' . $config->editor_url . '?' . time() . '"></script>';
-        if ($config->load_googlemap)
-            $out .= '<script src="//maps.google.com/maps/api/js?sensor=false&language=' . $language . '&' . time() . '"></script>';
-        $out .= '<script src="' . $config->scripts_url . '/' . $config->plugins_uri . '/cCrud.js?' . time() . '"></script>';
+        $out = '';
+        foreach ($config->js_libs as $lib) {
+            $out .= '<script src="' . $lib . '"></script>';
+        }
 
-        $settings = array(
-            'url' => $config->scripts_url . '/' . $config->ajax_uri,
-            'table_name' => $instance->table_name,
-            'editor_url' => $config->editor_url,
-            'editor_init_url' => $config->editor_init_url,
+        $out .= '<script src="/cCrud.js"></script>';
+
+        $settings = [
+            'url' => '/' . trim($config->ajax_uri, '/'),
+            'table_name' => $instance ? $instance->table_name : '',
             'force_editor' => $config->force_editor,
             'date_first_day' => $config->date_first_day,
             'date_format' => $config->date_format,
             'time_format' => $config->time_format,
-            'lang' => self::$lang_arr
-        );
+            'lang' => self::$lang_arr,
+        ];
         $out .= '
             <script type="text/javascript">
             <!--
@@ -10014,7 +9618,7 @@ class cCrud
 
             -->
             </script>';
-        $out .= '<script src="/cCrud.js"></script>';
+
         return $out;
     }
 
@@ -10377,7 +9981,6 @@ class cCrud
 
     protected function send_http_request($url, $data, $method, $return_result = false)
     {
-        // $path = self::check_url($url);
         $path = $url;
         $data = http_build_query($data);
         switch ($method) {
@@ -11582,12 +11185,6 @@ class cCrud
             'name' => 'task',
             'value' => $this->task
         ));
-        if ($this->config->dynamic_session) {
-            $out .= $this->single_tag($tag, '', array(
-                'name' => 'sess_name',
-                'value' => session_name()
-            ));
-        }
         if ($this->primary_val) {
             $out .= $this->single_tag($tag, '', array(
                 'name' => 'primary',
@@ -11876,10 +11473,19 @@ class cCrud
         return $filename;
     }
 
-    protected function save_file($file, &$filename, $field)
+    /**
+     * Salva o arquivo enviado no diretório configurado.
+     *
+     * @param array  $file     Dados do arquivo enviado
+     * @param string $filename Nome do arquivo a ser salvo
+     * @param string $field    Campo relacionado ao arquivo
+     *
+     * @return string Caminho completo do arquivo salvo
+     */
+    protected function save_file(array $file, string &$filename, string $field): string
     {
         $file_path = $this->get_image_folder($field) . '/' . $filename;
-        $file_path = utf8_decode($file_path);
+        $file_path = mb_convert_encoding($file_path, 'ISO-8859-1', 'UTF-8');
         move_uploaded_file($file['tmp_name'], $file_path);
         if ($this->after_upload) {
             $path = $this->check_file($this->after_upload['path'], 'save_file');
@@ -12108,12 +11714,6 @@ class cCrud
                     $out .= $title . '<small> ' . $this->get_table_tooltip() . '</small>';
                     break;
             }
-            if ($this->config->can_minimize) {
-                if ($to_show)
-                    $out .= '<span class="cCrud-toggle-show cCrud-toggle-down"><i class="' . $this->theme_config('slide_down_icon') . '"></i></span>';
-                else
-                    $out .= '<span class="cCrud-toggle-show cCrud-toggle-up"><i class="' . $this->theme_config('slide_up_icon') . '"></i></span>';
-            }
             $out .= $this->close_tag($tag);
         }
         return $out;
@@ -12122,28 +11722,6 @@ class cCrud
     protected function get_id()
     {
         return 'id="xc_' . base_convert(time() + rand(), 10, 36) . '"';
-    }
-
-    /**
-     * Obtém instância do encrypter configurado.
-     *
-     * @return EncrypterInterface
-     */
-    protected function getEncrypter(): EncrypterInterface
-    {
-        if (! $this->config->alt_encription_key) {
-            // Chave de encriptação alternativa não definida
-            return Services::response()->setStatusCode(500)->setBody(lang('cCrud.set_alt_encription_key'));
-        }
-
-        if (! extension_loaded('openssl')) {
-            // Extensão OpenSSL não disponível
-            return Services::response()->setStatusCode(500)->setBody(lang('cCrud.openssl_not_available'));
-        }
-
-        return Services::encrypter([
-            'key' => $this->config->alt_encription_key,
-        ]);
     }
 
     /*
