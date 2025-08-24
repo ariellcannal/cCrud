@@ -13660,19 +13660,17 @@ class cCrudPostdata
     }
 
     /**
-     * Obtém o valor de um campo específico.
+     * Retorna o valor de um campo enviado.
      *
-     * @param string $name Nome do campo desejado.
+     * @param string $name Nome do campo.
      *
-     * @return mixed Valor do campo ou false se não existir.
+     * @return mixed|null Valor do campo ou null se não existir.
      */
-    public function get($name)
+    public function get(string $name): mixed
     {
-        $fdata = $this->xcrud->_parse_field_names($name, 'cCrudPostdata'); // Recupera o mapeamento do campo
-        $fname = key($fdata); // Utiliza a primeira chave como identificador
-        $value = (isset($this->postdata[$fname]) ? $this->postdata[$fname] : false); // Retorna o valor se existir
-        return /* new cCrudPostdata_item */
-        ($value); // Mantido por compatibilidade com versões anteriores
+        $fdata = $this->xcrud->_parse_field_names($name, 'cCrudPostdata');
+        $fname = key($fdata) /*$fdata[0]['table'] . '.' . $fdata[0]['field']*/;
+        return $this->postdata[$fname] ?? null;
     }
 
     /**
