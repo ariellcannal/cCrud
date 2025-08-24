@@ -650,8 +650,8 @@ class cCrud
     {
         $request  = Services::request();
         $security = Services::security();
-        $postData = $request->getPost('xcrud');
-        $getData  = $request->getGet('xcrud');
+        $postData = $request->getPost('cCrud');
+        $getData  = $request->getGet('cCrud');
 
         if (is_array($postData) && isset($postData['instance'], $postData['key'], $postData['task'])) {
             self::init_prepare('post');
@@ -711,11 +711,11 @@ class cCrud
         $request = Services::request();
         switch ($method) {
             case 'post':
-                $postData = $request->getPost('xcrud');
+                $postData = $request->getPost('cCrud');
                 $sess_name = ($config->dynamic_session && is_array($postData) && ! empty($postData['sess_name'])) ? $postData['sess_name'] : $session->cookieName;
                 break;
             case 'get':
-                $getData  = $request->getGet('xcrud');
+                $getData  = $request->getGet('cCrud');
                 $sess_name = ($config->dynamic_session && is_array($getData) && ! empty($getData['sess_name'])) ? $getData['sess_name'] : $session->cookieName;
                 break;
             default:
@@ -1172,7 +1172,7 @@ class cCrud
                                                                                                        // parent
                                                                                                        // instance
                 $instance = cCrud::getInstance($this->model, $instance_name); // just another
-                                                                            // xcrud object
+                                                                            // cCrud object
                 $instance->table($this->prefix . $inner_tbl);
                 $instance->tableName($instance_name);
                 $instance->is_inner = true; // nested flag
@@ -1312,7 +1312,7 @@ class cCrud
         if (! $this->columns_select)
             return null;
         $out = "";
-        $out .= $this->open_tag('select', 'pull-right bootstrap-select xcrud-columnsList-select', array(
+        $out .= $this->open_tag('select', 'pull-right bootstrap-select cCrud-columnsList-select', array(
             'table_name' => $this->table_name,
             'multiple' => 'multiple',
             'title' => 'Colunas da Listagem',
@@ -2916,7 +2916,7 @@ class cCrud
 
     public function filter_file_name($name)
     {
-        $pos = strpos($name, '_@XCRUD');
+        $pos = strpos($name, '_@cCrud');
         if ($pos === false) {
             return $name;
         } else if ($pos === 0) {
@@ -2984,7 +2984,7 @@ class cCrud
     protected function _post(string $field = '', $default = false, $filter = false)
     {
         $request = Services::request();
-        $post    = $request->getPost('xcrud');
+        $post    = $request->getPost('cCrud');
 
         if (! is_array($post) || ! array_key_exists($field, $post)) {
             return $default;
@@ -3037,7 +3037,7 @@ class cCrud
     protected function _get(string $field = '', $default = false, $filter = false)
     {
         $request = Services::request();
-        $get     = $request->getGet('xcrud');
+        $get     = $request->getGet('cCrud');
 
         if (! is_array($get) || ! array_key_exists($field, $get)) {
             return $default;
@@ -4050,7 +4050,7 @@ class cCrud
                 $tag = [
                     'tag' => 'input',
                     'type' => 'hidden',
-                    'class' => 'xcrud-callback-message',
+                    'class' => 'cCrud-callback-message',
                     'name' => $message['type'],
                     'value' => $message['text'],
                     'data-exception' => $message['exception']
@@ -5020,7 +5020,7 @@ class cCrud
             $this->is_modal = $this->_post('is_modal', false);
 
             $request  = Services::request();
-            $postData = $request->getPost('xcrud');
+            $postData = $request->getPost('cCrud');
             if (is_array($postData) && array_key_exists('search', $postData) && $this->_post('search', $this->search, 'int') === 0) {
                 // clicou em limpar busca
                 $this->search = $this->_post('search', $this->search, 'int');
@@ -5855,7 +5855,7 @@ class cCrud
                     } else {
                         $instance->table_ro = false;
                     }
-                    $this->nested_rendered[$instance->table_name] = '<div class="xcrud-nested-container xcrud-container"><div class="xcrud-ajax" id="xcrud-ajax-' . base_convert(rand(), 10, 36) . '">' . $instance->render($instance->nested_default_render, $instance->nested_default_render_primary) . '</div></div>';
+                    $this->nested_rendered[$instance->table_name] = '<div class="cCrud-nested-container cCrud-container"><div class="cCrud-ajax" id="cCrud-ajax-' . base_convert(rand(), 10, 36) . '">' . $instance->render($instance->nested_default_render, $instance->nested_default_render_primary) . '</div></div>';
                 }
             }
         }
@@ -5886,13 +5886,13 @@ class cCrud
          * {
          * $instance->table_ro = false;
          * }
-         * //$this->data .= '<div class="xcrud-nested-container
-         * xcrud-container"><div class="xcrud-ajax" id="xcrud-ajax-' .
+         * //$this->data .= '<div class="cCrud-nested-container
+         * cCrud-container"><div class="cCrud-ajax" id="cCrud-ajax-' .
          * // base_convert(rand(), 10, 36) . '">' . $instance->render('list') .
          * '</div></div>';
          * $this->nested_rendered[$inst_name] = '<div
-         * class="xcrud-nested-container xcrud-container"><div
-         * class="xcrud-ajax" id="xcrud-ajax-' .
+         * class="cCrud-nested-container cCrud-container"><div
+         * class="cCrud-ajax" id="cCrud-ajax-' .
          * base_convert(rand(), 10, 36) . '">' . $instance->render('list') .
          * '</div></div>';
          * }
@@ -5940,7 +5940,7 @@ class cCrud
              * {
              * $links[$i] = '<li class="' .
              * $this->theme_config('pagination_item') .
-             * '"><a href="javascript:;" class="xcrud-action" data-start="' .
+             * '"><a href="javascript:;" class="cCrud-action" data-start="' .
              * $limit1 . '">' . $i . '</a></li>';
              * }
              * }
@@ -5996,7 +5996,7 @@ class cCrud
         if ($i == $curent)
             return '<li class="' . $this->theme_config('pagination_active') . '"><a href="javascript:;" class="' . $this->theme_config('pagination_link') . '" aria-current="page" data-start="' . $limit1 . '">' . $i . '</a></li>';
         else {
-            return '<li class="' . $this->theme_config('pagination_item') . '"><a href="javascript:;" class="xcrud-action ' . $this->theme_config('pagination_link') . '" data-start="' . $limit1 . '">' . $i . '</a></li>';
+            return '<li class="' . $this->theme_config('pagination_item') . '"><a href="javascript:;" class="cCrud-action ' . $this->theme_config('pagination_link') . '" data-start="' . $limit1 . '">' . $i . '</a></li>';
         }
     }
 
@@ -6108,7 +6108,7 @@ class cCrud
         if ($this->config->alt_session) {
             // Criptografa dados da sessão com o encrypter do CodeIgniter
             $encrypter   = $this->getEncrypter();
-            $sessionData = ['xcrud_session' => $cCrud_session];
+            $sessionData = ['cCrud_session' => $cCrud_session];
             $data        = $encrypter->encrypt(json_encode($sessionData));
             if (class_exists('Memcache')) {
                 $mc = new Memcache();
@@ -6174,12 +6174,12 @@ class cCrud
             $sessionData = json_decode($encrypter->decrypt($data), true);
             unset($data);
 
-            if (! $sessionData || ! isset($sessionData['xcrud_session'])) {
+            if (! $sessionData || ! isset($sessionData['cCrud_session'])) {
                 // Dados alternativos inválidos
                 throw new RuntimeException(lang('cCrud.alternative_session_data_invalid'));
             }
 
-            $this->session->set('cCrud_session', $sessionData['xcrud_session']);
+            $this->session->set('cCrud_session', $sessionData['cCrud_session']);
         }
 
         $inst_name     = $this->instance_name;
@@ -6201,7 +6201,7 @@ class cCrud
     protected function get_field_attr($name, $mode)
     {
         $tag = array(
-            'class' => 'xcrud-input',
+            'class' => 'cCrud-input',
             'name' => $this->fieldname_encode($name),
             'id' => $this->fieldname_encode($name)
         );
@@ -6226,12 +6226,12 @@ class cCrud
 
     protected function create_none($name, $value = '', $tag = array())
     {
-        return '<span class="xcrud-none">' . $value . '</span>';
+        return '<span class="cCrud-none">' . $value . '</span>';
     }
 
     protected function create_view_none($name, $value = '')
     {
-        return '<span class="xcrud-none">' . $value . '</span>';
+        return '<span class="cCrud-none">' . $value . '</span>';
     }
 
     protected function create_bool($name, $value = '', $tag = array())
@@ -6457,7 +6457,7 @@ class cCrud
             'data-type' => 'texteditor',
             'id' => 'editor_' . base_convert(rand(), 10, 36)
         );
-        $tag['class'] .= ' xcrud-texteditor';
+        $tag['class'] .= ' cCrud-texteditor';
 
         return $this->open_tag($tag, $this->theme_config('texteditor_field'), $this->field_attr[$name], true) . \esc($value) . $this->close_tag($tag);
     }
@@ -6480,7 +6480,7 @@ class cCrud
                 ? Time::parse($value)->toDateString()
                 : ''
         );
-        $tag['class'] .= ' xcrud-datepicker';
+        $tag['class'] .= ' cCrud-datepicker';
 
         $r = isset($this->field_attr[$name]) ? $this->field_attr[$name] : '';
         if ($r) {
@@ -6516,7 +6516,7 @@ class cCrud
                 ? Time::parse($value)->toDateTimeString()
                 : ''
         );
-        $tag['class'] .= ' xcrud-datepicker';
+        $tag['class'] .= ' cCrud-datepicker';
 
         return $this->single_tag($tag, $this->theme_config('datetime_field'), $this->field_attr[$name]);
     }
@@ -6541,7 +6541,7 @@ class cCrud
                 ? Time::parse($value)->toDateTimeString()
                 : ''
         );
-        $tag['class'] .= ' xcrud-datepicker';
+        $tag['class'] .= ' cCrud-datepicker';
 
         return $this->single_tag($tag, $this->theme_config('timestamp_field'), $this->field_attr[$name]);
     }
@@ -6564,7 +6564,7 @@ class cCrud
             'data-type' => 'time',
             'value' => $value ? Time::parse($value)->toTimeString() : ''
         );
-        $tag['class'] .= ' xcrud-datepicker';
+        $tag['class'] .= ' cCrud-datepicker';
 
         return $this->single_tag($tag, $this->theme_config('time_field'), $this->field_attr[$name]);
     }
@@ -6585,7 +6585,7 @@ class cCrud
             'data-type' => 'year',
             'value' => (int) $value
         );
-        $tag['class'] .= ' xcrud-datepicker';
+        $tag['class'] .= ' cCrud-datepicker';
 
         return $this->single_tag($tag, $this->theme_config('year_field'), $this->field_attr[$name]);
     }
@@ -6881,7 +6881,7 @@ class cCrud
             'tag' => 'input',
             'type' => 'hidden',
             'value' => $value
-        ), 'xcrud-input', $this->field_attr[$name]);
+        ), 'cCrud-input', $this->field_attr[$name]);
     }
 
     protected function create_password($name, $value = '', $tag = array())
@@ -7296,11 +7296,11 @@ class cCrud
             return $this->create_view_file($name, $value, $tag);
         }
         $out = ''; // upload container
-        $out .= $this->open_tag('div', 'xcrud-upload-container'); // file and
+        $out .= $this->open_tag('div', 'cCrud-upload-container'); // file and
                                                                   // delete button
         $out .= $this->open_tag('div', $this->theme_config('grid_button_group'));
         if ($value) {
-            // $out .= $this->open_tag('span', 'xcrud-file-name');
+            // $out .= $this->open_tag('span', 'cCrud-file-name');
             $binary = isset($this->upload_config[$name]['blob']) ? true : false;
             if ($binary && ! $is_upload) {
                 $file_size = $this->_file_size_bin($value);
@@ -7314,7 +7314,7 @@ class cCrud
 
             $attr = array(
                 'href' => (isset($this->upload_config[$name]['url']) ? $this->real_file_link($value, $this->upload_config[$name], true) : $this->file_link($name, $this->primary_val)),
-                'class' => 'xcrud-file-name xcrud-' . $ext,
+                'class' => 'cCrud-file-name cCrud-' . $ext,
                 'target' => '_blank'
             );
 
@@ -7329,7 +7329,7 @@ class cCrud
                 $out .= $this->remove_upload_button($name);
             }
         } else {
-            $out .= $this->open_tag('span', 'xcrud-nofile ' . $this->theme_config('no_file'));
+            $out .= $this->open_tag('span', 'cCrud-nofile ' . $this->theme_config('no_file'));
             $out .= $this->lang('no_file') . $this->close_tag('span');
         }
 
@@ -7339,7 +7339,7 @@ class cCrud
                 'value' => $value,
                 'type' => 'hidden'
             );
-            $out .= $this->single_tag('input', 'xcrud-input', $attr);
+            $out .= $this->single_tag('input', 'cCrud-input', $attr);
             // upload button
             $out .= $this->upload_file_button($name, $value, $tag);
         }
@@ -7355,7 +7355,7 @@ class cCrud
     {
         $out = '';
         $out .= $this->open_tag('span', $this->theme_config('upload_button'), array(
-            'class' => 'xcrud-add-file'
+            'class' => 'cCrud-add-file'
         ));
         if (! $this->is_rtl && $this->theme_config('upload_button_icon')) {
             $out .= $this->open_tag('i', $this->theme_config('upload_button_icon')) . $this->close_tag('i') . ' ';
@@ -7374,8 +7374,8 @@ class cCrud
             'type' => 'file',
             'data-type' => 'file',
             'data-field' => $name,
-            'class' => 'xcrud-upload',
-            'name' => 'xcrud-attach'
+            'class' => 'cCrud-upload',
+            'name' => 'cCrud-attach'
         );
         if (isset($tag['data-required']) && ! $value) {
             $attr['data-required'] = '';
@@ -7389,7 +7389,7 @@ class cCrud
     {
         $out = '';
         $out .= $this->open_tag('span', $this->theme_config('upload_button'), array(
-            'class' => 'xcrud-add-file'
+            'class' => 'cCrud-add-file'
         ));
         if (! $this->is_rtl && $this->theme_config('upload_button_icon')) {
             $out .= $this->open_tag('i', $this->theme_config('upload_button_icon')) . $this->close_tag('i') . ' ';
@@ -7408,9 +7408,9 @@ class cCrud
             'type' => 'file',
             'data-type' => 'image',
             'data-field' => $name,
-            'class' => 'xcrud-upload',
+            'class' => 'cCrud-upload',
             'accept' => 'image/jpeg,image/png,image/gif',
-            'name' => 'xcrud-attach',
+            'name' => 'cCrud-attach',
             'capture' => 'camera'
         );
         if (isset($tag['data-required']) && ! $value) {
@@ -7426,7 +7426,7 @@ class cCrud
         $out = '';
         $attr = array(
             'href' => 'javascript:;',
-            'class' => 'xcrud-remove-file',
+            'class' => 'cCrud-remove-file',
             'data-field' => $name
         );
         $out .= $this->open_tag('a', $this->theme_config('remove_button'), $attr);
@@ -7457,16 +7457,16 @@ class cCrud
             }
             $attr = array(
                 'href' => isset($this->upload_config[$name]['url']) ? $this->real_file_link($value, $this->upload_config[$name], true) : $this->file_link($name, $this->primary_val),
-                'class' => 'xcrud-file xcrud-' . $ext,
+                'class' => 'cCrud-file cCrud-' . $ext,
                 'target' => '_blank'
             );
-            $out .= $this->open_tag('span', 'xcrud-file-name');
+            $out .= $this->open_tag('span', 'cCrud-file-name');
             $out .= $this->open_tag('a', '', $attr);
             $out .= (isset($this->upload_config[$name]['text']) ? $this->upload_config[$name]['text'] : $value) . $this->close_tag('a');
             $out .= ' ' . $file_size;
             $this->close_tag('span');
         } else {
-            $out .= $this->open_tag('span', 'xcrud-nofile');
+            $out .= $this->open_tag('span', 'cCrud-nofile');
             $out .= $this->lang('no_file') . $this->close_tag('span');
         }
         return $out;
@@ -7478,7 +7478,7 @@ class cCrud
             return $this->create_view_image($name, $value, $tag = array());
         }
         $out = ''; // upload container
-        $out .= $this->open_tag('div', 'xcrud-upload-container'); // image and
+        $out .= $this->open_tag('div', 'cCrud-upload-container'); // image and
                                                                   // delete button
         if ($value) {
             $binary = isset($this->upload_config[$name]['blob']) ? true : false;
@@ -7498,7 +7498,7 @@ class cCrud
             }
         } else {
             $out .= $this->open_tag('div', $this->theme_config('grid_button_group'));
-            $out .= $this->open_tag('span', 'xcrud-noimage ' . $this->theme_config('no_file'));
+            $out .= $this->open_tag('span', 'cCrud-noimage ' . $this->theme_config('no_file'));
             $out .= $this->lang('no_image') . $this->close_tag('span') . $this->close_tag('div');
         }
 
@@ -7508,7 +7508,7 @@ class cCrud
                 'value' => $value,
                 'type' => 'hidden'
             );
-            $out .= $this->single_tag('input', 'xcrud-input', $attr, true);
+            $out .= $this->single_tag('input', 'cCrud-input', $attr, true);
             // upload button
             $out .= $this->upload_image_button($name, $value, $tag);
             // close upload container
@@ -7542,7 +7542,7 @@ class cCrud
             );
             $out .= $this->single_tag('img', $this->theme_config('image'), $attr);
         } else {
-            $out .= $this->open_tag('span', 'xcrud-noimage');
+            $out .= $this->open_tag('span', 'cCrud-noimage');
             $out .= $this->lang('no_image') . $this->close_tag('span');
         }
 
@@ -7623,7 +7623,7 @@ class cCrud
                 'autocomplete' => 'off',
                 'placeholder' => $this->lang($attr['search_text']),
                 'name' => $this->fieldname_encode($name . '.search'),
-                'class' => 'xcrud-map-search xcrud-input'
+                'class' => 'cCrud-map-search cCrud-input'
             );
             if (isset($this->disabled[$name])) {
                 $search['disabled'] = '';
@@ -7640,7 +7640,7 @@ class cCrud
 
         $map = array(
             'tag' => 'div',
-            'class' => 'xcrud-map',
+            'class' => 'cCrud-map',
             'data-text' => $this->lang($attr['text']),
             'data-zoom' => $attr['zoom'],
             'style' => 'width:' . $attr['width'] . 'px;height:' . $attr['height'] . 'px;'
@@ -7673,13 +7673,13 @@ class cCrud
             $tag = array(
                 'tag' => 'input',
                 'value' => $value,
-                'class' => 'xcrud-input',
+                'class' => 'cCrud-input',
                 'data-type' => 'point',
                 'type' => 'hidden'
             );
             $map = array(
                 'tag' => 'img',
-                'class' => 'xcrud-map',
+                'class' => 'cCrud-map',
                 'style' => 'width:' . $attr['width'] . 'px;height:' . $attr['height'] . 'px;',
                 'src' => 'https://maps.googleapis.com/maps/api/staticmap?center=' . $value . '&zoom=' . $attr['zoom'] . '&size=' . '2000x' . $attr['height'] . '&maptype=roadmap&markers=color:red%7C' . $value . '&key=' . $this->config->maps_api_key
             );
@@ -7743,7 +7743,7 @@ class cCrud
         $field   = $this->_post('field');
         $oldfile = $this->_post('oldfile', 0);
         $request = Services::request();
-        $file    = $request->getFile('xcrud-attach');
+        $file    = $request->getFile('cCrud-attach');
         if ($file && $file->isValid()) {
             $fileData = [
                 'name'     => $file->getName(),
@@ -7796,7 +7796,7 @@ class cCrud
         $field   = $this->_post('field');
         $oldfile = $this->_post('oldfile', 0);
         $request = Services::request();
-        $file    = $request->getFile('xcrud-attach');
+        $file    = $request->getFile('cCrud-attach');
         if ($file && $file->isValid()) {
             $fileData = [
                 'name'     => $file->getName(),
@@ -7880,7 +7880,7 @@ class cCrud
     protected function render_crop_window($filename, $field)
     {
         $out = ''; // upload container
-        $out .= $this->open_tag('div', 'xcrud-upload-container');
+        $out .= $this->open_tag('div', 'cCrud-upload-container');
         $tmp_name = substr($filename, 0, strrpos($filename, '.')) . '.tmp';
         if (isset($this->labels[$field]))
             $title = \esc($this->labels[$field]);
@@ -7900,7 +7900,7 @@ class cCrud
             'style' => 'display:none;max-width:none;',
             'alt' => ''
         );
-        $out .= $this->single_tag('img', 'xcrud-crop', $attr);
+        $out .= $this->single_tag('img', 'cCrud-crop', $attr);
         /*
          * $out .= $this->single_tag('input', 'new_key', array(
          * 'name' => 'new_key',
@@ -8896,7 +8896,7 @@ class cCrud
         } else {
             $attr['data-content'] = $content;
         }
-        $out .= $this->open_tag('a', 'xcrud_modal', $attr);
+        $out .= $this->open_tag('a', 'cCrud_modal', $attr);
         if ($this->config->images_in_grid && $image) {
             $out .= $content;
         } else {
@@ -9234,7 +9234,7 @@ class cCrud
         if (! isset($this->hide_button['duplicate']) && ! $this->table_ro && $this->is_duplicate($row)) {
             $tag = array(
                 'tag' => 'a',
-                'class' => 'xcrud-action',
+                'class' => 'cCrud-action',
                 'title' => $this->lang('duplicate'),
                 'href' => 'javascript:;',
                 'data-primary' => $row['primary_key'],
@@ -9254,7 +9254,7 @@ class cCrud
         if (! isset($this->hide_button['view']) && $this->is_view($row)) {
             $tag = array(
                 'tag' => 'a',
-                'class' => 'xcrud-action',
+                'class' => 'cCrud-action',
                 'title' => $this->lang('view'),
                 'href' => 'javascript:;',
                 'data-primary' => $row['primary_key'],
@@ -9272,7 +9272,7 @@ class cCrud
         if (! isset($this->hide_button['edit']) && ! $this->table_ro && $this->is_edit($row)) {
             $tag = array(
                 'tag' => 'a',
-                'class' => 'xcrud-action',
+                'class' => 'cCrud-action',
                 'title' => $this->lang('edit'),
                 'href' => 'javascript:;',
                 'data-primary' => $row['primary_key'],
@@ -9290,7 +9290,7 @@ class cCrud
         if (! isset($this->hide_button['remove']) && ! $this->table_ro && $this->is_remove($row)) {
             $tag = array(
                 'tag' => 'a',
-                'class' => 'xcrud-action',
+                'class' => 'cCrud-action',
                 'title' => $this->lang('remove'),
                 'href' => 'javascript:;',
                 'data-primary' => $row['primary_key'],
@@ -9469,7 +9469,7 @@ class cCrud
     protected function file_link($field, $primary_val, $thumb = false, $crop = false, $filename = false)
     {
         $params = array(
-            'xcrud' => array(
+            'cCrud' => array(
                 'instance' => $this->instance_name,
                 'field' => $field,
                 'primary' => $primary_val,
@@ -9479,13 +9479,13 @@ class cCrud
             )
         );
         if ($thumb !== false) {
-            $params['xcrud']['thumb'] = $thumb;
+            $params['cCrud']['thumb'] = $thumb;
         }
         if ($crop) {
-            $params['xcrud']['crop'] = $crop;
+            $params['cCrud']['crop'] = $crop;
         }
         if ($this->config->dynamic_session) {
-            $params['xcrud']['sess_name'] = session_name();
+            $params['cCrud']['sess_name'] = session_name();
         }
         return $this->config->scripts_url . '/' . $this->config->ajax_uri . '?' . http_build_query($params);
     }
@@ -9661,9 +9661,9 @@ class cCrud
         if ($row_class)
             $column_class[] = $row_class;
         if ($field == $order && $this->is_sortable)
-            $column_class[] = 'xcrud-current';
+            $column_class[] = 'cCrud-current';
         if ($is_sum)
-            $column_class[] = 'xcrud-sum';
+            $column_class[] = 'cCrud-sum';
         if ($row_color) {
             $attr['style'] = $row_color;
         }
@@ -9978,7 +9978,7 @@ class cCrud
             <script type="text/javascript">
             <!--
 
-                var xcrud_config = ' . json_encode($settings) . ';
+                var cCrud_config = ' . json_encode($settings) . ';
 
             -->
             </script>';
@@ -10021,7 +10021,7 @@ class cCrud
                 }
                 $out .= $this->open_tag('li') . $this->open_tag(array(
                     'tag' => 'a',
-                    'class' => $active . ' dropdown-item xcrud-action ' . $this->theme_config('limit_list_item'),
+                    'class' => $active . ' dropdown-item cCrud-action ' . $this->theme_config('limit_list_item'),
                     'data-limit' => $limts
                 )) . $this->lang('limit_list_' . $limts) . $this->close_tag('a') . $this->close_tag('li');
             }
@@ -10546,7 +10546,7 @@ class cCrud
         }
         if (isset($this->field_tabs[$mode]) or $this->default_tab !== false) {
             $tabs_header = $this->open_tag($tabs_block, $this->theme_config('tabs_container'), array(
-                'class' => 'xcrud-tabs'
+                'class' => 'cCrud-tabs'
             )) . $this->open_tag($tabs_head, $this->theme_config('tabs_header_row'));
             $tabs_body = $this->open_tag($tabs_content, $this->theme_config('tabs_content'));
             $k = 0;
@@ -10654,7 +10654,7 @@ class cCrud
         }
         if ((isset($this->field_tabs[$mode]) or $this->default_tab !== false) && ! $this->config->tabs_in_widgets) {
             $tabs_header = $this->open_tag($tabs_block, $this->theme_config('tabs_container'), array(
-                'class' => 'xcrud-tabs'
+                'class' => 'cCrud-tabs'
             )) . $this->open_tag($tabs_head, $this->theme_config('tabs_header_row'));
             $tabs_body = $this->open_tag($tabs_content, $this->theme_config('tabs_content'));
             $k = 0;
@@ -10700,7 +10700,7 @@ class cCrud
                         else if ($this->config->widgets_open == 'none')
                             $class_widget_container .= ' widget-closed';
                         $widget .= $this->open_tag('div', $class_widget_container, array(
-                            'class' => 'xcrud-widgets'
+                            'class' => 'cCrud-widgets'
                         ));
                         $widget .= $this->open_tag('div', 'widget-header');
                         $widget .= $this->open_tag('h4');
@@ -10748,7 +10748,7 @@ class cCrud
             $out .= $this->open_tag(array(
                 'tag' => 'a',
                 'href' => 'javascript:;',
-                'class' => 'xcrud-tooltip xcrud-button-link',
+                'class' => 'cCrud-tooltip cCrud-button-link',
                 'title' => $this->table_tooltip['tooltip']
             ));
             $out .= $this->open_tag(array(
@@ -10772,7 +10772,7 @@ class cCrud
             $out .= $this->open_tag(array(
                 'tag' => 'a',
                 'href' => 'javascript:;',
-                'class' => 'xcrud-tooltip xcrud-button-link',
+                'class' => 'cCrud-tooltip cCrud-button-link',
                 'title' => $this->field_tooltip[$field]['tooltip']
             ));
             $out .= $this->open_tag(array(
@@ -10796,7 +10796,7 @@ class cCrud
             $out .= $this->open_tag(array(
                 'tag' => 'a',
                 'href' => 'javascript:;',
-                'class' => 'xcrud-tooltip xcrud-button-link',
+                'class' => 'cCrud-tooltip cCrud-button-link',
                 'title' => $this->column_tooltip[$field]['tooltip']
             ));
             $out .= $this->open_tag(array(
@@ -10827,7 +10827,7 @@ class cCrud
             $attr['aria-expanded'] = 'false';
         }
         $out = '';
-        $out .= $this->open_tag('button', 'xcrud-search-toggle ' . $this->theme_config('search_toggle'), $attr);
+        $out .= $this->open_tag('button', 'cCrud-search-toggle ' . $this->theme_config('search_toggle'), $attr);
         $out .= $this->open_tag('i', $this->theme_config('search_toggle_icon')) . $this->close_tag('i');
         if (! empty($$search_label)) {
             $out .= $this->open_tag('span');
@@ -10858,7 +10858,7 @@ class cCrud
         if ($this->is_search) {
             $container_tag = [
                 'tag' => 'div',
-                'class' => 'xcrud-search-form collapse',
+                'class' => 'cCrud-search-form collapse',
                 'id' => 'search_' . $this->table_name
             ];
             if ($this->search || $this->config->search_opened) {
@@ -10962,13 +10962,13 @@ class cCrud
                         'type' => 'hidden',
                         'name' => $name
                     ];
-                    $out .= $this->single_tag($input, 'xcrud-columns-select xcrud-data ' . $this->theme_config('search_fieldlist'));
+                    $out .= $this->single_tag($input, 'cCrud-columns-select cCrud-data ' . $this->theme_config('search_fieldlist'));
                 } else {
                     $select = [
                         'tag' => 'select',
                         'name' => $name
                     ];
-                    $out .= $this->open_tag($select, 'xcrud-columns-select xcrud-data ' . $this->theme_config('search_fieldlist'));
+                    $out .= $this->open_tag($select, 'cCrud-columns-select cCrud-data ' . $this->theme_config('search_fieldlist'));
                     // $out .= $this->open_tag('option', '', array('value' => '')) .
                     // $this->lang('all_fields') . $this->close_tag('option');
                     $out .= implode('', $optlist);
@@ -10985,7 +10985,7 @@ class cCrud
             // $out .= $this->open_tag($button_group);
 
             $attr = array(
-                'class' => 'xcrud-action',
+                'class' => 'cCrud-action',
                 'href' => 'javascript:;',
                 'data-search' => 1
             );
@@ -10994,7 +10994,7 @@ class cCrud
             $out .= $this->close_tag('button');
             if ($this->search) {
                 $attr = array(
-                    'class' => 'xcrud-action',
+                    'class' => 'cCrud-action',
                     'href' => 'javascript:;',
                     'data-search' => 0
                 );
@@ -11016,11 +11016,11 @@ class cCrud
     protected function search_fieldlist($field, $phrase, $fieldlist, $line = 1)
     {
         $attr_preset = array(
-            'class' => 'xcrud-searchdata',
+            'class' => 'cCrud-searchdata',
             'name' => 'search_submit][' . $line . '][phrase'
         );
         if ($field == @$this->search_submit[$line]['column']) {
-            $class = 'xcrud-search-active';
+            $class = 'cCrud-search-active';
         } else {
             $class = '';
             $attr_preset['style'] = 'display:none';
@@ -11035,7 +11035,7 @@ class cCrud
             default:
                 if (! isset($fieldlist['default']) or $field == @$this->search_submit[$line]['column']) {
                     if (@! $this->search_submit[$line]['column']) {
-                        $class = 'xcrud-search-active';
+                        $class = 'cCrud-search-active';
                         $attr['style'] = '';
                     }
                     $attr['data-fieldtype'] = 'default';
@@ -11074,7 +11074,7 @@ class cCrud
                 if (! isset($fieldlist['date']) or $field == @$this->search_submit[$line]['column']) {
                     $attr['data-fieldtype'] = 'date';
                     $attr_range = array(
-                        'class' => 'xcrud-daterange xcrud-searchdata ' . $this->theme_config('search_range'),
+                        'class' => 'cCrud-daterange cCrud-searchdata ' . $this->theme_config('search_range'),
                         'name' => 'search_submit][' . $line . '][range',
                         'data-fieldtype' => 'date'
                     );
@@ -11106,11 +11106,11 @@ class cCrud
                     $attr['type'] = 'text';
                     $attr['name'] = 'search_submit][' . $line . '][phrase][from';
                     $attr['value'] = ((isset($phrase['from']) && $field == @$this->search_submit[$line]['column']) ? $phrase['from'] : '');
-                    // $fieldlist['date'] .= $this->open_tag('span', 'xcrud-range');
-                    $fieldlist['date'] .= $this->single_tag('input', 'xcrud-datepicker-from ' . $class . ' ' . $this->theme_config('search_from'), $attr);
+                    // $fieldlist['date'] .= $this->open_tag('span', 'cCrud-range');
+                    $fieldlist['date'] .= $this->single_tag('input', 'cCrud-datepicker-from ' . $class . ' ' . $this->theme_config('search_from'), $attr);
                     $attr['name'] = 'search_submit][' . $line . '][phrase][to';
                     $attr['value'] = (isset($phrase['to']) && $field == @$this->search_submit[$line]['column']) ? $phrase['to'] : '';
-                    $fieldlist['date'] .= $this->single_tag('input', 'xcrud-datepicker-to ' . $class . ' ' . $this->theme_config('search_to'), $attr);
+                    $fieldlist['date'] .= $this->single_tag('input', 'cCrud-datepicker-to ' . $class . ' ' . $this->theme_config('search_to'), $attr);
                 }
                 break;
             case 'select':
@@ -11176,7 +11176,7 @@ class cCrud
         $tag = array(
             'tag' => 'input',
             'type' => 'hidden',
-            'class' => 'xcrud-data'
+            'class' => 'cCrud-data'
         );
         if ($this->search) {
             if ($this->column) {
@@ -11230,9 +11230,9 @@ class cCrud
     ))
     {
         $out = '';
-        $out .= $this->open_tag($row, 'xcrud-th');
+        $out .= $this->open_tag($row, 'cCrud-th');
         if (count($this->mass_actions)) {
-            $out .= $this->open_tag($item).$this->open_tag('div',  'xcrud-mass-checkbox-container xcrud-mass-checkbox-header ' . $this->theme_config('mass_checkbox_header_container')) . $this->single_tag('input', 'xcrud-mass-checkbox xcrud-mass-checkbox-header ' . $this->theme_config('mass_checkbox_header_input'), array(
+            $out .= $this->open_tag($item).$this->open_tag('div',  'cCrud-mass-checkbox-container cCrud-mass-checkbox-header ' . $this->theme_config('mass_checkbox_header_container')) . $this->single_tag('input', 'cCrud-mass-checkbox cCrud-mass-checkbox-header ' . $this->theme_config('mass_checkbox_header_input'), array(
                 'type' => 'checkbox',
                 'id' => 'mass_checkbox_header_input'
             )) . $this->single_tag('label', $this->theme_config('mass_checkbox_header_label'), [
@@ -11241,24 +11241,24 @@ class cCrud
             $out .= $this->close_tag('div') . $this->close_tag($item);
         }
         if ($this->is_numbers) {
-            $out .= $this->open_tag($item, 'xcrud-num') . '&#35;' . $this->close_tag($item);
+            $out .= $this->open_tag($item, 'cCrud-num') . '&#35;' . $this->close_tag($item);
         }
         if (($this->is_edit || $this->is_remove || $this->is_view || $this->is_duplicate || $this->buttons || $this->grid_restrictions) && $this->task != 'print' && $this->buttons_position == 'left') {
-            $out .= $this->open_tag($item, 'xcrud-actions') . '&nbsp;' . $this->close_tag($item);
+            $out .= $this->open_tag($item, 'cCrud-actions') . '&nbsp;' . $this->close_tag($item);
         }
         foreach ($this->columns as $field => $fitem) {
             if (isset($this->field_type[$field]) && ($this->field_type[$field] == 'password' or $this->field_type[$field] == 'hidden'))
                 continue;
             $fieldname = $this->columns_names[$field];
-            $class = 'xcrud-column';
+            $class = 'cCrud-column';
             $attr = array();
             if ($this->is_sortable) {
-                $class .= ' xcrud-action';
+                $class .= ' cCrud-action';
                 if ($this->primary_key == $field) {
-                    $class .= ' xcrud-primary';
+                    $class .= ' cCrud-primary';
                 }
                 if ($this->order_column == $field) {
-                    $class .= ' xcrud-current xcrud-' . $this->order_direct;
+                    $class .= ' cCrud-current cCrud-' . $this->order_direct;
                     $attr['data-order'] = $this->order_direct == 'asc' ? 'desc' : 'asc';
                 } else {
                     $attr['data-order'] = $this->order_direct;
@@ -11278,7 +11278,7 @@ class cCrud
             $out .= $this->close_tag($item);
         }
         if (($this->is_edit || $this->is_remove || $this->is_view || $this->is_duplicate || $this->buttons || $this->grid_restrictions) && $this->task != 'print' && $this->buttons_position == 'right') {
-            $out .= $this->open_tag($item, 'xcrud-actions') . '&nbsp;' . $this->close_tag($item);
+            $out .= $this->open_tag($item, 'cCrud-actions') . '&nbsp;' . $this->close_tag($item);
         }
         $out .= $this->close_tag($row);
         return $out;
@@ -11287,7 +11287,7 @@ class cCrud
     /**
      *
      * @author Ariel Canal
-     *         Renderização da classe xcrud-actions-fixed
+     *         Renderização da classe cCrud-actions-fixed
      */
     protected function render_grid_body($row_tag = array(
         'tag' => 'tr'
@@ -11313,11 +11313,11 @@ class cCrud
                         }
                     }
                 }
-                $out .= $this->open_tag($row_tag, 'xcrud-row xcrud-row-' . $i);
+                $out .= $this->open_tag($row_tag, 'cCrud-row cCrud-row-' . $i);
                 if (count($this->mass_actions)) {
-                    $out .= $this->open_tag($item) . $this->open_tag('div', 'xcrud-mass ' . $this->theme_config('mass_checkbox_row_container'));
+                    $out .= $this->open_tag($item) . $this->open_tag('div', 'cCrud-mass ' . $this->theme_config('mass_checkbox_row_container'));
                     if (! $this->table_ro && ($this->is_edit($row) || $this->is_remove($row))) {
-                        $out .= $this->single_tag('input', 'xcrud-mass-checkbox xcrud-data ' . $this->theme_config('mass_checkbox_row_input'), array(
+                        $out .= $this->single_tag('input', 'cCrud-mass-checkbox cCrud-data ' . $this->theme_config('mass_checkbox_row_input'), array(
                             'type' => 'checkbox',
                             'name' => 'mass_list][' . $row['primary_key'],
                             'value' => $row['primary_key'],
@@ -11329,10 +11329,10 @@ class cCrud
                     $out .= $this->close_tag('div') . $this->close_tag($item);
                 }
                 if ($this->is_numbers) {
-                    $out .= $this->open_tag($item, 'xcrud-num', $this->_cell_attrib(false, false, false, $row, false, $row_color, $row_class)) . $this->open_tag('span') . ($key + $this->start + 1) . $this->close_tag('span') . $this->close_tag($item);
+                    $out .= $this->open_tag($item, 'cCrud-num', $this->_cell_attrib(false, false, false, $row, false, $row_color, $row_class)) . $this->open_tag('span') . ($key + $this->start + 1) . $this->close_tag('span') . $this->close_tag($item);
                 }
                 if (($this->is_edit || $this->is_remove || $this->is_view || $this->buttons || $this->is_duplicate || $this->grid_restrictions) && $this->task != 'print' && $this->buttons_position == 'left') {
-                    $out .= $this->open_tag($item, 'xcrud-actions' . (($this->config->fixed_action_buttons) ? ' xcrud-actions-fixed' : ''), $this->_cell_attrib(false, false, false, $row, false, $row_color, $row_class));
+                    $out .= $this->open_tag($item, 'cCrud-actions' . (($this->config->fixed_action_buttons) ? ' cCrud-actions-fixed' : ''), $this->_cell_attrib(false, false, false, $row, false, $row_color, $row_class));
                     $out .= $this->_render_list_buttons($row);
                     $out .= $this->open_tag('span') . $this->close_tag($item);
                 }
@@ -11345,7 +11345,7 @@ class cCrud
                     $out .= $this->open_tag('span') . $this->close_tag($item);
                 }
                 if (($this->is_edit || $this->is_remove || $this->is_view || $this->buttons || $this->is_duplicate || $this->grid_restrictions) && $this->task != 'print' && $this->buttons_position == 'right') {
-                    $out .= $this->open_tag($item, 'xcrud-actions' . (($this->config->fixed_action_buttons) ? ' xcrud-actions-fixed' : '') . ($this->config->fixed_action_buttons ? ' xcrud-fix' : ''), $this->_cell_attrib(false, false, false, $row, false, $row_color, $row_class)) . $this->open_tag('span');
+                    $out .= $this->open_tag($item, 'cCrud-actions' . (($this->config->fixed_action_buttons) ? ' cCrud-actions-fixed' : '') . ($this->config->fixed_action_buttons ? ' cCrud-fix' : ''), $this->_cell_attrib(false, false, false, $row, false, $row_color, $row_class)) . $this->open_tag('span');
                     $out .= $this->_render_list_buttons($row);
                     $out .= $this->open_tag('span') . $this->close_tag($item);
                 }
@@ -11363,7 +11363,7 @@ class cCrud
             if (count($this->mass_actions)) {
                 ++ $j;
             }
-            $out .= $this->open_tag($row_tag, 'xcrud-row') . $this->open_tag($item, '', array(
+            $out .= $this->open_tag($row_tag, 'cCrud-row') . $this->open_tag($item, '', array(
                 'colspan' => $j
             )) . $this->lang('table_empty') . $this->close_tag($item) . $this->close_tag($row_tag);
         }
@@ -11378,10 +11378,10 @@ class cCrud
     {
         $out = '';
         if ($this->sum && $this->result_list) {
-            $out .= $this->open_tag($row, 'xcrud-tf');
+            $out .= $this->open_tag($row, 'cCrud-tf');
             if (count($this->mass_actions)) {
-                $out .= $this->open_tag($item) . $this->open_tag('div', 'xcrud-mass-checkbox-container xcrud-mass-checkbox-footer ' . $this->theme_config('mass_checkbox_footer_container'));
-                $out .= $this->single_tag('input', 'xcrud-mass-checkbox xcrud-mass-checkbox-footer ' . $this->theme_config('mass_checkbox_footer_input'), [
+                $out .= $this->open_tag($item) . $this->open_tag('div', 'cCrud-mass-checkbox-container cCrud-mass-checkbox-footer ' . $this->theme_config('mass_checkbox_footer_container'));
+                $out .= $this->single_tag('input', 'cCrud-mass-checkbox cCrud-mass-checkbox-footer ' . $this->theme_config('mass_checkbox_footer_input'), [
                     'type' => 'checkbox',
                     'id' => 'mass_checkbox_footer_input'
                 ]);
@@ -11391,10 +11391,10 @@ class cCrud
                 $out .= $this->close_tag('div') . $this->close_tag($item);
             }
             if ($this->is_numbers) {
-                $out .= $this->open_tag($item, 'xcrud-num') . '&Sigma;' . $this->close_tag($item);
+                $out .= $this->open_tag($item, 'cCrud-num') . '&Sigma;' . $this->close_tag($item);
             }
             if (($this->is_edit || $this->is_remove || $this->buttons || $this->is_view || $this->is_duplicate || $this->grid_restrictions) && $this->task != 'print' && $this->buttons_position == 'left') {
-                $out .= $this->open_tag($item, 'xcrud-actions') . '&nbsp;' . $this->close_tag($item);
+                $out .= $this->open_tag($item, 'cCrud-actions') . '&nbsp;' . $this->close_tag($item);
             }
             foreach ($this->columns as $field => $fitem) {
                 if (isset($this->field_type[$field]) && ($this->field_type[$field] == 'password' or $this->field_type[$field] == 'hidden'))
@@ -11404,7 +11404,7 @@ class cCrud
                 $out .= $this->close_tag($item);
             }
             if (($this->is_edit || $this->is_remove || $this->buttons || $this->is_view || $this->is_duplicate || $this->grid_restrictions) && $this->task != 'print' && $this->buttons_position == 'right') {
-                $out .= $this->open_tag($item, 'xcrud-actions') . '&nbsp;' . $this->close_tag($item);
+                $out .= $this->open_tag($item, 'cCrud-actions') . '&nbsp;' . $this->close_tag($item);
             }
             $out .= $this->close_tag($row);
         }
@@ -11432,7 +11432,7 @@ class cCrud
     ))
     {
         if ($this->benchmark) {
-            return $this->open_tag($tag, 'xcrud-benchmark') . $this->benchmark_end() . $this->close_tag($tag);
+            return $this->open_tag($tag, 'cCrud-benchmark') . $this->benchmark_end() . $this->close_tag($tag);
         }
         return '';
     }
@@ -11443,7 +11443,7 @@ class cCrud
         $tag = array(
             'tag' => 'input',
             'type' => 'hidden',
-            'class' => 'xcrud-data'
+            'class' => 'cCrud-data'
         );
         $out .= $this->single_tag($tag, '', array(
             'name' => 'key',
@@ -11609,7 +11609,7 @@ class cCrud
                     }
                 }
             }
-            $out .= $this->open_tag($tag, 'xcrud-action');
+            $out .= $this->open_tag($tag, 'cCrud-action');
             if ($icon && ! $this->is_rtl) {
                 $out .= $this->open_tag(array(
                     'tag' => 'i',
@@ -11640,14 +11640,14 @@ class cCrud
     protected function csv_button($class = '', $icon = '')
     {
         if ($this->is_csv && ! isset($this->hide_button['csv'])) {
-            return $this->render_button('export_csv', 'csv', '', $class . ' xcrud-in-new-window', $icon);
+            return $this->render_button('export_csv', 'csv', '', $class . ' cCrud-in-new-window', $icon);
         }
     }
 
     protected function print_button($class = '', $icon = '')
     {
         if ($this->is_print && ! isset($this->hide_button['print'])) {
-            return $this->render_button('print', 'print', '', $class . ' xcrud-in-new-window', $icon);
+            return $this->render_button('print', 'print', '', $class . ' cCrud-in-new-window', $icon);
         }
     }
 
@@ -11777,7 +11777,7 @@ class cCrud
     {
         $file_path = $this->get_image_folder($field) . '/' . $filename;
         if (is_file($file_path)) {
-            $filename = substr_replace($filename, '_@XCRUD' . base_convert(time() . rand(), 10, 36), strrpos($filename, '.'), 0);
+            $filename = substr_replace($filename, '_@cCrud' . base_convert(time() . rand(), 10, 36), strrpos($filename, '.'), 0);
         }
         return $filename;
     }
@@ -11964,7 +11964,7 @@ class cCrud
             if ($to_show && ! $this->start_minimized)
                 $attr['style'] = 'display:none;';
             if ($to_show)
-                $attr['class'] = 'xcrud-main-tab';
+                $attr['class'] = 'cCrud-main-tab';
             if ($replace_title)
                 $title = $replace_title;
             else
@@ -11986,9 +11986,9 @@ class cCrud
             }
             if ($this->config->can_minimize) {
                 if ($to_show)
-                    $out .= '<span class="xcrud-toggle-show xcrud-toggle-down"><i class="' . $this->theme_config('slide_down_icon') . '"></i></span>';
+                    $out .= '<span class="cCrud-toggle-show cCrud-toggle-down"><i class="' . $this->theme_config('slide_down_icon') . '"></i></span>';
                 else
-                    $out .= '<span class="xcrud-toggle-show xcrud-toggle-up"><i class="' . $this->theme_config('slide_up_icon') . '"></i></span>';
+                    $out .= '<span class="cCrud-toggle-show cCrud-toggle-up"><i class="' . $this->theme_config('slide_up_icon') . '"></i></span>';
             }
             $out .= $this->close_tag($tag);
         }
@@ -12320,7 +12320,7 @@ class cCrud
     {
         $out = '';
         if (count($this->alphabetical_index)) {
-            $out .= $this->open_tag('ul', 'xcrud-alphabetical ' . $this->theme_config('alphabetical_container'));
+            $out .= $this->open_tag('ul', 'cCrud-alphabetical ' . $this->theme_config('alphabetical_container'));
             if (! isset($this->alphabetical_index[0]) || $this->alphabetical_index[0] != 'all')
                 array_unshift($this->alphabetical_index, 'all');
 
@@ -12335,7 +12335,7 @@ class cCrud
                 else
                     $class = $this->theme_config('alphabetical_item');
 
-                $out .= $this->open_tag('li', 'xcrud-action ' . $class, $attr) . $this->lang($i) . $this->close_tag('li');
+                $out .= $this->open_tag('li', 'cCrud-action ' . $class, $attr) . $this->lang($i) . $this->close_tag('li');
             }
             $out .= $this->close_tag('ul');
         }
@@ -12392,7 +12392,7 @@ class cCrud
                     $class = $this->theme_config('custom_filter_item');
                 }
 
-                $out .= $this->open_tag('a', 'xcrud-action dropdown-item ' . $class, $attr) . $this->lang($attr['data-label']) . $this->close_tag('a');
+                $out .= $this->open_tag('a', 'cCrud-action dropdown-item ' . $class, $attr) . $this->lang($attr['data-label']) . $this->close_tag('a');
 
                 if ($label == "all") {
                     $out .= $this->open_tag('div', 'dropdown-divider') . $this->close_tag('div');
@@ -12442,7 +12442,7 @@ class cCrud
                 $out .= '<div class="' . $icon_container . '"><i class="' . $icon . '"></i></div>';
                 $out .= '<div class="title">' . $this->lang('total') . '</div>';
                 $out .= '<div class="value">' . $total . '</div>';
-                $out .= '<a class="xcrud-action more" data-filter="totalizer" data-label="all">Visualizar <i class="pull-right fas fa-angle-right"></i></a>';
+                $out .= '<a class="cCrud-action more" data-filter="totalizer" data-label="all">Visualizar <i class="pull-right fas fa-angle-right"></i></a>';
                 $out .= "</div></div></div>";
             }
             foreach ($this->totalizers as $name => $params) {
@@ -12893,7 +12893,7 @@ class cCrud
                             ));
                             $func = 'create_' . $type;
                             unset($attr);
-                            $attr['class'] = "col-md-8 pull-left xcrud-input";
+                            $attr['class'] = "col-md-8 pull-left cCrud-input";
                             $attr['multiple'] = "multiple";
 
                             $null_opt = $this->lists_null_opt;
@@ -13041,7 +13041,7 @@ class cCrud
                     foreach ($this->custom_lists_static as $label => $where) {
                         $filtro_titulo[$label] = $where;
                         $out .= $this->open_tag('li');
-                        $out .= $this->open_tag('a', 'xcrud-action custom_list', array(
+                        $out .= $this->open_tag('a', 'cCrud-action custom_list', array(
                             'data-filter' => 'title',
                             'data-label' => $label,
                             'data-preferencia' => 'custom_list_' . (($this->table != "contatos" ? $this->table : $this->table_name)),
@@ -13067,7 +13067,7 @@ class cCrud
                     $line = true;
                     $filtro_titulo[$label] = $where;
                     $out .= $this->open_tag('li');
-                    $out .= $this->open_tag('a', 'xcrud-action custom_list', array(
+                    $out .= $this->open_tag('a', 'cCrud-action custom_list', array(
                         'data-filter' => 'title',
                         'data-label' => $label,
                         'data-preferencia' => 'custom_list_' . (($this->table != "contatos" ? $this->table : $this->table_name)),
@@ -13110,7 +13110,7 @@ class cCrud
             if ($to_show && ! $this->start_minimized)
                 $attr['style'] = 'display:none;';
             if ($to_show)
-                $attr['class'] = 'xcrud-main-tab';
+                $attr['class'] = 'cCrud-main-tab';
             $attr['data-toggle'] = 'modal';
             $attr['data-target'] = '#customLists';
             $out .= $this->open_tag($tag, '', $attr);
@@ -13130,10 +13130,10 @@ class cCrud
             }
             if ($this->config->can_minimize) {
                 if ($to_show)
-                    $out .= '<span class="xcrud-toggle-show xcrud-toggle-down"><i class="' . $this->theme_config('slide_down_icon') . '"></i></span>';
+                    $out .= '<span class="cCrud-toggle-show cCrud-toggle-down"><i class="' . $this->theme_config('slide_down_icon') . '"></i></span>';
 
                 else
-                    $out .= '<span class="xcrud-toggle-show xcrud-toggle-up"><i class="' . $this->theme_config('slide_up_icon') . '"></i></span>';
+                    $out .= '<span class="cCrud-toggle-show cCrud-toggle-up"><i class="' . $this->theme_config('slide_up_icon') . '"></i></span>';
             }
             $out .= $this->close_tag($tag);
         }
@@ -13181,7 +13181,7 @@ class cCrud
     {
         if (count($this->mass_actions)) {
             $out = $this->open_tag('div', $this->theme_config('mass_container_class'));
-            $out .= $this->open_tag('select', 'xcrud-mass-select not_select2 not_select2 xcrud-data ' . $this->theme_config('mass_select'), array(
+            $out .= $this->open_tag('select', 'cCrud-mass-select not_select2 not_select2 cCrud-data ' . $this->theme_config('mass_select'), array(
                 'name' => 'mass_task'
             ));
             $out .= $this->open_tag('option', '', array(
@@ -13203,7 +13203,7 @@ class cCrud
                 )) . $this->lang('mass_remove') . $this->close_tag('option');
             }
             $out .= $this->close_tag('select');
-            $out .= $this->open_tag('a', 'xcrud-action ' . $this->theme_config('mass_button'), array(
+            $out .= $this->open_tag('a', 'cCrud-action ' . $this->theme_config('mass_button'), array(
                 'data-task' => 'mass',
                 'href' => 'javascript:;',
                 'data-after' => 'list',
@@ -13218,14 +13218,14 @@ class cCrud
     {
         $out = "";
         if (count($this->mass_actions)) {
-            $out .= $this->open_tag('div', 'xcrud-mass-form ' . $this->theme_config('mass_form_container'));
+            $out .= $this->open_tag('div', 'cCrud-mass-form ' . $this->theme_config('mass_form_container'));
             foreach ($this->mass_edit as $field => $fitem) {
                 $type = $this->field_type[$field];
                 $lbl = $this->labels[$field];
                 if ($type == "textarea" || $type == "texteditor") {
                     $type = "text";
                 }
-                $out .= $this->open_tag('div', 'xcrud-mass-form-group ' . $this->theme_config('mass_form_field_group'), array(
+                $out .= $this->open_tag('div', 'cCrud-mass-form-group ' . $this->theme_config('mass_form_field_group'), array(
                     'id' => $field
                 ));
                 $out .= $this->open_tag('label', $this->theme_config('mass_form_label'), array(
@@ -13240,7 +13240,7 @@ class cCrud
                         $field,
                         null,
                         [
-                            'class' => 'xcrud-input ' . $this->theme_config('mass_form_field')
+                            'class' => 'cCrud-input ' . $this->theme_config('mass_form_field')
                         ]
                     ));
 

@@ -1,14 +1,14 @@
 var cCrud = {
 	config: function(key) {
-		if (xcrud_config[key] !== undefined) {
-			return xcrud_config[key];
+		if (cCrud_config[key] !== undefined) {
+			return cCrud_config[key];
 		} else {
 			return key;
 		}
 	},
 	lang: function(key) {
-		if (xcrud_config['lang'][key] !== undefined) {
-			return xcrud_config['lang'][key];
+		if (cCrud_config['lang'][key] !== undefined) {
+			return cCrud_config['lang'][key];
 		} else {
 			return key;
 		}
@@ -26,24 +26,24 @@ var cCrud = {
 			dataType: "html",
 			cache: false,
 			data: {
-				"xcrud": data
+				"cCrud": data
 			},
 			beforeSend: function() {
-				$(document).trigger("xcrudbeforerequest", [container, data]);
+				$(document).trigger("cCrudbeforerequest", [container, data]);
 				cCrud.close_modal = data.close;
 				cCrud.current_task = data.task;
 				cCrud.current_focus = $("*:focus");
 				cCrud.after_task = data.after;
 			},
 			success: function(response) {
-				if (!$('.xcrud_result_validation').lenght) {
-					$('body').append($('<div>').attr('class', 'xcrud_result_validation'));
+				if (!$('.cCrud_result_validation').lenght) {
+					$('body').append($('<div>').attr('class', 'cCrud_result_validation'));
 				}
 				var validation_container = response;
 				cCrud.check_message(validation_container);
 				if (!cCrud.exception) {
 					if (cCrud.close_modal == true) {
-						$("#xcrud-modal-window").modal('hide');
+						$("#cCrud-modal-window").modal('hide');
 						if (cCrud.parent_container) {
 							container = cCrud.parent_container;
 							cCrud.parent_container = null;
@@ -62,7 +62,7 @@ var cCrud = {
 				console.log(jqXHR.responseText);
 			},
 			complete: function(jqXHR) {
-				$(document).trigger("xcrudafterrequest", [container, data]);
+				$(document).trigger("cCrudafterrequest", [container, data]);
 				cCrud.hide_progress(container);
 			}
 		});
@@ -72,12 +72,12 @@ var cCrud = {
 		var html = cCrud.data2form(data);
 		cCrud.bootstrap_modal('Aguarde', '');
 		setTimeout(function() {
-			el = $("#xcrud-modal-window .modal-content").addClass('xcrud').addClass('xcrud-ajax');
+			el = $("#cCrud-modal-window .modal-content").addClass('cCrud').addClass('cCrud-ajax');
 			cCrud.request(el, data, cCrud.reinit);
 		}, 500);
 	},
 	init: function(container) {
-		$(document).trigger("xcrudinit");
+		$(document).trigger("cCrudinit");
 	},
 	new_window_request: function(container, data) {
 		var html = cCrud.data2form(data);
@@ -92,7 +92,7 @@ var cCrud = {
 		html += '<form method="post" action="' + cCrud.config('url') + '">';
 		$.map(data, function(value, key) {
 			if (!$.isPlainObject(value)) {
-				html += '<input type="hidden" name="xcrud[' + key + ']" value="' + value + '" />';
+				html += '<input type="hidden" name="cCrud[' + key + ']" value="' + value + '" />';
 			}
 		});
 		html += '</form></body></html>';
@@ -101,8 +101,8 @@ var cCrud = {
 	unique_check: function(container, data, success_callback) {
 		data.unique = {};
 		data.task = "unique";
-		if ($(container).find('.xcrud-input[data-unique]').length) {
-			$(container).find('.xcrud-input[data-unique]').each(function(index, element) {
+		if ($(container).find('.cCrud-input[data-unique]').length) {
+			$(container).find('.cCrud-input[data-unique]').each(function(index, element) {
 				data.unique[$(element).attr('name')] = $(element).val();
 			});
 			$.ajax({
@@ -112,11 +112,11 @@ var cCrud = {
 					cCrud.show_progress(container);
 				},
 				data: {
-					"xcrud": data
+					"cCrud": data
 				},
 				dataType: "json",
 				success: function(response) {
-					// $(container).find(".xcrud-data[name=key]:first").val(response.key);
+					// $(container).find(".cCrud-data[name=key]:first").val(response.key);
 					if (response.error) {
 						$(container).find(response.error.selector).parent().parent().addClass('has-error');
 						// alert(cCrud.lang('unique_error'));
@@ -143,24 +143,24 @@ var cCrud = {
 		}
 	},
 	show_progress: function(container) {
-		$(container).closest(".xcrud").find(".xcrud-overlay").fadeTo(300, 0.6);
+		$(container).closest(".cCrud").find(".cCrud-overlay").fadeTo(300, 0.6);
 	},
 	hide_progress: function(container) {
-		$(container).closest(".xcrud").find(".xcrud-overlay").css("display", "none");
+		$(container).closest(".cCrud").find(".cCrud-overlay").css("display", "none");
 	},
 	get_container: function(element) {
-		return $(element).closest(".xcrud-ajax");
+		return $(element).closest(".cCrud-ajax");
 	},
 	list_data: function(container, element) {
 		var data = {};
 		cCrud.validation_error = 0;
 		cCrud.save_editor_content(container);
-		$(container).find(".xcrud-data:not([type='checkbox'])").each(function() {
+		$(container).find(".cCrud-data:not([type='checkbox'])").each(function() {
 			if (cCrud.check_container(this, container)) {
 				data[$(this).attr("name")] = cCrud.prepare_val(this);
 			}
 		});
-		$(container).find('.xcrud-data[type="checkbox"]:not([disabled])').each(function() {
+		$(container).find('.cCrud-data[type="checkbox"]:not([disabled])').each(function() {
 			if (cCrud.check_container(this, container) && $(this).prop('checked')) {
 				data[$(this).attr("name")] = cCrud.prepare_val(this);
 			}
@@ -174,9 +174,9 @@ var cCrud = {
 		var validation = data.task == 'save' ? true : false;
 		if (validation) {
 			$('.is-invalid', container).removeClass('is-invalid');
-			$(document).trigger("xcrudbeforevalidate", [container]);
+			$(document).trigger("cCrudbeforevalidate", [container]);
 		}
-		$('.xcrud-input:not([type="checkbox"],[type="radio"],[disabled])', container).each(function() {
+		$('.cCrud-input:not([type="checkbox"],[type="radio"],[disabled])', container).each(function() {
 			if (cCrud.check_container(this, container)) {
 				var val = cCrud.prepare_val(this);
 				data.postdata[$(this).attr("name")] = val;
@@ -199,7 +199,7 @@ var cCrud = {
 		});
 		var group_required = false;
 		var has_group_required = false;
-		$(container).find('.xcrud-input[group-required="true"]:not([type="checkbox"],[type="radio"],[disabled])').each(function() {
+		$(container).find('.cCrud-input[group-required="true"]:not([type="checkbox"],[type="radio"],[disabled])').each(function() {
 			if (cCrud.check_container(this, container)) {
 				has_group_required = true;
 				var val = cCrud.prepare_val(this);
@@ -211,13 +211,13 @@ var cCrud = {
 			}
 		});
 		if (has_group_required && !group_required) {
-			$(container).find('.xcrud-input[group-required="true"]:not([type="checkbox"],[type="radio"],[disabled])').each(function() {
+			$(container).find('.cCrud-input[group-required="true"]:not([type="checkbox"],[type="radio"],[disabled])').each(function() {
 				if (cCrud.check_container(this, container)) {
 					cCrud.field_invalid(this);
 				}
 			});
 		}
-		$(container).find('.xcrud-input[data-type="checkboxes"]:not([disabled])').each(function() {
+		$(container).find('.cCrud-input[data-type="checkboxes"]:not([disabled])').each(function() {
 			if (data.postdata[$(this).attr("name")] === undefined) {
 				data.postdata[$(this).attr("name")] = '';
 			}
@@ -229,23 +229,23 @@ var cCrud = {
 				}
 			}
 		});
-		$(container).find('.xcrud-input[type="radio"]:not([disabled])').each(function() {
+		$(container).find('.cCrud-input[type="radio"]:not([disabled])').each(function() {
 			if (cCrud.check_container(this, container) && $(this).prop('checked')) {
 				data.postdata[$(this).attr("name")] = cCrud.prepare_val(this);
 			}
 		});
-		$(container).find('.xcrud-input[data-type="bool"]:not([disabled])').each(function() {
+		$(container).find('.cCrud-input[data-type="bool"]:not([disabled])').each(function() {
 			if (cCrud.check_container(this, container)) {
 				data.postdata[$(this).attr("name")] = $(this).prop('checked') ? 1 : 0;
 			}
 		});
-		$(container).find(".xcrud-searchdata.xcrud-search-active").each(function() {
+		$(container).find(".cCrud-searchdata.cCrud-search-active").each(function() {
 			if (cCrud.check_container(this, container)) {
 				data[$(this).attr("name")] = cCrud.prepare_val(this);
 			}
 		});
 		if (validation) {
-			$(document).trigger("xcrudaftervalidate", [container, data]);
+			$(document).trigger("cCrudaftervalidate", [container, data]);
 		}
 		return data;
 	},
@@ -257,7 +257,7 @@ var cCrud = {
 	},
 	list_controls_data: function(container, element) {
 		var data = {};
-		$(container).find(".xcrud-data").each(function() {
+		$(container).find(".cCrud-data").each(function() {
 			if (cCrud.check_container(this, container)) {
 				data[$(this).attr("name")] = cCrud.prepare_val(this);
 			}
@@ -265,10 +265,10 @@ var cCrud = {
 		return data;
 	},
 	check_container: function(element, container) {
-		return $(element).closest(".xcrud-ajax").attr('id') == $(container).attr('id') ? true : false;
+		return $(element).closest(".cCrud-ajax").attr('id') == $(container).attr('id') ? true : false;
 	},
 	save_editor_content: function(container) {
-		if ($(container).find('.xcrud-texteditor').length) {
+		if ($(container).find('.cCrud-texteditor').length) {
 			if (typeof (tinyMCE) != 'undefined') {
 				tinyMCE.triggerSave();
 				/*
@@ -304,7 +304,7 @@ var cCrud = {
 		}
 	},
 	change_filter: function(type, container, fieldname) {
-		$(container).find(".xcrud-searchdata").hide().removeClass("xcrud-search-active");
+		$(container).find(".cCrud-searchdata").hide().removeClass("cCrud-search-active");
 		var name_selector = '';
 		switch (type) {
 			case 'datetime':
@@ -327,7 +327,7 @@ var cCrud = {
 				var fieldtype = 'default';
 				break;
 		}
-		$(container).find('.xcrud-searchdata[data-fieldtype="' + fieldtype + '"]' + name_selector).show().addClass("xcrud-search-active");
+		$(container).find('.cCrud-searchdata[data-fieldtype="' + fieldtype + '"]' + name_selector).show().addClass("cCrud-search-active");
 		if (fieldtype == 'date') {
 			cCrud.init_datepicker_range(type, container);
 		}
@@ -336,30 +336,30 @@ var cCrud = {
 		/*
 		 * https://github.com/Eonasdan/bootstrap-datetimepicker/
 		 */
-		if ($(container).find('.xcrud-datepicker-from').data("DateTimePicker") == undefined && $(container).find('.xcrud-datepicker-to').data("DateTimePicker") == undefined) {
-			from = $(container).find('.xcrud-datepicker-from').datetimepicker();
-			to = $(container).find('.xcrud-datepicker-to').datetimepicker();
+		if ($(container).find('.cCrud-datepicker-from').data("DateTimePicker") == undefined && $(container).find('.cCrud-datepicker-to').data("DateTimePicker") == undefined) {
+			from = $(container).find('.cCrud-datepicker-from').datetimepicker();
+			to = $(container).find('.cCrud-datepicker-to').datetimepicker();
 			switch (type) {
 				case 'time':
 					element.datetimepicker({
-						format: xcrud_config.moment_time_format,
+						format: cCrud_config.moment_time_format,
 						useCurrent: false
 					});
 				case 'datetime':
 				case 'timestamp':
 					element.datetimepicker({
-						format: xcrud_config.moment_date_format + ' ' + xcrud_config.moment_time_format,
+						format: cCrud_config.moment_date_format + ' ' + cCrud_config.moment_time_format,
 						useCurrent: false
 					});
 				case 'date':
 					element.datetimepicker({
-						format: xcrud_config.moment_date_format,
+						format: cCrud_config.moment_date_format,
 						useCurrent: false
 					});
 				case 'year':
 					element.datetimepicker({
 						viewMode: 'years',
-						format: xcrud_config.moment_year_format,
+						format: cCrud_config.moment_year_format,
 						useCurrent: false
 					});
 				default:
@@ -372,31 +372,31 @@ var cCrud = {
 		/*
 		 * https://github.com/Eonasdan/bootstrap-datetimepicker/
 		 */
-		$(container).find(".xcrud-datepicker").each(function() {
+		$(container).find(".cCrud-datepicker").each(function() {
 			if ($(this).data("DateTimePicker") == undefined) {
 				var element = $(this);
 				var format_id = $(this).data("type");
 				switch (format_id) {
 					case 'time':
 						element.datetimepicker({
-							format: xcrud_config.moment_time_format,
+							format: cCrud_config.moment_time_format,
 							useCurrent: false
 						});
 					case 'datetime':
 					case 'timestamp':
 						element.datetimepicker({
-							format: xcrud_config.moment_date_format + ' ' + xcrud_config.moment_time_format,
+							format: cCrud_config.moment_date_format + ' ' + cCrud_config.moment_time_format,
 							useCurrent: false
 						});
 					case 'date':
 						element.datetimepicker({
-							format: xcrud_config.moment_date_format,
+							format: cCrud_config.moment_date_format,
 							useCurrent: false
 						});
 					case 'year':
 						element.datetimepicker({
 							viewMode: 'years',
-							format: xcrud_config.moment_year_format,
+							format: cCrud_config.moment_year_format,
 							useCurrent: false
 						});
 					default:
@@ -421,7 +421,7 @@ var cCrud = {
 		}
 	},
 	init_texteditor: function(container) {
-		var elements = $(container).find(".xcrud-texteditor:not(.editor-loaded)");
+		var elements = $(container).find(".cCrud-texteditor:not(.editor-loaded)");
 		if ($(elements).length) {
 			if (cCrud.config('editor_url') || cCrud.config('force_editor')) {
 				$(elements).addClass("editor-loaded").addClass("editor-instance");
@@ -432,7 +432,7 @@ var cCrud = {
 							type: "get",
 							dataType: "script",
 							success: function(js) {
-								$(".xcrud-overlay").stop(true, true).css("display", "none");
+								$(".cCrud-overlay").stop(true, true).css("display", "none");
 								$(elements).removeClass("editor-instance");
 							},
 							cache: true
@@ -461,11 +461,11 @@ var cCrud = {
 		}
 	},
 	upload_file: function(element, data, container) {
-		var upl_container = $(element).closest('.xcrud-upload-container');
+		var upl_container = $(element).closest('.cCrud-upload-container');
 		data.field = $(element).data("field");
-		data.oldfile = $(upl_container).find('.xcrud-input').val();
+		data.oldfile = $(upl_container).find('.cCrud-input').val();
 		data.task = "upload";
-		data.mode = $(element).closest('.xcrud-ajax').find('.xcrud-data[name="task"]').val();
+		data.mode = $(element).closest('.cCrud-ajax').find('.cCrud-data[name="task"]').val();
 		data.type = $(element).data("type");
 		var ext = cCrud.get_extension($(element).val());
 		if (data.type == 'image') {
@@ -482,20 +482,20 @@ var cCrud = {
 					break;
 			}
 		}
-		$(document).trigger("xcrudbeforeupload", [container, data]);
+		$(document).trigger("cCrudbeforeupload", [container, data]);
 		cCrud.show_progress(container);
 		$.ajaxFileUpload({
 			secureuri: false,
 			fileElementId: $(element).attr('id'),
 			data: {
-				"xcrud": data
+				"cCrud": data
 			},
 			url: cCrud.config('url'),
 			success: function(out) {
 				cCrud.hide_progress(container);
 				$(upl_container).replaceWith(out);
-				$(document).trigger("xcrudafterupload", [container, data, status]);
-				var crop_img = $(out).find("img.xcrud-crop");
+				$(document).trigger("cCrudafterupload", [container, data, status]);
+				var crop_img = $(out).find("img.cCrud-crop");
 				if ($(crop_img).length) {
 					cCrud.show_crop_window(crop_img, container);
 				}
@@ -507,7 +507,7 @@ var cCrud = {
 		});
 	},
 	show_crop_window: function(crop_img, container) {
-		var upl_container = $(container).find('img.xcrud-crop').closest('.xcrud-upload-container');
+		var upl_container = $(container).find('img.cCrud-crop').closest('.cCrud-upload-container');
 		$(crop_img).dialog({
 			resizable: false,
 			height: 'auto',
@@ -523,16 +523,16 @@ var cCrud = {
 						data[$(this).attr('name')] = $(this).val();
 					});
 					// data.task = "crop_image";
-					$(document).trigger("xcrudbeforeecrop", [container, data]);
+					$(document).trigger("cCrudbeforeecrop", [container, data]);
 					cCrud.show_progress(container);
 					$.ajax({
 						data: {
-							"xcrud": data
+							"cCrud": data
 						},
 						success: function(out) {
 							cCrud.hide_progress(container);
 							$(upl_container).replaceWith(out);
-							$(document).trigger("xcrudaftercrop", [container, data]);
+							$(document).trigger("cCrudaftercrop", [container, data]);
 						},
 						error: function() {
 							cCrud.hide_progress(container);
@@ -544,7 +544,7 @@ var cCrud = {
 						cache: false,
 					});
 					$(this).dialog("destroy");
-					$(".xcrud-crop").remove();
+					$(".cCrud-crop").remove();
 				}
 			},
 			close: function(event, ui) {
@@ -560,7 +560,7 @@ var cCrud = {
 				cCrud.show_progress(container);
 				$.ajax({
 					data: {
-						"xcrud": data
+						"cCrud": data
 					},
 					success: function(out) {
 						cCrud.hide_progress(container);
@@ -576,7 +576,7 @@ var cCrud = {
 					cache: false,
 				});
 				$(this).dialog("destroy");
-				$(".xcrud-crop").remove();
+				$(".cCrud-crop").remove();
 			},
 			open: function(event, ui) {
 				cCrud.load_image(crop_img.attr('src'), function(imageObject) {
@@ -618,7 +618,7 @@ var cCrud = {
 					var h2 = h1 * 3;
 					cropset.setSelect = [w1, h1, w2, h2];
 					cropset.allowSelect = false;
-					$(".ui-dialog img.xcrud-crop").Jcrop(cropset);
+					$(".ui-dialog img.cCrud-crop").Jcrop(cropset);
 				});
 			}
 		});
@@ -647,14 +647,14 @@ var cCrud = {
 		}
 	},
 	remove_file: function(element, data, container) {
-		var upl_container = $(element).closest('.xcrud-upload-container');
+		var upl_container = $(element).closest('.cCrud-upload-container');
 		data.field = $(element).data("field");
-		data.file = $(upl_container).find('.xcrud-input').val();
+		data.file = $(upl_container).find('.cCrud-input').val();
 		data.task = "remove_upload";
 		cCrud.show_progress(container);
 		$.ajax({
 			data: {
-				"xcrud": data
+				"cCrud": data
 			},
 			success: function(data) {
 				cCrud.hide_progress(container);
@@ -671,12 +671,12 @@ var cCrud = {
 		});
 	},
 	get_coordinates: function(c) {
-		$(".xcrud").find("input.xrud-crop-data[name=x]").val(Math.round(c.x));
-		$(".xcrud").find("input.xrud-crop-data[name=y]").val(Math.round(c.y));
-		$(".xcrud").find("input.xrud-crop-data[name=x2]").val(Math.round(c.x2));
-		$(".xcrud").find("input.xrud-crop-data[name=y2]").val(Math.round(c.y2));
-		$(".xcrud").find("input.xrud-crop-data[name=w]").val(Math.round(c.w));
-		$(".xcrud").find("input.xrud-crop-data[name=h]").val(Math.round(c.h));
+		$(".cCrud").find("input.xrud-crop-data[name=x]").val(Math.round(c.x));
+		$(".cCrud").find("input.xrud-crop-data[name=y]").val(Math.round(c.y));
+		$(".cCrud").find("input.xrud-crop-data[name=x2]").val(Math.round(c.x2));
+		$(".cCrud").find("input.xrud-crop-data[name=y2]").val(Math.round(c.y2));
+		$(".cCrud").find("input.xrud-crop-data[name=w]").val(Math.round(c.w));
+		$(".cCrud").find("input.xrud-crop-data[name=h]").val(Math.round(c.h));
 	},
 	validation_url: function(val) {
 		if (val == "")
@@ -781,30 +781,30 @@ var cCrud = {
 	},
 	check_fixed_buttons: function() {
 		return null;
-		$(".xcrud").each(function() {
-			if ($(this).find(".xcrud-list:first").width() > $(this).find(".xcrud-list-container:first").width()) {
-				var w = $(this).find(".xcrud-actions:not(.xcrud-fix):first").width();
-				$(this).find(".xcrud-actions:not(.xcrud-fix):first").css({
+		$(".cCrud").each(function() {
+			if ($(this).find(".cCrud-list:first").width() > $(this).find(".cCrud-list-container:first").width()) {
+				var w = $(this).find(".cCrud-actions:not(.cCrud-fix):first").width();
+				$(this).find(".cCrud-actions:not(.cCrud-fix):first").css({
 					"width": w,
 					"min-width": w
 				});
-				$(this).find(".xcrud-list:first .xcrud-actions.xcrud-fix:not(.xcrud-actions-fixed)").addClass("xcrud-actions-fixed");
+				$(this).find(".cCrud-list:first .cCrud-actions.cCrud-fix:not(.cCrud-actions-fixed)").addClass("cCrud-actions-fixed");
 			} else
-				$(this).find(".xcrud-list:first .xcrud-actions").removeClass("xcrud-actions-fixed");
+				$(this).find(".cCrud-list:first .cCrud-actions").removeClass("cCrud-actions-fixed");
 		});
 	},
 	block_query: {},
 	depend_init: function(container) {
 		$(container).off('change.depend');
 		var dependencies = {};
-		$(container).find('.xcrud-input[data-depend]').each(function() {
+		$(container).find('.cCrud-input[data-depend]').each(function() {
 			var container = cCrud.get_container(this);
 			var data = cCrud.list_controls_data(container, this);
 			var depend_on = $(this).data("depend");
 			data.task = "depend";
 			data.name = $(this).attr('name');
 			data.value = $(this).val();
-			$(container).on('change.depend', '.xcrud-input[name="' + depend_on + '"]', function() {
+			$(container).on('change.depend', '.cCrud-input[name="' + depend_on + '"]', function() {
 				if (cCrud.check_container(this, container)) {
 					data.dependval = $(this).val();
 					cCrud.depend_query(data, depend_on, container);
@@ -816,7 +816,7 @@ var cCrud = {
 		});
 		$.map(dependencies, function(val, key) {
 			window.setTimeout(function() {
-				$(container).find('.xcrud-input[name="' + val + '"]:not([data-depend])').trigger('change.depend');
+				$(container).find('.cCrud-input[name="' + val + '"]:not([data-depend])').trigger('change.depend');
 			}, 100);
 		});
 	},
@@ -825,27 +825,27 @@ var cCrud = {
 			return;
 		}
 		cCrud.block_query[data.name + depend_on] = 1;
-		var el = $(container).find('.xcrud-input[name="' + data.name + '"]');
+		var el = $(container).find('.cCrud-input[name="' + data.name + '"]');
 		var parent = el.parent();
 		var values = el.val();
 
-		$(parent).trigger("xcrudbeforedepend", [container, data]);
+		$(parent).trigger("cCrudbeforedepend", [container, data]);
 		$.ajax({
 			data: {
-				"xcrud": data
+				"cCrud": data
 			},
 			type: 'post',
 			url: cCrud.config('url'),
 			success: function(input) {
 				el.select2('destroy').remove();
 				parent.css('visibility', 'hidden').append(input);
-				el = $(parent).find('.xcrud-input[name="' + data.name + '"]');
+				el = $(parent).find('.cCrud-input[name="' + data.name + '"]');
 				if (values !== null) {
 					el.val(values);
 				}
-				$(parent).trigger("xcrudafterdepend", [container, data]);
+				$(parent).trigger("cCrudafterdepend", [container, data]);
 				window.setTimeout(function() {
-					cCrud.jr_request($(container).find('.xcrud-input[name="' + data.name + '"]'));
+					cCrud.jr_request($(container).find('.cCrud-input[name="' + data.name + '"]'));
 					cCrud.block_query[data.name + depend_on] = 0;
 				}, 400);
 				el.select2();
@@ -921,7 +921,7 @@ var cCrud = {
 				var infoWindow = new google.maps.InfoWindow({
 					maxWidth: 320
 				});
-				infoWindow.setContent('<p class="xcrud-infowinow">' + infowindow + '</p>');
+				infoWindow.setContent('<p class="cCrud-infowinow">' + infowindow + '</p>');
 				infoWindow.open(map, currentmarker);
 			});
 		}
@@ -984,10 +984,10 @@ var cCrud = {
 	marker_instances: [],
 	map_init: function(container) {
 		cCrud.map_instances = [];
-		$(container).find('.xcrud-map').each(function() {
+		$(container).find('.cCrud-map').each(function() {
 			var cont = this;
 			var point_field = $(cont).parent().children('input[data-type="point"]');
-			var search_field = $(cont).parent().children('.xcrud-map-search');
+			var search_field = $(cont).parent().children('.cCrud-map-search');
 			var point = cCrud.parse_latlng($(point_field).val());
 			var map = cCrud.create_map(cont, point, $(cont).data('zoom'), 'ROADMAP');
 			var marker = cCrud.place_marker(map, point, $(cont).data('draggable'), $(cont).data('text'), point_field);
@@ -1015,15 +1015,15 @@ var cCrud = {
 		var m_left = $(element).outerWidth();
 		var m_top = $(element).outerHeight();
 		var pos = $(element).offset();
-		$(element).prev(".xcrud-map-dropdown").remove();
+		$(element).prev(".cCrud-map-dropdown").remove();
 		if (results) {
-			var list = '<ul class="xcrud-map-dropdown">';
+			var list = '<ul class="cCrud-map-dropdown">';
 			$.map(results, function(value) {
 				list += '<li data-val="' + value.lat + ',' + value.lng + '">' + value.address + '</li>';
 			});
 			list += '</ul>';
 			$(element).before(list);
-			$(element).prev(".xcrud-map-dropdown").offset(pos).css({
+			$(element).prev(".cCrud-map-dropdown").offset(pos).css({
 				"marginTop": m_top + "px",
 				"minWidth": m_left + "px"
 			}).children('li').on("click", function() {
@@ -1037,7 +1037,7 @@ var cCrud = {
 		}
 	},
 	map_resize_all: function() {
-		if ($(".xcrud-map").length && cCrud.map_instances.length) {
+		if ($(".cCrud-map").length && cCrud.map_instances.length) {
 			for (i = 0; i < cCrud.map_instances.length; i++) {
 				var map = cCrud.map_instances[i];
 				var marker = cCrud.marker_instances[i];
@@ -1051,10 +1051,10 @@ var cCrud = {
 		if (!selector_or_object) {
 			selector_or_object = 'body';
 		}
-		if ($(selector_or_object).hasClass('xcrud-ajax')) {
+		if ($(selector_or_object).hasClass('cCrud-ajax')) {
 			var obj = $(selector_or_object);
 		} else {
-			var obj = $(selector_or_object).find(".xcrud-ajax");
+			var obj = $(selector_or_object).find(".cCrud-ajax");
 		}
 		obj = obj.eq(0);
 		obj.each(function() {
@@ -1064,37 +1064,37 @@ var cCrud = {
 		});
 	},
 	bootstrap_modal: function(header, content) {
-		$("#xcrud-modal-window").remove();
-		$("body").append('<div id="xcrud-modal-window" class="modal fade"><div class="modal-dialog modal-lg"><div class="modal-content"></div></div></div>');
-		$("#xcrud-modal-window .modal-content").html('<div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title">' + header + '</h4></div>');
-		$("#xcrud-modal-window .modal-content").append('<div class="modal-body">' + content + '</div>');
-		$("#xcrud-modal-window").modal({
+		$("#cCrud-modal-window").remove();
+		$("body").append('<div id="cCrud-modal-window" class="modal fade"><div class="modal-dialog modal-lg"><div class="modal-content"></div></div></div>');
+		$("#cCrud-modal-window .modal-content").html('<div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title">' + header + '</h4></div>');
+		$("#cCrud-modal-window .modal-content").append('<div class="modal-body">' + content + '</div>');
+		$("#cCrud-modal-window").modal({
 			keyboard: false
 		}).on('shown.bs.modal', function(e) {
 		});
-		$('#xcrud-modal-window [data-dismiss="modal"]').on("click", function() {
-			$("#xcrud-modal-window").modal('hide');
+		$('#cCrud-modal-window [data-dismiss="modal"]').on("click", function() {
+			$("#cCrud-modal-window").modal('hide');
 			if ($(".simplemodal-close").length) { // joomla trick
 				$(".simplemodal-close").trigger("click");
-				$("#xcrud-modal-window").remove();
+				$("#cCrud-modal-window").remove();
 			}
 			return false;
 		});
-		$('#xcrud-modal-window').on('hidden.bs.modal hidden', function() {
-			$("#xcrud-modal-window").remove();
+		$('#cCrud-modal-window').on('hidden.bs.modal hidden', function() {
+			$("#cCrud-modal-window").remove();
 		});
 	},
 	ui_modal: function(header, content) {
-		$("#xcrud-modal-window").remove();
-		$("body").append('<div id="xcrud-modal-window">' + content + '</div>');
-		$("#xcrud-modal-window").dialog({
+		$("#cCrud-modal-window").remove();
+		$("body").append('<div id="cCrud-modal-window">' + content + '</div>');
+		$("#cCrud-modal-window").dialog({
 			resizable: false,
 			height: 'auto',
 			width: 'auto',
 			modal: true,
 			closeOnEscape: true,
 			close: function(event, ui) {
-				$("#xcrud-modal-window").remove();
+				$("#cCrud-modal-window").remove();
 			},
 			title: header
 		});
@@ -1123,17 +1123,17 @@ var cCrud = {
 		cCrud.bootstrap_modal(Base64.decode(header), Base64.decode(content));
 	},
 	init_tabs: function(container) {
-		if ($(container).find('.xcrud-tabs').length) {
+		if ($(container).find('.cCrud-tabs').length) {
 			if (typeof ($.fn.tab) != 'undefined') {
-				$(container).find('.xcrud-tabs > ul:first > li > a').on("click", function() {
+				$(container).find('.cCrud-tabs > ul:first > li > a').on("click", function() {
 					$(this).tab('show');
 					return false;
 				});
-				$('.xcrud .nav-tabs a').on('shown.bs.tab', function(e) {
+				$('.cCrud .nav-tabs a').on('shown.bs.tab', function(e) {
 					cCrud.map_resize_all();
 				});
 			} else {
-				$(container).find('.xcrud-tabs').tabs({
+				$(container).find('.cCrud-tabs').tabs({
 					activate: function(event, ui) {
 						cCrud.map_resize_all();
 					}
@@ -1142,17 +1142,17 @@ var cCrud = {
 		}
 	},
 	init_tooltips: function(container) {
-		if ($(container).find('.xcrud-tooltip').length) {
-			$(container).find('.xcrud-tooltip').tooltip();
+		if ($(container).find('.cCrud-tooltip').length) {
+			$(container).find('.cCrud-tooltip').tooltip();
 		}
 	},
 	show_alert: function(texto) {
 
-		if (!alertify.xcrud) {
-			alertify.dialog('xcrud', function factory() {
+		if (!alertify.cCrud) {
+			alertify.dialog('cCrud', function factory() {
 				return {
 					build: function() {
-						this.setHeader(xcrud_config.table_name);
+						this.setHeader(cCrud_config.table_name);
 					},
 					main: function(message) {
 						this.message = message;
@@ -1169,7 +1169,7 @@ var cCrud = {
 				}
 			});
 		}
-		alertify.xcrud(texto);
+		alertify.cCrud(texto);
 	},
 	show_error: function(texto, delay = 5) {
 		console.log(texto);
@@ -1193,10 +1193,10 @@ var cCrud = {
 	},
 	check_message: function(container) {
 		if (typeof container == "string") {
-			var messages = $(container).filter(".xcrud-callback-message");
+			var messages = $(container).filter(".cCrud-callback-message");
 		}
 		else {
-			var messages = $(container).find(".xcrud-callback-message");
+			var messages = $(container).find(".cCrud-callback-message");
 		}
 		if ($(messages).length) {
 			messages.each(function() {
@@ -1302,7 +1302,7 @@ var cCrud = {
 				}
 				var fields = [];
 				$('#' + id + ' .filtrosFields').each(function() {
-					var i = [$(this).attr('id'), $(this).find('.f').val(), $(this).find('.inp .xcrud-input').val()]
+					var i = [$(this).attr('id'), $(this).find('.f').val(), $(this).find('.inp .cCrud-input').val()]
 					fields.push(i);
 				});
 				var fieldsAd = [];
@@ -1336,9 +1336,9 @@ var cCrud = {
 	action: function(e) {
 		var container = cCrud.get_container(e);
 		var data = cCrud.list_data(container, e);
-		if ($(e).hasClass('xcrud-in-new-window')) {
+		if ($(e).hasClass('cCrud-in-new-window')) {
 			cCrud.new_window_request(container, data);
-		} else if ($(e).hasClass('xcrud-in-modal')) {
+		} else if ($(e).hasClass('cCrud-in-modal')) {
 			cCrud.parent_container = container;
 			cCrud.modal_request(container, data);
 		} else {
@@ -1370,7 +1370,7 @@ var cCrud = {
 				cCrud.show_progress(container);
 			},
 			data: {
-				"xcrud": data
+				"cCrud": data
 			},
 			dataType: "json",
 			beforeSend: function(jqXHR, settings) {
@@ -1379,7 +1379,7 @@ var cCrud = {
 			},
 			success: function(response) {
 				for (var i in response) {
-					var obj = $('.xcrud-input[name="' + i + '"]', container);
+					var obj = $('.cCrud-input[name="' + i + '"]', container);
 					if (obj.data('select2')) {
 						obj.select2('destroy').replaceWith(response[i]);
 					} else {
@@ -1389,7 +1389,7 @@ var cCrud = {
 			},
 			complete: function() {
 				cCrud.hide_progress(container);
-				$(document).trigger("xcrudafterjoinrelation", [e.closest('.form-horizontal'), data, status]);
+				$(document).trigger("cCrudafterjoinrelation", [e.closest('.form-horizontal'), data, status]);
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
 				// console.log(textStatus);
@@ -1402,20 +1402,20 @@ var cCrud = {
 		if (!$.fn.select2)
 			return;
 		var container = cCrud.get_container(e);
-		$('select:not(.xcrud-columns-select):not(.xcrud-searchdata):not(.not_select2):not(.xcrud-columnsList-select)', container).each(function() {
+		$('select:not(.cCrud-columns-select):not(.cCrud-searchdata):not(.not_select2):not(.cCrud-columnsList-select)', container).each(function() {
 			var options = $.extend({
 				width: '100%'
 			}, $(this).data());
 			if ($(this).hasClass('select2-ajax')) {
-				var container = $(this).closest('.xcrud-ajax');
+				var container = $(this).closest('.cCrud-ajax');
 				var depend_on = $(this).data("depend");
 				var dados = cCrud.list_controls_data(container);
-				dados.dependval = $('.xcrud-input[name="' + depend_on + '"]').val();
+				dados.dependval = $('.cCrud-input[name="' + depend_on + '"]').val();
 				dados.name = $(this).data('relationajax');
 				dados.task = 'relation_search';
 				$.extend(options, {
 					ajax: {
-						url: "/ajax/xcrud",
+						url: "/ajax/cCrud",
 						dataType: 'json',
 						delay: 250,
 						type: 'POST',
@@ -1425,7 +1425,7 @@ var cCrud = {
 						data: function(params) {
 							return {
 								q: params.term,
-								xcrud: dados
+								cCrud: dados
 							};
 						},
 						processResults: function(data, page) {
@@ -1459,7 +1459,7 @@ var cCrud = {
 	init_columns_select: function(container) {
 		var data = cCrud.list_data(container);
 		if (data.task == 'list') {
-			$('.xcrud-columnsList-select', container).SumoSelect({
+			$('.cCrud-columnsList-select', container).SumoSelect({
 				okCancelInMulti: true,
 				selectAll: true
 			});
@@ -1467,45 +1467,45 @@ var cCrud = {
 	}
 };
 /** events */
-$(document).on("xcrudinit", function() {
-	if ($(".xcrud").length) {
-		$(".xcrud").off('change', 'select.xcrud-columnsList-select').on("change", "select.xcrud-columnsList-select", function() {
+$(document).on("cCrudinit", function() {
+	if ($(".cCrud").length) {
+		$(".cCrud").off('change', 'select.cCrud-columnsList-select').on("change", "select.cCrud-columnsList-select", function() {
 			var container = cCrud.get_container(this);
 			var data = cCrud.list_data(container);
 			data.task = 'change_columns';
 			data.columns = $(this).val();
 			cCrud.request(container, data);
 		});
-		$(".xcrud").off('change', '.xcrud-actionlist').on("change", ".xcrud-actionlist", function() {
+		$(".cCrud").off('change', '.cCrud-actionlist').on("change", ".cCrud-actionlist", function() {
 			var container = cCrud.get_container(this);
 			var data = cCrud.list_data(container);
 			cCrud.request(container, data);
 		});
-		$(".xcrud").off('change', '.xcrud-daterange').on("change", ".xcrud-daterange", function() {
+		$(".cCrud").off('change', '.cCrud-daterange').on("change", ".cCrud-daterange", function() {
 			var container = $(this).parent();
 			if ($(this).val()) {
-				if ($(container).find(".xcrud-datepicker-from").data("DateTimePicker") != undefined) {
-					$(container).find(".xcrud-datepicker-from").data("DateTimePicker").date(new Date($(this).find('option:selected').data('from') * 1000));
-					$(container).find(".xcrud-datepicker-to").data("DateTimePicker").date(new Date($(this).find('option:selected').data('to') * 1000));
+				if ($(container).find(".cCrud-datepicker-from").data("DateTimePicker") != undefined) {
+					$(container).find(".cCrud-datepicker-from").data("DateTimePicker").date(new Date($(this).find('option:selected').data('from') * 1000));
+					$(container).find(".cCrud-datepicker-to").data("DateTimePicker").date(new Date($(this).find('option:selected').data('to') * 1000));
 				} else {
-					$(container).find(".xcrud-datepicker-from").datepicker('update', new Date($(this).find('option:selected').data('from') * 1000));
-					$(container).find(".xcrud-datepicker-to").datepicker('update', new Date($(this).find('option:selected').data('to') * 1000));
+					$(container).find(".cCrud-datepicker-from").datepicker('update', new Date($(this).find('option:selected').data('from') * 1000));
+					$(container).find(".cCrud-datepicker-to").datepicker('update', new Date($(this).find('option:selected').data('to') * 1000));
 				}
 			} else {
-				$(container).find(".xcrud-datepicker-from,.xcrud-datepicker-to").val('');
+				$(container).find(".cCrud-datepicker-from,.cCrud-datepicker-to").val('');
 			}
 		});
-		$(".xcrud").off('change', '.xcrud-columns-select').on("change", ".xcrud-columns-select", function() {
+		$(".cCrud").off('change', '.cCrud-columns-select').on("change", ".cCrud-columns-select", function() {
 			var container = $(this).parent();
 			var type = $(this).children("option:selected").data('type');
 			var fieldname = $(this).children("option:selected").val();
 			cCrud.change_filter(type, container, fieldname);
 		});
-		$(".xcrud").off('click', '.xcrud-action').on("click", ".xcrud-action", function() {
+		$(".cCrud").off('click', '.cCrud-action').on("click", ".cCrud-action", function() {
 			var element = $(this);
 			var confirm_text = $(this).data('confirm');
 			if (confirm_text) {
-				alertify.confirm(xcrud_config.table_name, confirm_text, function() {
+				alertify.confirm(cCrud_config.table_name, confirm_text, function() {
 					cCrud.action(element);
 				}, function() {
 
@@ -1515,37 +1515,37 @@ $(document).on("xcrudinit", function() {
 			}
 			return false;
 		});
-		$(".xcrud").off('click', '.xcrud-toggle-show').on("click", ".xcrud-toggle-show", function() {
-			var container = $(this).closest(".xcrud").find(".xcrud-container:first");
-			var closed = $(this).hasClass("xcrud-toggle-down");
+		$(".cCrud").off('click', '.cCrud-toggle-show').on("click", ".cCrud-toggle-show", function() {
+			var container = $(this).closest(".cCrud").find(".cCrud-container:first");
+			var closed = $(this).hasClass("cCrud-toggle-down");
 			if (closed) {
 				$(container).stop(true, true).delay(100).slideDown(200, function() {
-					$(document).trigger("xcrudslidedown");
-					$(container).trigger("xcrudslidedown");
+					$(document).trigger("cCrudslidedown");
+					$(container).trigger("cCrudslidedown");
 				});
-				// $(this).removeClass("xcrud-toggle-down");
-				// $(this).addClass("xcrud-toggle-up");
-				$(this).closest(".xcrud").find(".xcrud-main-tab").slideUp(200);
+				// $(this).removeClass("cCrud-toggle-down");
+				// $(this).addClass("cCrud-toggle-up");
+				$(this).closest(".cCrud").find(".cCrud-main-tab").slideUp(200);
 			} else {
 				$(container).stop(true, true).slideUp(200, function() {
-					$(document).trigger("xcrudslideup");
+					$(document).trigger("cCrudslideup");
 					$(container)
-					z.trigger("xcrudslideup");
+					z.trigger("cCrudslideup");
 				});
-				// $(this).removeClass("xcrud-toggle-up");
-				// $(this).addClass("xcrud-toggle-down");
-				$(this).closest(".xcrud").find(".xcrud-main-tab").delay(100).slideDown(200);
+				// $(this).removeClass("cCrud-toggle-up");
+				// $(this).addClass("cCrud-toggle-down");
+				$(this).closest(".cCrud").find(".cCrud-main-tab").delay(100).slideDown(200);
 			}
 			return false;
 		});
-		$(".xcrud").off('keypress', '.xcrud-input').on("keypress", ".xcrud-input", function(e) {
+		$(".cCrud").off('keypress', '.cCrud-input').on("keypress", ".cCrud-input", function(e) {
 			return cCrud.pattern_callback(e, this);
 		});
-		$(".xcrud").off('click', '.xcrud-search-toggle').on("click", ".xcrud-search-toggle", function() {
-			$(this).closest(".xcrud-ajax").find(".xcrud-search-toggle").find(".xcrud-searchdata").focus();
+		$(".cCrud").off('click', '.cCrud-search-toggle').on("click", ".cCrud-search-toggle", function() {
+			$(this).closest(".cCrud-ajax").find(".cCrud-search-toggle").find(".cCrud-searchdata").focus();
 			return false;
 		});
-		$(".xcrud").off('keydown', '.xcrud-searchdata').on("keydown", ".xcrud-searchdata", function(e) {
+		$(".cCrud").off('keydown', '.cCrud-searchdata').on("keydown", ".cCrud-searchdata", function(e) {
 			if (e.which == 13) { // ENTER
 				var container = cCrud.get_container(this);
 				var data = cCrud.list_data(container);
@@ -1556,10 +1556,10 @@ $(document).on("xcrudinit", function() {
 			} else if (e.which == 27) { // ESC
 				if ($(this).parent().find("a").hasClass('fa-search')) {
 					// ainda não buscou
-					if ($(this).parent().find(".xcrud-searchdata").val() === "") {
+					if ($(this).parent().find(".cCrud-searchdata").val() === "") {
 
 					} else {
-						$(this).parent().find(".xcrud-searchdata").val('');
+						$(this).parent().find(".cCrud-searchdata").val('');
 					}
 				} else if ($(this).parent().find("a").hasClass('fa-times')) {
 					// ja fez a busca (ja
@@ -1568,47 +1568,47 @@ $(document).on("xcrudinit", function() {
 				}
 			}
 		});
-		$(".xcrud").off('change', '.xcrud-upload').on("change", ".xcrud-upload", function() {
+		$(".cCrud").off('change', '.cCrud-upload').on("change", ".cCrud-upload", function() {
 			var container = cCrud.get_container(this);
 			var data = cCrud.list_data(container);
 			cCrud.upload_file(this, data, container);
 			return false;
 		});
-		$(".xcrud").off('click', '.xcrud-remove-file').on("click", ".xcrud-remove-file", function() {
+		$(".cCrud").off('click', '.cCrud-remove-file').on("click", ".cCrud-remove-file", function() {
 			var container = cCrud.get_container(this);
 			var data = cCrud.list_data(container);
 			cCrud.remove_file(this, data, container);
 			return false;
 		});
-		$(".xcrud").off('click', '.xcrud_modal').on("click", ".xcrud_modal", function() {
+		$(".cCrud").off('click', '.cCrud_modal').on("click", ".cCrud_modal", function() {
 			var content = $(this).data("content");
 			var header = $(this).data("header");
 			cCrud.modal(header, content);
 			return false;
 		});
-		$(".xcrud").off('change', '.xcrud-mass-select').on("change", ".xcrud-mass-select", function() {
+		$(".cCrud").off('change', '.cCrud-mass-select').on("change", ".cCrud-mass-select", function() {
 			if ($(this).val() == 1) {
-				cCrud.get_container(this).find('.xcrud-mass-form-group').show(150);
+				cCrud.get_container(this).find('.cCrud-mass-form-group').show(150);
 			}
 			else {
-				cCrud.get_container(this).find('.xcrud-mass-form-group').hide(150);
+				cCrud.get_container(this).find('.cCrud-mass-form-group').hide(150);
 			}
 
 		});
-		$(".xcrud").off('change', 'input.xcrud-mass-checkbox-header[type="checkbox"],input.xcrud-mass-checkbox-footer[type="checkbox"]').on("change", 'input.xcrud-mass-checkbox-header[type="checkbox"],input.xcrud-mass-checkbox-footer[type="checkbox"]', function() {
+		$(".cCrud").off('change', 'input.cCrud-mass-checkbox-header[type="checkbox"],input.cCrud-mass-checkbox-footer[type="checkbox"]').on("change", 'input.cCrud-mass-checkbox-header[type="checkbox"],input.cCrud-mass-checkbox-footer[type="checkbox"]', function() {
 			if ($(this).is(':checked')) {
-				$('input.xcrud-mass-checkbox[type="checkbox"]', cCrud.get_container(this)).prop("checked", true);
+				$('input.cCrud-mass-checkbox[type="checkbox"]', cCrud.get_container(this)).prop("checked", true);
 			} else {
-				$('input.xcrud-mass-checkbox[type="checkbox"]', cCrud.get_container(this)).prop("checked", false);
+				$('input.cCrud-mass-checkbox[type="checkbox"]', cCrud.get_container(this)).prop("checked", false);
 			}
 		});
-		$(".xcrud").off('change', '.join_relation').on("change", ".join_relation", function() {
+		$(".cCrud").off('change', '.join_relation').on("change", ".join_relation", function() {
 			cCrud.jr_request($(this));
 			cCrud.depend_init(this);
 		});
-		$(".xcrud-ajax").each(function() {
+		$(".cCrud-ajax").each(function() {
 			cCrud.init_datepicker(this);
-			cCrud.init_datepicker_range($(this).find('.xcrud-columns-select option:selected').data('type'), this);
+			cCrud.init_datepicker_range($(this).find('.cCrud-columns-select option:selected').data('type'), this);
 			cCrud.depend_init(this);
 			cCrud.map_init(this);
 			cCrud.check_fixed_buttons();
@@ -1622,28 +1622,28 @@ $(document).on("xcrudinit", function() {
 			cCrud.init_checkbox(this);
 			cCrud.init_columns_select(this);
 			cCrud.init_mask(this);
-			//$(".xcrud-input").first().focus();
+			//$(".cCrud-input").first().focus();
 		});
 	}
 });
 $(document).ready(function() {
 	cCrud.init();
 });
-$(window).on("resize load xcrudslidetoggle", function() {
+$(window).on("resize load cCrudslidetoggle", function() {
 	cCrud.check_fixed_buttons();
 });
 $(window).on("load", function() {
-	$(".xcrud-ajax").each(function() {
+	$(".cCrud-ajax").each(function() {
 		cCrud.init_texteditor(this);
 	});
 });
-$(document).on("xcrudbeforerequest", function(event, container) {
+$(document).on("cCrudbeforerequest", function(event, container) {
 	cCrud.show_progress(container);
 });
-$(document).on("xcrudafterrequest", function(event, container) {
+$(document).on("cCrudafterrequest", function(event, container) {
 	cCrud.init_datepicker(container);
 	cCrud.init_texteditor(container);
-	cCrud.init_datepicker_range($(container).find('.xcrud-columns-select option:selected').data('type'), container);
+	cCrud.init_datepicker_range($(container).find('.cCrud-columns-select option:selected').data('type'), container);
 	cCrud.depend_init(container);
 	cCrud.map_init(container);
 	cCrud.check_fixed_buttons();
@@ -1656,18 +1656,18 @@ $(document).on("xcrudafterrequest", function(event, container) {
 	cCrud.init_mask(container);
 	cCrud.init_columns_select(container);
 });
-$(document).on("xcrudafterupload", function(event, container) {
+$(document).on("cCrudafterupload", function(event, container) {
 	cCrud.check_message(container);
 });
-$(document).on("xcrudbeforedepend", function(event, container, data) {
+$(document).on("cCrudbeforedepend", function(event, container, data) {
 	$('select[name="' + data.name + '"]').parent().find('.select2').remove();
 });
-$(document).on("xcrudafterdepend", function(event, container, data) {
+$(document).on("cCrudafterdepend", function(event, container, data) {
 });
-$(document).on("xcrudafterjoinrelation", function(event, container) {
+$(document).on("cCrudafterjoinrelation", function(event, container) {
 	cCrud.init_datepicker(container);
 	cCrud.init_texteditor(container);
-	cCrud.init_datepicker_range($(container).find('.xcrud-columns-select option:selected').data('type'), container);
+	cCrud.init_datepicker_range($(container).find('.cCrud-columns-select option:selected').data('type'), container);
 	cCrud.map_init(container);
 	cCrud.check_fixed_buttons();
 	cCrud.init_tooltips(container);
@@ -1682,9 +1682,9 @@ $(document).on("xcrudafterjoinrelation", function(event, container) {
 //
 /** print */
 $.extend({
-	print_window: function(print_win, xcrud) {
+	print_window: function(print_win, cCrud) {
 		var data = {};
-		$(xcrud).find(".xcrud-data").each(function() {
+		$(cCrud).find(".cCrud-data").each(function() {
 			data[$(this).attr("name")] = $(this).val();
 		});
 		data.task = 'print';
@@ -1694,7 +1694,7 @@ $.extend({
 				print_win.document.open();
 				print_win.document.write(out);
 				print_win.document.close();
-				$(xcrud).find(".xcrud-data[name=key]:first").val($(print_win.document).find(".xcrud-data[name=key]:first").val());
+				$(cCrud).find(".cCrud-data[name=key]:first").val($(print_win.document).find(".cCrud-data[name=key]:first").val());
 				var ua = navigator.userAgent.toLowerCase();
 				if ((ua.indexOf("opera") != -1)) { // opera fix
 					$(print_win).load(function() {
@@ -1731,15 +1731,15 @@ $.extend({
 		var fileId = 'jUploadFile' + id;
 		var form = $('<form  action="" method="POST" name="' + formId + '" id="' + formId + '" enctype="multipart/form-data"></form>');
 		if (data) {
-			for (var i in data.xcrud) {
-				if (data.xcrud[i] == 'postdata') {
+			for (var i in data.cCrud) {
+				if (data.cCrud[i] == 'postdata') {
 					/*
-					 * for (var j in data.xcrud.postdata) { $('<input
-					 * type="hidden" name="xcrud[postdata][' + j + ']" value="' +
-					 * data.xcrud.postdata[j] + '" />').appendTo(form); }
+					 * for (var j in data.cCrud.postdata) { $('<input
+					 * type="hidden" name="cCrud[postdata][' + j + ']" value="' +
+					 * data.cCrud.postdata[j] + '" />').appendTo(form); }
 					 */
 				} else
-					$('<input type="hidden" name="xcrud[' + i + ']" value="' + data.xcrud[i] + '" />').appendTo(form);
+					$('<input type="hidden" name="cCrud[' + i + ']" value="' + data.cCrud[i] + '" />').appendTo(form);
 			}
 		}
 		var oldElement = $('#' + fileElementId);

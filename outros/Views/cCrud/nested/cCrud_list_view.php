@@ -3,7 +3,7 @@
 </div>
 <div class="panel-body container-fluid padding-0">
 	<?php if ($this->is_create or $this->is_csv or $this->is_print){?>
-	<div class="xcrud-top-actions">
+	<div class="cCrud-top-actions">
 		<div class="pull-left">
     		<?php echo $this->add_button('btn btn-success','icon wb-plus'); ?>
     	</div>
@@ -19,11 +19,11 @@
 		<div class="clearfix"></div>
 	</div>
 	<?php } ?>
-	<div class="xcrud-list-container">
+	<div class="cCrud-list-container">
 		<?php echo $this->render_alphabetical_filter();?><br/>
 		<?php echo $this->render_custom_filter('direita')?>
         <table
-			class="xcrud-list table table-striped table-hover table-condensed">
+			class="cCrud-list table table-striped table-hover table-condensed">
 			<thead>
                 <?php echo $this->render_grid_head('tr', 'th', array('asc' =>'<i class="icon wb-triangle-up"></i>', 'desc' => '<i class="icon wb-triangle-down"></i>')); ?>
             </thead>

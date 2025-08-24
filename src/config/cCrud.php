@@ -9,13 +9,13 @@ use CodeIgniter\Config\BaseConfig;
 class cCrud extends BaseConfig
 {
     // scripts
-    public $load_bootstrap = false; // turn on, if you want to load bootstrap via xCRUD
+    public $load_bootstrap = false; // turn on, if you want to load bootstrap via cCrud
     public $load_googlemap = false; // loads google map api for 'POINT' type. Turn off, if your site already uses it.
-    public $load_jquery = false; // loads jQuery, turn it off if you already have jQuery on your page. jQuery version must be at least 1.7. If your jQuery loads in the bottom of page, you must activate $manual_load and use  Xcrud::load_css() & Xcrud::load_js() on your page.
+    public $load_jquery = false; // loads jQuery, turn it off if you already have jQuery on your page. jQuery version must be at least 1.7. If your jQuery loads in the bottom of page, you must activate $manual_load and use  cCrud::load_css() & cCrud::load_js() on your page.
     public $load_jquery_ui = false; // jQueryUI, turn it on if you already have jQueryUI on your page (datepicker and slider widgets are mandatory).
     public $load_jcrop = false; // disable, if your page already uses jCrop
     public $jquery_no_conflict = false; // Includes jQuery.noConflict(). Use according to jQuery documentation.
-    public $manual_load = false; // Allows you to disable xcruds css and js output, but you can use Xcrud::load_css() & Xcrud::load_js() in your code manually.
+    public $manual_load = false; // Allows you to disable cCruds css and js output, but you can use cCrud::load_css() & cCrud::load_js() in your code manually.
 
     
     // editor
@@ -30,7 +30,7 @@ class cCrud extends BaseConfig
     public $show_primary_ai_field = false; // Show primary auto-increment field in create/edit view.
     public $show_primary_ai_column = false; // Show primary auto-increment column in list view.
     public $can_minimize = false; // allows 'minimize' arrow in grid
-    public $start_minimized = false; // Start all xCRUD instances minimized.
+    public $start_minimized = false; // Start all cCrud instances minimized.
     public $remove_confirm = true; // Show confirmation dialog on remove action.
     public $column_cut = 100; // Sets the maximum number of characters in the column.
     public $limit = 25; // default limit of rows per page
@@ -61,7 +61,7 @@ class cCrud extends BaseConfig
     public $lists_null_opt = true; // display null(empty) option in all dropdowns and multiselects
     public $enum_as_radio = false; // shows ENUM field as radiobox, dropdown by default
     public $set_as_checkboxes = false; // shows SET field as checkboxes, multiselect by default
-    public $upload_folder_def = '../../uploads/'; // Default uploads folder on your site, relative to xCRUD folder or absolute path required. Folder is must exist.
+    public $upload_folder_def = '../../uploads/'; // Default uploads folder on your site, relative to cCrud folder or absolute path required. Folder is must exist.
     public $not_null_is_required = true; // makes not null fields required
     public $encode_field_names = false;
     
@@ -130,17 +130,17 @@ class cCrud extends BaseConfig
     public $maps_api_key = '';
     
     
-    // xcrud folder url
-    public $scripts_url = ''; // URL to the xCRUD folder, not real path, without a trailing slash, can be relative, e.g. 'some_folder/xcrud' or absolute, e.g. 'http://www.your_site.com/some_folder/xcrud'. If empty - will be detected automatically
+    // cCrud folder url
+    public $scripts_url = ''; // URL to the cCrud folder, not real path, without a trailing slash, can be relative, e.g. 'some_folder/cCrud' or absolute, e.g. 'http://www.your_site.com/some_folder/cCrud'. If empty - will be detected automatically
     public $urls2abs = true; // makes relative urls to absolute. Turn off if you have some troubles with relative urls.
     
     
     // system integration options. NO ANY TRAILING SLASHES!
-    // urls (relative to $scripts_url or xcrud's folder, if $scripts_url is not defined)
+    // urls (relative to $scripts_url or cCrud's folder, if $scripts_url is not defined)
     public $plugins_uri = 'plugins'; // scripts and libraries
     public $lang_uri = 'application/language'; // js files
     public $ajax_uri = 'ajax'; // main ajax file ou url
-    // paths (relative to xcrud's folder)
+    // paths (relative to cCrud's folder)
     public $lang_path = '../../language/'; // ini files
     // external session
     public $external_session = false; // use only when you use integration with externall session
@@ -151,11 +151,11 @@ class cCrud extends BaseConfig
     
     // system
     public $performance_mode = false; // experimental, disables {field_tags} features
-    public $autoclean_timeout = 3600; // in seconds. Do not change, if not sure. Xcrud clears old instances in session when you reload browser tab or open new tab with xcrud. In this case Xcrud can't work in two tabs in the same time. You can increase timeout on your risk.
+    public $autoclean_timeout = 3600; // in seconds. Do not change, if not sure. cCrud clears old instances in session when you reload browser tab or open new tab with cCrud. In this case cCrud can't work in two tabs in the same time. You can increase timeout on your risk.
     
     
     // anti XSS
-    public $auto_xss_filtering = false; // enable all Xcrud's POST and GET data filtering
+    public $auto_xss_filtering = false; // enable all cCrud's POST and GET data filtering
     public $xss_disalowed_attibutes = array('on\w*', /*'style',*/ 'xmlns', 'formaction'); // Remove bad attributes such as style, onclick and xmlns
     public $xss_naughty_html = 'alert|applet|audio|basefont|base|behavior|bgsound|blink|body|embed|expression|form|frameset|frame|head|html|ilayer|input|isindex|layer|link|meta|object|plaintext|script|textarea|title|video|xml|xss'; // If a tag containing any of the words in the list below is found, the tag gets converted to entities.
     public $xss_naughty_scripts = 'alert|cmd|passthru|eval|exec|expression|system|fopen|fsockopen|file|file_get_contents|readfile|unlink'; // imilar to above, only instead of looking for tags it looks for PHP and JavaScript commands that are disallowed.  Rather than removing the code, it simply converts the parenthesis to entities rendering the code un-executable.

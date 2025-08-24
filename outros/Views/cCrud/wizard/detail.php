@@ -1,7 +1,7 @@
 <?php if ($this->get_var('custom_head') != false)
         require APPPATH . 'Views/' . ltrim($this->get_var('custom_head'), '/'); ?>
 	
-<?php require $_SERVER['DOCUMENT_ROOT'].'/application/views/xcrud_default/_blocos/replace_title.php';?>
+<?php require $_SERVER['DOCUMENT_ROOT'].'/application/views/cCrud_default/_blocos/replace_title.php';?>
 <div class="panel panel-bordered wizard-pane active" role="tabpanel" aria-expanded="true">
 	<div class="panel-toolbar" role="toolbar">
 		<div class="btn-group btn-group-flat pull-right" role="group">
