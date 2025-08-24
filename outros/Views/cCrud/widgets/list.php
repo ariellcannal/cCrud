@@ -12,7 +12,7 @@ if ($this->get_var('custom_head') != false)
 		<?php echo $this->render_mass_edit_form();?>
 	</div>
 	<?php }?>
-	<div class="xcrud-list-container table-responsive">
+	<div class="cCrud-list-container table-responsive">
 		<table class="table table-hover table-striped" data-selectable="selectable" data-row-selectable="true">
 			<thead>
                 <?php echo $this->render_grid_head('tr', 'th', array('asc' =>'<i class="icon wb-triangle-up"></i>', 'desc' => '<i class="icon wb-triangle-down"></i>')); ?>

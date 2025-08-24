@@ -13,7 +13,7 @@ class Postdata
      *
      * @var cCrud|null
      */
-    private ?cCrud $xcrud = null;
+    private ?cCrud $cCrud = null;
 
     /**
      * Dados recebidos via POST.
@@ -26,11 +26,11 @@ class Postdata
      * Inicializa a classe com os dados do formulário.
      *
      * @param array<string,mixed> $postdata Dados do formulário.
-     * @param cCrud               $xcrud    Instância principal do cCrud.
+     * @param cCrud               $cCrud    Instância principal do cCrud.
      */
-    public function __construct(array $postdata, cCrud $xcrud)
+    public function __construct(array $postdata, cCrud $cCrud)
     {
-        $this->xcrud = $xcrud;
+        $this->cCrud = $cCrud;
         $this->postdata = $postdata;
     }
 
@@ -46,11 +46,11 @@ class Postdata
      */
     public function set(string $name, mixed $value): self
     {
-        $fdata = $this->xcrud->_parse_field_names($name, 'Postdata');
+        $fdata = $this->cCrud->_parse_field_names($name, 'Postdata');
         foreach ($fdata as $key => $_) {
             $this->postdata[$key] = $value;
         }
-        $this->xcrud->unlock_field($name); // Garante que o campo possa ser reutilizado
+        $this->cCrud->unlock_field($name); // Garante que o campo possa ser reutilizado
         return $this;
     }
 
@@ -63,7 +63,7 @@ class Postdata
      */
     public function del(string $name): self
     {
-        $fdata = $this->xcrud->_parse_field_names($name, 'Postdata');
+        $fdata = $this->cCrud->_parse_field_names($name, 'Postdata');
         foreach ($fdata as $key => $_) {
             unset($this->postdata[$key]);
         }
@@ -79,7 +79,7 @@ class Postdata
      */
     public function get(string $name): mixed
     {
-        $fdata = $this->xcrud->_parse_field_names($name, 'Postdata');
+        $fdata = $this->cCrud->_parse_field_names($name, 'Postdata');
         $fname = key($fdata);
         return $this->postdata[$fname] ?? null;
     }

@@ -1,7 +1,7 @@
 <?php if ($this->get_var('custom_head') != false)
         require APPPATH . 'Views/' . ltrim($this->get_var('custom_head'), '/'); ?>
 <?php if($this->is_inner)
-	include 'nested/xcrud_list_view.php';
+	include 'nested/cCrud_list_view.php';
 else{
 ?>
 <div class="page-header">
@@ -15,7 +15,7 @@ else{
 			<div class="panel">
 				<div class="panel-heading">
 					<?php if ($this->is_create or $this->is_csv or $this->is_search or $this->is_print){?>
-				        <div class="xcrud-top-actions">
+				        <div class="cCrud-top-actions">
 							<div class="pull-left">
 								<?php echo $this->add_button('btn btn-success','icon wb-plus'); ?>
 								<?php echo $this->render_mass_actions();?>
@@ -41,8 +41,8 @@ else{
 				<div class="pull-right col-md-2">
 					<?php echo $this->render_columns_select();?>
 				</div>
-				<div class="xcrud-list-container table-responsive">
-			        <table class="xcrud-list table table-striped table-hover table-condensed table-responsive" data-selectable="selectable" data-row-selectable="true">
+				<div class="cCrud-list-container table-responsive">
+			        <table class="cCrud-list table table-striped table-hover table-condensed table-responsive" data-selectable="selectable" data-row-selectable="true">
 						<thead>
 			                <?php echo $this->render_grid_head('tr', 'th', array('asc' =>'<i class="icon wb-triangle-up"></i>', 'desc' => '<i class="icon wb-triangle-down"></i>')); ?>
 			            </thead>

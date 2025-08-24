@@ -1,11 +1,11 @@
 <?php if ($this->get_var('custom_head') != false)
         require APPPATH . 'Views/' . ltrim($this->get_var('custom_head'), '/'); ?>
 	
-<?php require $_SERVER['DOCUMENT_ROOT'].'/application/views/xcrud_default/_blocos/replace_title.php';?>
+<?php require $_SERVER['DOCUMENT_ROOT'].'/application/views/cCrud_default/_blocos/replace_title.php';?>
 <div class="page-header">
 	<?php echo $this->renderTableName($mode,array('tag'=>'h1','class'=>'page-title'),false,$title); ?>
 	<p class="page-description">Preencha os parâmetros abaixo:</p>
-    <div class="page-header-actions xcrud-top-actions">
+    <div class="page-header-actions cCrud-top-actions">
     	<div class="btn-group">
     	<?php echo $this->render_button('make_report','make_report','','btn btn-success','');?>
 	    </div>
@@ -16,7 +16,7 @@
 	<div class="col-md-6 col-sm-12 col-xs-12">
 		<div class="panel">
 			<div class="panel-body">
-				<div class="xcrud-view">
+				<div class="cCrud-view">
 					<?php
 					/* DEFAULTS */
 					$container = 'table';
@@ -44,7 +44,7 @@
 					echo $this->render_fields_list($mode,$container,$row,$label,$field,$tabs_block,$tabs_head,$tabs_row,$tabs_link,$tabs_content,$tabs_pane);
 					?>
 				</div>
-				<div class="xcrud-nav">
+				<div class="cCrud-nav">
 				    <?php echo $this->render_benchmark(); ?>
 				</div>
 			</div>
