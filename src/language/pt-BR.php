@@ -87,6 +87,7 @@ return [
     'field_name_required' => 'Você deve definir o nome do campo para o método <strong>{0}</strong>.',
     'styles_already_rendered' => 'Estilos do cCrud já foram carregados! Defina <strong>$manual_load = true</strong> no arquivo de configuração',
     'scripts_already_rendered' => 'Scripts do cCrud já foram carregados! Defina <strong>$manual_load = true</strong> no arquivo de configuração',
+    'view_config_not_found' => 'Arquivo de configuração das views não encontrado.',
     'wrong_path_or_file' => 'Caminho ou arquivo incorreto! O método <strong>{0}</strong> falhou.<br /><small>{1}</small>',
     'wrong_path_or_folder' => 'Caminho ou pasta incorreta! O método <strong>{0}</strong> falhou.<br /><small>{1}</small>',
     'cannot_create_directory' => 'Não é possível criar o diretório {0}',

@@ -89,7 +89,8 @@ class Database
         }
         $this->connect->set_charset($dbencoding);
         if ($this->connect->error) {
-            throw new RuntimeException($this->connect->error);
+            // Lança exceção com mensagem de erro do banco traduzida
+            throw new RuntimeException(lang('cCrud.db_error', [$this->connect->error]));
         }
         if ($this->config->db_time_zone) {
             $this->connect->query('SET time_zone = \'\'' . $this->config->db_time_zone . '\'\'');
@@ -231,9 +232,18 @@ class Database
      * @author Ariel Canal
      *         Inserido o filtro do erro de Foreing Key.
      */
+    /**
+     * Dispara uma exceção de runtime com mensagem traduzida
+     *
+     * @param string $chave       Chave da mensagem de idioma
+     * @param int    $codigoHttp  Código HTTP associado
+     * @param array  $parametros  Parâmetros para a mensagem de idioma
+     *
+     * @throws RuntimeException Quando ocorre falha de execução
+     */
     private function erro(string $chave = 'undefined_error', int $codigoHttp = 500, array $parametros = []): void
     {
-        $mensagem = lang('cCrud.' . $chave, $parametros);
-        throw new \RuntimeException($mensagem, $codigoHttp);
+        // Lança exceção com mensagem localizada
+        throw new \RuntimeException(lang('cCrud.' . $chave, $parametros), $codigoHttp);
     }
 }
