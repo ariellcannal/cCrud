@@ -572,6 +572,21 @@ class cCrud
     }
 
     /**
+     * Escapa valores para cláusulas LIKE.
+     *
+     * @param string $val Valor a ser escapado.
+     * @param array<int,string> $pattern Padrões de prefixo e sufixo.
+     *
+     * @return string Valor formatado para cláusulas LIKE.
+     */
+    protected function escapeLike(string $val, array $pattern): string
+    {
+        $escaped = str_replace(' ', '%', $val);
+        $escaped = $this->model->db->escapeLikeString($escaped);
+        return "'" . $pattern[0] . $escaped . $pattern[1] . "'";
+    }
+
+    /**
      * Retorna uma instância do cCrud utilizando o Model informado.
      *
      * @throws RuntimeException Caso o Model informado não utilize uma Entity CI4 como returnType
@@ -971,7 +986,7 @@ class cCrud
                                                                                                        // in
                                                                                                        // parent
                                                                                                        // instance
-                $instance = cCrud::get_instance($instance_name, $this->ci); // just another
+                $instance = cCrud::get_instance($this->model, $instance_name); // just another
                                                                             // xcrud object
                 $instance->table($this->prefix . $inner_tbl);
                 $instance->table_name($instance_name);
@@ -2851,7 +2866,7 @@ class cCrud
         fwrite($output, chr(0xEF) . chr(0xBB) . chr(0xBF)); // bom
         fputcsv($output, $headers, $this->config->csv_delimiter, $this->config->csv_enclosure);
 
-        foreach ($db->result() as $row) {
+        foreach ($query->getResultArray() as $row) {
             $out = array();
             foreach ($this->columns as $field => $fitem) {
                 if (isset($this->field_type[$field]) && ($this->field_type[$field] == 'password' or $this->field_type[$field] == 'hidden'))
@@ -3138,7 +3153,7 @@ class cCrud
             throw new RuntimeException(lang('cCrud.postdata_empty'));
         }
         $set = array();
-        $db = Database::get_instance($this->connection, $this->ci);
+        $db = $this->model->db;
         $fields = array_merge($this->fields, $this->hidden_fields);
         $fk_queries = array();
         foreach ($postdata as $key => $val) {
@@ -3211,7 +3226,7 @@ class cCrud
         }
         $db->query('INSERT INTO `' . $this->table . '` (' . implode(',', array_keys($set[$this->table])) . ') VALUES (' . implode(',', $set[$this->table]) . ')');
         if ($this->primary_ai) {
-            $ins_id = $db->insert_id();
+            $ins_id = $db->insertID();
             $set[$this->table]['`' . $this->primary_key . '`'] = $ins_id;
             $postdata[$this->table . '.' . $this->primary_key] = $ins_id;
         } else {
@@ -3230,7 +3245,7 @@ class cCrud
             foreach ($this->fk_relation as $fk) {
                 $field = $fk['table'] . '.' . $fk['field'];
                 if (array_key_exists($fk['alias'], $postdata) && array_key_exists($field, $postdata)) {
-                    $in_val = $db->escape($postdata[$field], false, $this->field_type[$field], $this->field_null[$field], isset($this->bit_field[$field]));
+                    $in_val = $db->escape($postdata[$field]);
                     unset($where_q);
                     if (count($fk['add_data'])) {
                         foreach ($fk['add_data'] as $k => $v) {
@@ -3270,12 +3285,12 @@ class cCrud
 
     protected function make_fk_remove($rel, $primary)
     {
-        $db = Database::get_instance($this->connection, $this->ci);
+        $db = $this->model->db;
     }
 
     protected function make_fk_insert($rel, $val, $primary)
     {
-        $db = Database::get_instance($this->connection, $this->ci);
+        $db = $this->model->db;
     }
 
     /**
@@ -3298,7 +3313,7 @@ class cCrud
         }
         $res = false;
         $set = array();
-        $db = Database::get_instance($this->connection, $this->ci);
+        $db = $this->model->db;
         $fields = array_merge($this->fields, $this->hidden_fields);
         foreach ($postdata as $key => $val) {
             if (isset($fields[$key]) && ! isset($this->locked_fields[$key]) && ! isset($this->custom_fields[$key]) && ((! isset($this->disabled[$key]['edit']) && ! isset($this->readonly[$key]['edit'])) || isset($this->pass_var['edit'][$key]))) {
@@ -3381,7 +3396,7 @@ class cCrud
             foreach ($this->fk_relation as $fk) {
                 $field = $fk['table'] . '.' . $fk['field'];
                 if (array_key_exists($fk['alias'], $postdata) && array_key_exists($field, $postdata)) {
-                    $in_val = $db->escape($postdata[$field], false, $this->field_type[$field], $this->field_null[$field], isset($this->bit_field[$field]));
+                    $in_val = $db->escape($postdata[$field]);
                     $db->query('DELETE FROM `' . $fk['fk_table'] . '` WHERE `' . $fk['in_fk_field'] . '` = ' . $in_val . ' AND ' . $this->_build_rel_ins_where($fk['alias']));
                     $fkids = $this->parse_comma_separated($postdata[$fk['alias']]);
                     if ($fkids) {
@@ -3445,7 +3460,7 @@ class cCrud
             }
         } else {
             // remove case
-            $db = Database::get_instance($this->connection, $this->ci);
+            $db = $this->model->db;
             $del_row = array();
             $del = false;
             $fields = array();
@@ -3481,8 +3496,8 @@ class cCrud
             }
             if (! $this->join) {
                 if ($fields) {
-                    $db->query('SELECT ' . implode(',', $fields) . " FROM `{$this->table}` WHERE `{$this->primary_key}` = " . $db->escape($this->primary_val) . ' LIMIT 1');
-                    $del_row = $db->row();
+                    $query = $db->query('SELECT ' . implode(',', $fields) . " FROM `{$this->table}` WHERE `{$this->primary_key}` = " . $db->escape($this->primary_val) . ' LIMIT 1');
+                    $del_row = $query->getRowArray();
                 }
                     if (! $this->is_remove($del_row)) {
                         // Remoção não autorizada
@@ -3501,8 +3516,8 @@ class cCrud
                     }
                 }
                 if ($fields) {
-                    $db->query('SELECT ' . implode(',', $fields) . " FROM `{$this->table}` AS `{$this->table}` " . implode(' ', $joins) . " WHERE `{$this->table}`.`{$this->primary_key}` = " . $db->escape($this->primary_val));
-                    $del_row = $db->row();
+                    $query = $db->query('SELECT ' . implode(',', $fields) . " FROM `{$this->table}` AS `{$this->table}` " . implode(' ', $joins) . " WHERE `{$this->table}`.`{$this->primary_key}` = " . $db->escape($this->primary_val));
+                    $del_row = $query->getRowArray();
                 }
                     if (! $this->is_remove($del_row)) {
                         // Remoção não autorizada
@@ -3522,7 +3537,7 @@ class cCrud
                 foreach ($this->fk_relation as $fk) {
                     $field = $fk['table'] . '.' . $fk['field'];
                     if (array_key_exists($field, $del_row)) {
-                        $in_val = $db->escape($del_row[$field], false, $this->field_type[$field], $this->field_null[$field], isset($this->bit_field[$field]));
+                        $in_val = $db->escape($del_row[$field]);
                         $db->query('DELETE FROM `' . $fk['fk_table'] . '` WHERE `' . $fk['in_fk_field'] . '` = ' . $in_val);
                     }
                 }
@@ -3695,9 +3710,9 @@ class cCrud
                         $message = $alert['message'] . '<br /><br />' . "\r\n" . ($alert['link'] ? '<a href="' . $alert['link'] . '" target="_blank">' . $alert['link'] . '</a>' : '');
                     else
                         $message = $alert['message'] . "\r\n\r\n" . ($alert['link'] ? $alert['link'] : '');
-                    $db = Database::get_instance($this->connection, $this->ci);
-                    $db->query("SELECT `{$alert['email_column']}` FROM `{$alert['email_table']}`" . ($alert['where'] ? ' WHERE ' . $alert['where'] : ''));
-                    foreach ($db->result() as $row) {
+                    $db = $this->model->db;
+                    $query = $db->query("SELECT `{$alert['email_column']}` FROM `{$alert['email_table']}`" . ($alert['where'] ? ' WHERE ' . $alert['where'] : ''));
+                    foreach ($query->getResultArray() as $row) {
                         $this->send_email($row[$alert['email_column']], $alert['subject'], $message, array(), $this->config->email_enable_html);
                     }
                 }
@@ -3789,10 +3804,10 @@ class cCrud
                 }
             }
             if ($fields) {
-                $db = Database::get_instance($this->connection, $this->ci);
+                $db = $this->model->db;
                 if (! $this->join) {
-                    $db->query('SELECT ' . implode(',', $fields) . " FROM `{$this->table}` WHERE `{$this->primary_key}` = " . $db->escape($this->primary_val) . " LIMIT 1");
-                    $row = $db->row();
+                    $query = $db->query('SELECT ' . implode(',', $fields) . " FROM `{$this->table}` WHERE `{$this->primary_key}` = " . $db->escape($this->primary_val) . " LIMIT 1");
+                    $row = $query->getRowArray();
                 } else {
                     $tables = array(
                         '`' . $this->table . '`'
@@ -3803,8 +3818,8 @@ class cCrud
                         $joins[] = "INNER JOIN `{$param['join_table']}` AS `{$alias}`
                     ON `{$param['table']}`.`{$param['field']}` = `{$alias}`.`{$param['join_field']}` " . $param['additional_cond'];
                     }
-                    $db->query('SELECT ' . implode(',', $fields) . " FROM `{$this->table}` AS `{$this->table}` " . implode(' ', $joins) . " WHERE `{$this->table}`.`{$this->primary_key}` = " . $db->escape($this->primary_val));
-                    $row = $db->row();
+                    $query = $db->query('SELECT ' . implode(',', $fields) . " FROM `{$this->table}` AS `{$this->table}` " . implode(' ', $joins) . " WHERE `{$this->table}`.`{$this->primary_key}` = " . $db->escape($this->primary_val));
+                    $row = $query->getRowArray();
                 }
             }
 
@@ -3858,9 +3873,9 @@ class cCrud
                         $message = $alert['message'] . '<br /><br />' . "\r\n" . ($alert['link'] ? '<a href="' . $alert['link'] . '" target="_blank">' . $alert['link'] . '</a>' : '');
                     else
                         $message = $alert['message'] . "\r\n\r\n" . ($alert['link'] ? $alert['link'] : '');
-                    $db = Database::get_instance($this->connection, $this->ci);
-                    $db->query("SELECT `{$alert['email_column']}` FROM `{$alert['email_table']}`" . ($alert['where'] ? ' WHERE ' . $alert['where'] : ''));
-                    foreach ($db->result() as $row) {
+                    $db = $this->model->db;
+                    $query = $db->query("SELECT `{$alert['email_column']}` FROM `{$alert['email_table']}`" . ($alert['where'] ? ' WHERE ' . $alert['where'] : ''));
+                    foreach ($query->getResultArray() as $row) {
                         $this->send_email($row[$alert['email_column']], $alert['subject'], $message, array(), $this->config->email_enable_html);
                     }
                 }
@@ -4135,12 +4150,12 @@ class cCrud
             }
         }
         $sum = $sum_tmp ? ', ' . implode(', ', $sum_tmp) : '';
-        $db = Database::get_instance($this->connection, $this->ci);
+        $db = $this->model->db;
         // $db->query("SELECT COUNT(`{$this->table}`.`{$this->primary_key}`) AS
         // `count` {$sum} \r\n FROM `{$this->table}`\r\n {$table_join}\r\n
         // {$where}");
-        $db->query("SELECT COUNT(*) AS `count` {$sum} \r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where}\r\n {$group_by}");
-        $this->sum_row = $db->row();
+        $query = $db->query("SELECT COUNT(*) AS `count` {$sum} \r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where}\r\n {$group_by}");
+        $this->sum_row = $query->getRowArray();
         $this->result_total = $this->sum_row['count'];
         if (count($this->totalizers)) {
             foreach ($this->totalizers as $name => $totalizer_config) {
@@ -4149,15 +4164,15 @@ class cCrud
                     $select_tot = $totalizer_config['select'];
                 else
                     $select_tot = 'COUNT(*)';
-                $db->query("SELECT " . $select_tot . " AS `count` \r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where_tot}");
-                $this->totalizers[$name]['total'] = $db->row();
+                $query = $db->query("SELECT " . $select_tot . " AS `count` \r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where_tot}");
+                $this->totalizers[$name]['total'] = $query->getRowArray();
                 $this->totalizers[$name]['total'] = $this->totalizers[$name]['total']['count'];
             }
         }
         $limit = $this->_build_limit($this->result_total);
         // var_dump("SELECT {$select} \r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where}\r\n {$group_by}\r\n {$order_by}\r\n {$limit}");
-        $db->query("SELECT {$select} \r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where}\r\n {$group_by}\r\n {$order_by}\r\n {$limit}");
-        $this->result_list = $db->result();
+        $query = $db->query("SELECT {$select} \r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where}\r\n {$group_by}\r\n {$order_by}\r\n {$limit}");
+        $this->result_list = $query->getResultArray();
 
         if ($this->before_list) {
             $path = $this->check_file($this->before_list['path'], 'before_list');
@@ -4223,7 +4238,7 @@ class cCrud
     protected function _build_select_list($csv = false)
     {
         $this->find_grid_text_variables();
-        $db = Database::get_instance($this->connection, $this->ci);
+        $db = $this->model->db;
         $columns = array();
 
         // $subselect_before = $this->subselect_before;
@@ -4458,7 +4473,7 @@ class cCrud
      */
     protected function _build_where($build_alphabetical = true, $is_totalizer = false)
     {
-        $db = Database::get_instance($this->connection, $this->ci);
+        $db = $this->model->db;
         $where_arr = array();
         $where_arr_pri = array();
 
@@ -4485,11 +4500,11 @@ class cCrud
                         }
                     } else {
                         if (isset($this->subselect[$fieldkey])) {
-                            $where_arr[] = $this->subselect_where($fieldkey) . $this->_cond_from_where($params['field']) . $db->escape($params['value'], isset($this->no_quotes[$fieldkey]));
+                            $where_arr[] = $this->subselect_where($fieldkey) . $this->_cond_from_where($params['field']) . $db->escape($params['value']);
                         } elseif (isset($this->point_field[$fieldkey])) {
-                            $where_arr[] = 'CONCAT(X(`' . $this->_where_field($params) . '`),\',\',Y(`' . $this->_where_field($params) . '`))' . $this->_cond_from_where($params['field']) . $db->escape($params['value'], isset($this->no_quotes[$fieldkey]));
+                            $where_arr[] = 'CONCAT(X(`' . $this->_where_field($params) . '`),\',\',Y(`' . $this->_where_field($params) . '`))' . $this->_cond_from_where($params['field']) . $db->escape($params['value']);
                         } else {
-                            $where_arr[] = $this->_where_field($params) . $this->_cond_from_where($params['field']) . $db->escape($params['value'], isset($this->no_quotes[$fieldkey]));
+                            $where_arr[] = $this->_where_field($params) . $this->_cond_from_where($params['field']) . $db->escape($params['value']);
                         }
                     }
                 } else {
@@ -4525,11 +4540,11 @@ class cCrud
                                 $search_arr[] = $this->_build_fk_relation_subwhere($this->search_submit[$i]['column'], $i);
                             } // search in subselect
                             elseif (isset($this->subselect[$this->search_submit[$i]['column']])) {
-                                $search_arr[] = '(' . $this->subselect_query[$this->search_submit[$i]['column']] . ') LIKE ' . $db->escape_like($this->search_submit[$i]['phrase'], $this->search_pattern);
+                                $search_arr[] = '(' . $this->subselect_query[$this->search_submit[$i]['column']] . ') LIKE ' . $this->escapeLike($this->search_submit[$i]['phrase'], $this->search_pattern);
                             } elseif (isset($this->point_field[$this->search_submit[$i]['column']])) {
                                 $fdata = $this->_parse_field_names($this->search_submit[$i]['column'], 'build_where', false, false);
                                 $fitem = reset($fdata);
-                                $search_arr[] = 'CONCAT(X(`' . $fitem['table'] . '`.`' . $fitem['field'] . '`),\',\',Y(`' . $fitem['table'] . '`.`' . $fitem['field'] . '`))LIKE ' . $db->escape_like($this->search_submit[$i]['phrase'], $this->search_pattern);
+                                $search_arr[] = 'CONCAT(X(`' . $fitem['table'] . '`.`' . $fitem['field'] . '`),\',\',Y(`' . $fitem['table'] . '`.`' . $fitem['field'] . '`))LIKE ' . $this->escapeLike($this->search_submit[$i]['phrase'], $this->search_pattern);
                             } else {
                                 $fdata = $this->_parse_field_names($this->search_submit[$i]['column'], 'build_where', false, false);
                                 $fitem = reset($fdata);
@@ -4577,11 +4592,11 @@ class cCrud
                                         break;
                                     default:
                                         if (isset($this->point_field[$key])) {
-                                            $search_arr[] = 'CONCAT(X(`' . $fitem['table'] . '`.`' . $fitem['field'] . '`),\',\',Y(`' . $fitem['table'] . '`.`' . $fitem['field'] . '`)) LIKE ' . $db->escape_like($this->search_submit[$i]['phrase'], $this->search_pattern);
+                                            $search_arr[] = 'CONCAT(X(`' . $fitem['table'] . '`.`' . $fitem['field'] . '`),\',\',Y(`' . $fitem['table'] . '`.`' . $fitem['field'] . '`)) LIKE ' . $this->escapeLike($this->search_submit[$i]['phrase'], $this->search_pattern);
                                         } elseif (isset($this->bit_field[$key])) {
-                                            $search_arr[] = 'CAST(`' . $fitem['table'] . '`.`' . $fitem['field'] . '` AS UNSIGNED) LIKE ' . $db->escape_like($this->search_submit[$i]['phrase'], $this->search_pattern);
+                                            $search_arr[] = 'CAST(`' . $fitem['table'] . '`.`' . $fitem['field'] . '` AS UNSIGNED) LIKE ' . $this->escapeLike($this->search_submit[$i]['phrase'], $this->search_pattern);
                                         } else {
-                                            $search_arr[] = '(`' . $fitem['table'] . '`.`' . $fitem['field'] . '` LIKE ' . $db->escape_like($this->search_submit[$i]['phrase'], $this->search_pattern) . ')';
+                                            $search_arr[] = '(`' . $fitem['table'] . '`.`' . $fitem['field'] . '` LIKE ' . $this->escapeLike($this->search_submit[$i]['phrase'], $this->search_pattern) . ')';
                                         }
                                         break;
                                 }
@@ -4598,19 +4613,19 @@ class cCrud
                                 } elseif (isset($this->fk_relation[$key])) {
                                     $or_array[] = $this->_build_fk_relation_subwhere($key, $i);
                                 } elseif (isset($this->subselect[$key])) {
-                                    $or_array[] = '(' . $this->subselect_query[$key] . ') LIKE ' . $db->escape_like($this->search_submit[$i]['phrase'], $this->search_pattern);
+                                    $or_array[] = '(' . $this->subselect_query[$key] . ') LIKE ' . $this->escapeLike($this->search_submit[$i]['phrase'], $this->search_pattern);
                                 } elseif ($this->field_type[$key] == 'date' || $this->field_type[$key] == 'datetime' || $this->field_type[$key] == 'timestamp' || $this->field_type[$key] == 'time') {
                                     if (preg_match('/^[0-9\-\:\s]+$/', $this->search_submit[$i]['phrase'])) {
-                                        $or_array[] = '`' . $fitem['table'] . '`.`' . $fitem['field'] . '` LIKE ' . $db->escape_like($this->search_submit[$i]['phrase'], $this->search_pattern);
+                                        $or_array[] = '`' . $fitem['table'] . '`.`' . $fitem['field'] . '` LIKE ' . $this->escapeLike($this->search_submit[$i]['phrase'], $this->search_pattern);
                                     }
                                 } elseif (isset($this->point_field[$key])) {
-                                    $or_array[] = 'CONCAT(X(`' . $fitem['table'] . '`.`' . $fitem['field'] . '`),\',\',Y(`' . $fitem['table'] . '`.`' . $fitem['field'] . '`)) LIKE ' . $db->escape_like($this->search_submit[$i]['phrase'], $this->search_pattern);
+                                    $or_array[] = 'CONCAT(X(`' . $fitem['table'] . '`.`' . $fitem['field'] . '`),\',\',Y(`' . $fitem['table'] . '`.`' . $fitem['field'] . '`)) LIKE ' . $this->escapeLike($this->search_submit[$i]['phrase'], $this->search_pattern);
                                 } elseif (isset($this->bit_field[$key])) {
-                                    $or_array[] = 'CAST(`' . $fitem['table'] . '`.`' . $fitem['field'] . '` AS UNSIGNED) LIKE ' . $db->escape_like($this->search_submit[$i]['phrase'], $this->search_pattern);
+                                    $or_array[] = 'CAST(`' . $fitem['table'] . '`.`' . $fitem['field'] . '` AS UNSIGNED) LIKE ' . $this->escapeLike($this->search_submit[$i]['phrase'], $this->search_pattern);
                                 } else {
                                     // $f_array[] = '`' . $fitem['table'] . '`.`' .
                                     // $fitem['field'] . '`';
-                                    $or_array[] = '`' . $fitem['table'] . '`.`' . $fitem['field'] . '` LIKE ' . $db->escape_like($this->search_submit[$i]['phrase'], $this->search_pattern);
+                                    $or_array[] = '`' . $fitem['table'] . '`.`' . $fitem['field'] . '` LIKE ' . $this->escapeLike($this->search_submit[$i]['phrase'], $this->search_pattern);
                                 }
                             }
                             $where = '(';
@@ -4618,7 +4633,7 @@ class cCrud
                              * if ($f_array)
                              * {
                              * $where .= 'CONCAT_WS(\' \',' . implode(',', $f_array) . ')
-                             * LIKE ' . $db->escape_like($this->phrase, $this->
+                             * LIKE ' . $this->escapeLike($this->phrase, $this->
                              * search_pattern);
                              * }
                              * if ($f_array && $or_array)
@@ -4786,7 +4801,7 @@ class cCrud
      */
     protected function _build_relation_subwhere($key, $i = 1) // multicolumn name
     {
-        $db = Database::get_instance($this->connection, $this->ci);
+        $db = $this->model->db;
 
         if ($key) {
             $rel = $this->relation[$key];
@@ -4826,7 +4841,7 @@ class cCrud
                             WHERE `{$rel['rel_alias']}`.`{$rel['rel_field']}` = `{$rel['table']}`.`{$rel['field']}`
                             LIMIT 1) \r\n";
             }
-            return "{$select} LIKE " . $db->escape_like($this->search_submit[$i]['phrase'], $this->search_pattern);
+            return "{$select} LIKE " . $this->escapeLike($this->search_submit[$i]['phrase'], $this->search_pattern);
         }
         /*
          * else
@@ -4884,7 +4899,7 @@ class cCrud
          * `{$this->relation[$column]['table']}`.`{$this->relation[$column]['field']}`
          * LIMIT 1) \r\n";
          * }
-         * $or_where[] = $select . ' LIKE ' . $db->escape_like($this->phrase,
+         * $or_where[] = $select . ' LIKE ' . $this->escapeLike($this->phrase,
          * $this->search_pattern);
          * }
          * return implode(' OR ', $or_where);
@@ -4894,7 +4909,7 @@ class cCrud
 
     protected function _build_fk_relation_subwhere($key, $i = 1) // multicolumn name
     {
-        $db = Database::get_instance($this->connection, $this->ci);
+        $db = $this->model->db;
         $fk = $this->fk_relation[$key];
 
         if (is_array($fk['rel_name'])) {
@@ -4908,14 +4923,14 @@ class cCrud
         $select = '(SELECT GROUP_CONCAT(DISTINCT ' . $rel_name . ' SEPARATOR \', \')
             FROM `' . $fk['rel_tbl'] . '`
             INNER JOIN `' . $fk['fk_table'] . '` ON `' . $fk['fk_table'] . '`.`' . $fk['out_fk_field'] . '` = `' . $fk['rel_tbl'] . '`.`' . $fk['rel_field'] . '` WHERE `' . $fk['fk_table'] . '`.`' . $fk['in_fk_field'] . '` = `' . $fk['table'] . '`.`' . $fk['field'] . '` AND ' . $this->_build_rel_where($key) . ')' . "\r\n";
-        return $select . ' LIKE ' . $db->escape_like($this->search_submit[$i]['phrase'], $this->search_pattern);
+        return $select . ' LIKE ' . $this->escapeLike($this->search_submit[$i]['phrase'], $this->search_pattern);
     }
 
     protected function _build_rel_where($name)
     {
         $where_arr = array();
         if ($this->fk_relation[$name]['rel_where']) {
-            $db = Database::get_instance($this->connection, $this->ci);
+            $db = $this->model->db;
             if (is_array($this->fk_relation[$name]['rel_where'])) {
                 foreach ($this->fk_relation[$name]['rel_where'] as $field => $val) {
                     $val = preg_replace_callback('/\{(.+)\}/Uu', array(
@@ -4940,7 +4955,7 @@ class cCrud
     {
         $where_arr = array();
         if ($this->fk_relation[$name]['add_data']) {
-            $db = Database::get_instance($this->connection, $this->ci);
+            $db = $this->model->db;
             if (is_array($this->fk_relation[$name]['add_data'])) {
                 foreach ($this->fk_relation[$name]['add_data'] as $field => $val) {
                     $val = preg_replace_callback('/\{(.+)\}/Uu', array(
@@ -5145,19 +5160,19 @@ class cCrud
     protected function _get_table_info()
     {
         $this->table_info = array();
-        $db = Database::get_instance($this->connection, $this->ci);
-        $db->query("SHOW COLUMNS FROM `{$this->table}`");
-        $this->table_info[$this->table] = $db->result();
+        $db = $this->model->db;
+        $query = $db->query("SHOW COLUMNS FROM `{$this->table}`");
+        $this->table_info[$this->table] = $query->getResultArray();
         if ($this->join) {
             foreach ($this->join as $alias => $join) {
-                $db->query("SHOW COLUMNS FROM `{$join['join_table']}`");
-                $this->table_info[$alias] = $db->result();
+                $query = $db->query("SHOW COLUMNS FROM `{$join['join_table']}`");
+                $this->table_info[$alias] = $query->getResultArray();
             }
         }
         if ($this->join_relation) {
             foreach ($this->join_relation as $item) {
-                $db->query("SHOW COLUMNS FROM `{$item['rel_table']}`");
-                $this->table_info[$item['rel_table']] = $db->result();
+                $query = $db->query("SHOW COLUMNS FROM `{$item['rel_table']}`");
+                $this->table_info[$item['rel_table']] = $query->getResultArray();
             }
         }
         return true;
@@ -5529,9 +5544,9 @@ class cCrud
                 $this->field_type[$field_index] = 'datetime';
                 if (! isset($this->defaults[$field_index])) {
                     if ($row['Default'] == 'CURRENT_TIMESTAMP') {
-                        $db = Database::get_instance($this->connection, $this->ci);
-                        $db->query('SELECT NOW() AS `now`');
-                        $tmstmp = $db->row();
+                        $db = $this->model->db;
+                        $result = $db->query('SELECT NOW() AS `now`');
+                        $tmstmp = $result->getRowArray();
                         $this->defaults[$field_index] = $tmstmp['now'];
                     } else
                         $this->defaults[$field_index] = $row['Default'];
@@ -5857,7 +5872,7 @@ class cCrud
         {
             foreach ($this->inner_table_instance as $inst_name => $field) {
                 if (isset($this->result_row[$field])) {
-                    $instance = self::get_instance($inst_name, $this->ci);
+                    $instance = self::get_instance($this->model, $inst_name);
                     $instance->ajax_request = true;
                     $instance->import_vars();
                     $instance->inner_where($this->result_row[$field]);
@@ -6938,7 +6953,7 @@ class cCrud
 
             $tag['class'] .= ' ' . $this->theme_config('select_field');
         }
-        $db = Database::get_instance($this->connection, $this->ci);
+        $db = $this->model->db;
         $where_arr = array();
         if ($this->relation[$name]['rel_where']) {
             if (is_array($this->relation[$name]['rel_where'])) {
@@ -6974,8 +6989,8 @@ class cCrud
         } else {
             $name_select = '`' . $this->relation[$name]['rel_name'] . '` AS `name`';
         }
-        $db->query('SELECT COUNT(*) as total FROM `' . $this->relation[$name]['rel_tbl'] . '` ' . $where);
-        $total = $db->row();
+        $result = $db->query('SELECT COUNT(*) as total FROM `' . $this->relation[$name]['rel_tbl'] . '` ' . $where);
+        $total = $result->getRowArray();
         unset($this->field_attr[$name]['data-relationajax']);
         $this->field_attr[$name]['class'] = $tag['class'];
         if ($total['total'] >= $this->config->relation_ajax) {
@@ -7029,8 +7044,8 @@ class cCrud
             }
             $query = 'SELECT `' . $this->relation[$name]['rel_field'] . '` AS `field`,' . $name_select . $this->get_relation_tree_fields($this->relation[$name]) . ' FROM `' . $this->relation[$name]['rel_tbl'] . '` ' . $join . ' ' . $where . ' GROUP BY `field` ORDER BY ' . $this->get_relation_ordering($this->relation[$name]);
 
-            $db->query($query);
-            $options = $this->resort_relation_opts($db->result(), $this->relation[$name]);
+            $result = $db->query($query);
+            $options = $this->resort_relation_opts($result->getResultArray(), $this->relation[$name]);
             if ($this->lists_null_opt) {
                 $out .= $this->open_tag(array(
                     'tag' => 'option',
@@ -7058,7 +7073,7 @@ class cCrud
         if ($value === null || $value === '') {
             return '';
         }
-        $db = Database::get_instance($this->connection, $this->ci);
+        $db = $this->model->db;
         if (is_array($this->relation[$name]['rel_name'])) {
             $field = 'CONCAT_WS(' . $db->escape($this->relation[$name]['rel_separator']) . ',`' . implode('`,`', $this->relation[$name]['rel_name']) . '`) as `name`';
         } else {
@@ -7073,8 +7088,8 @@ class cCrud
         } else {
             $where = ' = ' . $db->escape($value);
         }
-        $db->query('SELECT ' . $field . ' FROM `' . $this->relation[$name]['rel_tbl'] . '` WHERE `' . $this->relation[$name]['rel_field'] . '` ' . $where . ' GROUP BY `' . $this->relation[$name]['rel_field'] . '`');
-        $options = $db->result();
+        $result = $db->query('SELECT ' . $field . ' FROM `' . $this->relation[$name]['rel_tbl'] . '` WHERE `' . $this->relation[$name]['rel_field'] . '` ' . $where . ' GROUP BY `' . $this->relation[$name]['rel_field'] . '`');
+        $options = $result->getResultArray();
         $out = array();
         foreach ($options as $opt) {
             $out[] = $opt['name'];
@@ -7185,7 +7200,7 @@ class cCrud
         $tag['class'] .= ' ' . $this->theme_config('multiselect_field');
         $values = $this->parse_comma_separated($value);
 
-        $db = Database::get_instance($this->connection, $this->ci);
+        $db = $this->model->db;
         $where_arr = array();
         if ($this->fk_relation[$name]['rel_where']) {
             if (is_array($this->fk_relation[$name]['rel_where'])) {
@@ -7221,8 +7236,8 @@ class cCrud
             $order_by = '`name` ASC';
         }
 
-        $db->query('SELECT `' . $this->fk_relation[$name]['rel_tbl'] . '`.`' . $this->fk_relation[$name]['rel_field'] . '` AS `field`,' . $name_select . ' FROM `' . $this->fk_relation[$name]['rel_tbl'] . '` ' . $where . ' GROUP BY `field` ORDER BY ' . $order_by);
-        $options = $db->result();
+        $result = $db->query('SELECT `' . $this->fk_relation[$name]['rel_tbl'] . '`.`' . $this->fk_relation[$name]['rel_field'] . '` AS `field`,' . $name_select . ' FROM `' . $this->fk_relation[$name]['rel_tbl'] . '` ' . $where . ' GROUP BY `field` ORDER BY ' . $order_by);
+        $options = $result->getResultArray();
 
         if ($this->lists_null_opt) {
             $out .= $this->open_tag(array(
@@ -7257,7 +7272,7 @@ class cCrud
             return '';
         }
 
-        $db = Database::get_instance($this->connection, $this->ci);
+        $db = $this->model->db;
         if (is_array($this->fk_relation[$name]['rel_name'])) {
             $optnames = array();
             foreach ($this->fk_relation[$name]['rel_name'] as $optnms) {
@@ -7280,9 +7295,9 @@ class cCrud
             $order_by = '`name` ASC';
         }
 
-        $db->query('SELECT `' . $this->fk_relation[$name]['rel_tbl'] . '`.`' . $this->fk_relation[$name]['rel_field'] . '` AS `field`,' . $name_select . ' FROM `' . $this->fk_relation[$name]['rel_tbl'] . '` WHERE `' . $this->fk_relation[$name]['rel_tbl'] . '`.`' . $this->fk_relation[$name]['rel_field'] . '` ' . $where . ' GROUP BY `field` ORDER BY ' . $order_by);
+        $result = $db->query('SELECT `' . $this->fk_relation[$name]['rel_tbl'] . '`.`' . $this->fk_relation[$name]['rel_field'] . '` AS `field`,' . $name_select . ' FROM `' . $this->fk_relation[$name]['rel_tbl'] . '` WHERE `' . $this->fk_relation[$name]['rel_tbl'] . '`.`' . $this->fk_relation[$name]['rel_field'] . '` ' . $where . ' GROUP BY `field` ORDER BY ' . $order_by);
 
-        $options = $db->result();
+        $options = $result->getResultArray();
         $out = array();
         foreach ($options as $opt) {
             $out[] = $opt['name'];
@@ -9321,7 +9336,7 @@ class cCrud
 
     protected function _check_unique_value()
     {
-        $db = Database::get_instance($this->connection, $this->ci);
+        $db = $this->model->db;
         $unique = $this->_post('unique');
         $fdata = $this->_parse_field_names($unique, '_check_unique_value');
         $out = array();
@@ -9333,8 +9348,8 @@ class cCrud
         }
         foreach ($fdata as $fkey => $fitem) {
             $q = 'SELECT COUNT(*) AS `count` FROM `' . $this->table . '`' . $table_join . ' WHERE ' . $primary_where . ' `' . $fitem['table'] . '`.`' . $fitem['field'] . '` = ' . $db->escape($fitem['value']);
-            $db->query($q);
-            $this->result_row = $db->row();
+            $query = $db->query($q);
+            $this->result_row = $query->getRowArray();
             if ($this->result_row['count'] > 0) {
                 $out[] = '[name="' . $this->fieldname_encode($fkey) . '"]';
             }
@@ -9523,7 +9538,7 @@ class cCrud
     protected function _clone_row()
     {
         if (is_array($this->table_info) && count($this->table_info) && ! $this->table_ro) {
-            $db = Xcrud_db::get_instance($this->connection);
+            $db = $this->model->db;
             $fields = array();
             $row = array();
             $this->find_details_text_variables();
@@ -9536,8 +9551,8 @@ class cCrud
             }
             if ($fields) {
                 if (! $this->join) {
-                    $db->query('SELECT ' . implode(',', $fields) . " FROM `{$this->table}` WHERE `{$this->primary_key}` = " . $db->escape($this->primary_val) . " LIMIT 1");
-                    $row = $db->row();
+                    $query = $db->query('SELECT ' . implode(',', $fields) . " FROM `{$this->table}` WHERE `{$this->primary_key}` = " . $db->escape($this->primary_val) . " LIMIT 1");
+                    $row = $query->getRowArray();
                 } else {
                     $tables = array(
                         '`' . $this->table . '`'
@@ -9549,8 +9564,8 @@ class cCrud
                             $joins[] = "INNER JOIN `{$param['join_table']}` AS `{$alias}` ON `{$param['table']}`.`{$param['field']}` = `{$alias}`.`{$param['join_field']}` " . $param['additional_cond'];
                         }
                     }
-                    $db->query('SELECT ' . implode(',', $fields) . " FROM `{$this->table}` AS `{$this->table}` " . implode(' ', $joins) . " WHERE `{$this->table}`.`{$this->primary_key}` = " . $db->escape($this->primary_val));
-                    $row = $db->row();
+                    $query = $db->query('SELECT ' . implode(',', $fields) . " FROM `{$this->table}` AS `{$this->table}` " . implode(' ', $joins) . " WHERE `{$this->table}`.`{$this->primary_key}` = " . $db->escape($this->primary_val));
+                    $row = $query->getRowArray();
                 }
             }
 
@@ -9589,8 +9604,8 @@ class cCrud
             $where = $this->_build_where();
             $table_join = $this->_build_table_join();
             $where_ai = $where ? "AND {$this->primary_ai} = " . (int) $this->primary_val : "WHERE {$this->primary_ai} = " . (int) $this->primary_val;
-            $db->query("SELECT {$select}\r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where}\r\n {$where_ai} LIMIT 1");
-            $postdata = $db->row();
+            $query = $db->query("SELECT {$select}\r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where}\r\n {$where_ai} LIMIT 1");
+            $postdata = $query->getRowArray();
             if (isset($this->pass_var['create'])) {
                 foreach ($this->pass_var['create'] as $field => $pv) {
                     $postdata[$field] = $pv['value'];
@@ -12387,11 +12402,11 @@ class cCrud
         if ($this->alphabetical_field != '') {
             $table_join = $this->_build_table_join();
             $where = $this->_build_where(false);
-            $db = Database::get_instance($this->connection, $this->ci);
+            $db = $this->model->db;
 
-            $db->query("SELECT SUBSTRING(UPPER($this->alphabetical_field),1,1) as inicial \r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where}\r\n GROUP BY SUBSTRING(UPPER($this->alphabetical_field),1,1) ORDER BY inicial ASC");
+            $query = $db->query("SELECT SUBSTRING(UPPER($this->alphabetical_field),1,1) as inicial \r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where}\r\n GROUP BY SUBSTRING(UPPER($this->alphabetical_field),1,1) ORDER BY inicial ASC");
             $this->alphabetical_index = array();
-            foreach ($db->result() as $index) {
+            foreach ($query->getResultArray() as $index) {
                 if (in_array($index['inicial'], range('A', 'Z')))
                     $this->alphabetical_index[$index['inicial']] = $index['inicial'];
                 else
@@ -12518,11 +12533,11 @@ class cCrud
                 $total_items ++;
                 $width = round((12 / $total_items));
 
-                $db = Database::get_instance($this->connection, $this->ci);
+                $db = $this->model->db;
                 $table_join = $this->_build_table_join();
                 $where_tot = $this->_build_where(false, 'all');
-                $db->query("SELECT COUNT(*) AS `count` \r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where_tot}");
-                $total = $db->row();
+                $result = $db->query("SELECT COUNT(*) AS `count` \r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where_tot}");
+                $total = $result->getRowArray();
                 $total = $total['count'];
 
                 $icon = ($this->theme_config('totalizer_icon_all') != "") ? $this->theme_config('totalizer_icon_all') : $this->theme_config('totalizer_icon_default');
@@ -12588,9 +12603,9 @@ class cCrud
             $table_join = $this->_build_table_join();
             $this->task = $old_task;
 
-            $db = Database::get_instance($this->connection, $this->ci);
-            $db->query("SELECT {$select}\r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where}\r\n LIMIT 1");
-            $result_row = (array) $db->row();
+            $db = $this->model->db;
+            $query = $db->query("SELECT {$select}\r\n FROM `{$this->table}`\r\n {$table_join}\r\n {$where}\r\n LIMIT 1");
+            $result_row = (array) $query->getRowArray();
 
             foreach ($set as $k => $f) {
                 $f = explode(' = ', str_replace(array(
@@ -12650,7 +12665,7 @@ class cCrud
         if (! isset($this->relation[$name])) {
             return 'Restricted.';
         }
-        $db = Database::get_instance($this->connection, $this->ci);
+        $db = $this->model->db;
         $where_arr = array();
         $where_arr[] = $this->relation[$name]['rel_name'] . ' LIKE "%' . $_POST['q'] . '%"';
         if ($this->relation[$name]['rel_where']) {
@@ -12685,8 +12700,8 @@ class cCrud
         } else {
             $name_select = '`' . $this->relation[$name]['rel_name'] . '` AS `name`';
         }
-        $db->query('SELECT `' . $this->relation[$name]['rel_field'] . '` AS `field`,' . $name_select . $this->get_relation_tree_fields($this->relation[$name]) . ' FROM `' . $this->relation[$name]['rel_tbl'] . '` ' . $where . ' GROUP BY `field` ORDER BY ' . $this->get_relation_ordering($this->relation[$name]) . ' LIMIT ' . $this->config->relation_ajax);
-        $options = $this->resort_relation_opts($db->result(), $this->relation[$name]);
+        $result = $db->query('SELECT `' . $this->relation[$name]['rel_field'] . '` AS `field`,' . $name_select . $this->get_relation_tree_fields($this->relation[$name]) . ' FROM `' . $this->relation[$name]['rel_tbl'] . '` ' . $where . ' GROUP BY `field` ORDER BY ' . $this->get_relation_ordering($this->relation[$name]) . ' LIMIT ' . $this->config->relation_ajax);
+        $options = $this->resort_relation_opts($result->getResultArray(), $this->relation[$name]);
 
         $results['items'] = array();
         if ($options) {
@@ -12723,13 +12738,13 @@ class cCrud
     private function set_custom_lists()
     {
         return true;
-        $db = Database::get_instance($this->connection, $this->ci);
-        $db->query('SELECT * FROM core_listagensPersonalizadas WHERE lpe_entidade = "' . (($this->table != "contatos" ? $this->table : $this->table_name)) . '" AND (' . (($_SESSION['usr_id']) ? 'lpe_usuario = ' . $_SESSION['usr_id'] . ' OR ' : '') . 'lpe_usuario IS NULL)');
+        $db = $this->model->db;
+        $result = $db->query('SELECT * FROM core_listagensPersonalizadas WHERE lpe_entidade = "' . (($this->table != "contatos" ? $this->table : $this->table_name)) . '" AND (' . (($_SESSION['usr_id']) ? 'lpe_usuario = ' . $_SESSION['usr_id'] . ' OR ' : '') . 'lpe_usuario IS NULL)');
 
         if (in_array($this->custom_filter_active['title'], array_keys($this->custom_lists_static))) {
             $this->columns($this->columns_default);
         }
-        foreach ($db->result() as $list) {
+        foreach ($result->getResultArray() as $list) {
             if ($this->custom_filter_active['title'] == $list['lpe_nome']) {
                 $this->custom_lists_active = $list;
                 unset($colunas);
@@ -12851,10 +12866,10 @@ class cCrud
                 $options['IS NULL'] = 'É vazio ou nulo';
                 $options['IS NOT NULL'] = 'Não é vazio ou nulo';
 
-                $db = Database::get_instance($this->connection, $this->ci);
+                $db = $this->model->db;
                 if ($this->table == "propostas") {
-                    $db->query('SELECT * FROM core_produtos WHERE pro_ativo = 1 ORDER BY pro_nome ASC');
-                    foreach ($db->result() as $pro) {
+                    $result = $db->query('SELECT * FROM core_produtos WHERE pro_ativo = 1 ORDER BY pro_nome ASC');
+                    foreach ($result->getResultArray() as $pro) {
                         $produtos[$pro['pro_id']] = $pro['pro_nome'];
                     }
                 }
@@ -13431,10 +13446,10 @@ class cCrud
                 $select[] = $k . ' as "' . $k . '"';
             }
             $select = implode(',', $select);
-            $db = Database::get_instance($this->connection, $this->ci);
+            $db = $this->model->db;
             // echo 'SELECT ' . $select . ' FROM `' . $this->relation[$field]['rel_tbl'] . '` WHERE `' . $this->relation[$field]['rel_field'] . '` = "' . $value . '"';exit;
-            $db->query('SELECT ' . $select . ' FROM `' . $this->relation[$field]['rel_tbl'] . '` WHERE `' . $this->relation[$field]['rel_field'] . '` = "' . $value . '"');
-            $data = $db->row();
+            $query = $db->query('SELECT ' . $select . ' FROM `' . $this->relation[$field]['rel_tbl'] . '` WHERE `' . $this->relation[$field]['rel_field'] . '` = "' . $value . '"');
+            $data = $query->getRowArray();
             $mode = 'create';
             foreach ($this->join_relation[$field]['rel_additional_fields'] as $fld => $fdata) {
                 $func = 'create_' . $this->field_type[$fld];
@@ -13499,9 +13514,9 @@ class cCrud
         foreach ($this->join_relation as $key => $params) {
             if ($params['tag_support'] === true) {
                 $val = $postdata[$key];
-                $db = Database::get_instance($this->connection, $this->ci);
-                $db->query('SELECT * FROM `' . $this->relation[$key]['rel_tbl'] . '` WHERE `' . $this->relation[$key]['rel_field'] . '` = "' . $val . '"');
-                $row = $db->row();
+                $db = $this->model->db;
+                $result = $db->query('SELECT * FROM `' . $this->relation[$key]['rel_tbl'] . '` WHERE `' . $this->relation[$key]['rel_field'] . '` = "' . $val . '"');
+                $row = $result->getRowArray();
                 unset($set);
                 if (is_array($this->join_relation[$key]['rel_additional_fields'])) {
                     foreach ($this->join_relation[$key]['rel_additional_fields'] as $k => $fdata) {
@@ -13523,7 +13538,7 @@ class cCrud
                     }
 
                     $db->query('INSERT INTO `' . $this->relation[$key]['rel_tbl'] . '` (' . implode(',', array_keys($set)) . ') VALUES (' . implode(',', $set) . ')');
-                    $postdata[$key] = $db->insert_id();
+                    $postdata[$key] = $db->insertID();
                 } else {
                     if (is_array($this->join_relation[$key]['default_data_edit'])) {
                         foreach ($this->join_relation[$key]['default_data_edit'] as $k => $v) {
