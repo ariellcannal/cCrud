@@ -269,7 +269,7 @@ var cCrud = {
 	},
 	save_editor_content: function(container) {
 		if ($(container).find('.cCrud-texteditor').length) {
-			if (typeof (tinyMCE) != 'undefined') {
+			if (typeof tinyMCE !== 'undefined') {
 				tinyMCE.triggerSave();
 				/*
 				 * for (instance in tinyMCE.editors) { if
@@ -280,7 +280,7 @@ var cCrud = {
 				 * //tinyMCE.editors[instance] = null; } } }
 				 */
 			}
-			if (typeof (CKEDITOR) != 'undefined') {
+			if (typeof CKEDITOR !== 'undefined') {
 				for (instance in CKEDITOR.instances) {
 					if ($('#' + instance).length) {
 						CKEDITOR.instances[instance].updateElement();
@@ -423,43 +423,27 @@ var cCrud = {
 	init_texteditor: function(container) {
 		var elements = $(container).find(".cCrud-texteditor:not(.editor-loaded)");
 		if ($(elements).length) {
-			if (cCrud.config('editor_url') || cCrud.config('force_editor')) {
-				$(elements).addClass("editor-loaded").addClass("editor-instance");
-				if (cCrud.config('editor_init_url')) {
-					window.setTimeout(function() {
-						$.ajax({
-							url: cCrud.config('editor_init_url'),
-							type: "get",
-							dataType: "script",
-							success: function(js) {
-								$(".cCrud-overlay").stop(true, true).css("display", "none");
-								$(elements).removeClass("editor-instance");
-							},
-							cache: true
-						});
-					}, 300);
-				} else {
-					if (typeof (tinyMCE) != 'undefined') {
-						tinyMCE.init({
-							mode: "textareas",
-							editor_selector: "editor-instance",
-							height: "250"
-						});
-					} else if (typeof (CKEDITOR) != 'undefined') {
-						$('.editor-instance').each(function() {
-							if ($(this).data('editor-config')) {
-								CKEDITOR.replace($(this).get(0), { customConfig: $(this).data('editor-config') });
-							}
-							else {
-								CKEDITOR.replace($(this).get(0));
-							}
-						});
-					}
-					$(elements).removeClass("editor-instance");
-				}
-			}
-		}
-	},
+                        if (cCrud.config('force_editor') || typeof tinyMCE !== 'undefined' || typeof CKEDITOR !== 'undefined') {
+                                $(elements).addClass("editor-loaded").addClass("editor-instance");
+                                if (typeof tinyMCE !== 'undefined') {
+                                        tinyMCE.init({
+                                                mode: "textareas",
+                                                editor_selector: "editor-instance",
+                                                height: "250"
+                                        });
+                                } else if (typeof CKEDITOR !== 'undefined') {
+                                        $('.editor-instance').each(function() {
+                                                if ($(this).data('editor-config')) {
+                                                        CKEDITOR.replace($(this).get(0), { customConfig: $(this).data('editor-config') });
+                                                } else {
+                                                        CKEDITOR.replace($(this).get(0));
+                                                }
+                                        });
+                                }
+                                $(elements).removeClass("editor-instance");
+                        }
+                }
+        },
 	upload_file: function(element, data, container) {
 		var upl_container = $(element).closest('.cCrud-upload-container');
 		data.field = $(element).data("field");
@@ -1194,8 +1178,7 @@ var cCrud = {
 	check_message: function(container) {
 		if (typeof container == "string") {
 			var messages = $(container).filter(".cCrud-callback-message");
-		}
-		else {
+		} else {
 			var messages = $(container).find(".cCrud-callback-message");
 		}
 		if ($(messages).length) {
@@ -1260,11 +1243,11 @@ var cCrud = {
 		updateOutput2($('#customListsEdit #nestable_list_2').data('output', $('#customListsEdit #nestable_list_2_output')));
 		var setSaveModal = function(id) {
 			$('#' + id + ' .remove').click(function() {
-				$.ajax({
-					url: "/ajax/remove_custom_view",
-					data: {
-						id: $('#' + id + ' #lpe_id').val(),
-					},
+                                $.ajax({
+                                        url: cCrud.config('url') + '/remove_custom_view',
+                                        data: {
+                                                id: $('#' + id + ' #lpe_id').val(),
+                                        },
 					type: "POST",
 					success: function(json, status, jqXHR) {
 						// $('#customLists .modal-body').prepend(json);
@@ -1310,11 +1293,11 @@ var cCrud = {
 					var i = [$(this).attr('id'), $(this).val()]
 					fieldsAd.push(i);
 				});
-				$.ajax({
-					url: "/ajax/save_custom_view",
-					data: {
-						id: $('#' + id + ' #lpe_id').val(),
-						nome: $('#' + id + ' #name').val(),
+                                $.ajax({
+                                        url: cCrud.config('url') + '/save_custom_view',
+                                        data: {
+                                                id: $('#' + id + ' #lpe_id').val(),
+                                                nome: $('#' + id + ' #name').val(),
 						entidade: $('#' + id + ' #lpe_entidade').val(),
 						filtros: fields,
 						filtrosAdicionais: fieldsAd,
@@ -1414,11 +1397,11 @@ var cCrud = {
 				dados.name = $(this).data('relationajax');
 				dados.task = 'relation_search';
 				$.extend(options, {
-					ajax: {
-						url: "/ajax/cCrud",
-						dataType: 'json',
-						delay: 250,
-						type: 'POST',
+                                        ajax: {
+                                                url: cCrud.config('url') + '/cCrud',
+                                                dataType: 'json',
+                                                delay: 250,
+                                                type: 'POST',
 						beforeSend: function(jqXHR, settings) {
 							// console.log(jqXHR);
 						},
@@ -1589,8 +1572,7 @@ $(document).on("cCrudinit", function() {
 		$(".cCrud").off('change', '.cCrud-mass-select').on("change", ".cCrud-mass-select", function() {
 			if ($(this).val() == 1) {
 				cCrud.get_container(this).find('.cCrud-mass-form-group').show(150);
-			}
-			else {
+			} else {
 				cCrud.get_container(this).find('.cCrud-mass-form-group').hide(150);
 			}
 

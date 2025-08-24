@@ -524,10 +524,6 @@ class cCrud
 
         $this->config = cCrudConfig::instance();
 
-        $this->config->scripts_url = self::check_url($this->config->scripts_url, true);
-        $this->config->editor_url = self::check_url($this->config->editor_url);
-        $this->config->editor_init_url = self::check_url($this->config->editor_init_url);
-
         $this->limit = $this->config->limit;
         $this->limit_list = $this->config->limit_list;
         $this->column_cut = $this->config->column_cut;
@@ -581,7 +577,9 @@ class cCrud
     {
         if (self::$routesRegistered === false) {
             // registra as rotas apenas uma vez
-            Services::routes()->post('ajax', 'cCrud::ajax', ['namespace' => 'cCrud']);
+            $config    = cCrudConfig::instance();
+            $ajaxRoute = trim($config->ajax_uri, '/');
+            Services::routes()->post($ajaxRoute, 'cCrud::ajax', ['namespace' => 'cCrud']);
             Services::routes()->get('cCrud.css', 'cCrud::css', ['namespace' => 'cCrud']);
             Services::routes()->get('cCrud.js', 'cCrud::js', ['namespace' => 'cCrud']);
             self::$routesRegistered = true;
@@ -9146,112 +9144,17 @@ class cCrud
         return json_encode($data);
     }
 
-    public static function check_url($url, $scr_url = false)
-    {
-        if (! $url && ! $scr_url)
-            return false;
-        $url     = rtrim($url, '/');
-        $request = Services::request();
-        $host    = trim($request->getServer('HTTP_HOST'), '/');
-        $https   = $request->getServer('HTTPS');
-        $scheme  = (! $https or strtolower($https) == 'off' or strtolower($https) == 'no') ? 'http://' : 'https://';
-        // some troubles with sym links between private and public
-        $documentRoot = $request->getServer('DOCUMENT_ROOT');
-        $doc_root = trim(str_replace('\\', '/', str_replace(array(
-            '/public_html',
-            '/private_html'
-        ), '', $documentRoot)), '/');
-        $file_dir = trim(str_replace('\\', '/', str_replace(array(
-            '/public_html',
-            '/private_html'
-        ), '', dirname(__file__))), '/');
-
-        $curr_host = $scheme . $host;
-        $is_full_url = mb_strpos($url, '://') === false ? false : true;
-        if ($is_full_url) { // www fix
-            $curr_www = preg_match('/:\/\/www\./u', $curr_host) ? true : false;
-            $url_www = preg_match('/:\/\/www\./u', $url) ? true : false;
-            if ($curr_www != $url_www) {
-                if ($curr_www) {
-                    $url = preg_replace('/(:\/\/)/u', '$1www.', $url, 1);
-                } else {
-                    $url = preg_replace('/(:\/\/)www\./u', '$1', $url, 1);
-                }
-            }
-        } elseif ($this->config->urls2abs) {
-            if (mb_substr($url, 0, 1) == '/' or mb_substr($url, 0, 2) == './') {
-                $url = $curr_host . ltrim($url, '.');
-            } elseif ($scr_url && ! $url) {
-                // $script_uri = ltrim(mb_substr($file_dir, mb_strpos($file_dir,
-                // $doc_root) + mb_strlen($doc_root)), '/');
-
-                $file_dir = explode('/', $file_dir);
-                $max_root = array();
-                $file_dir = array_reverse($file_dir);
-                foreach ($file_dir as $segment) {
-
-                    if (mb_substr($doc_root, - mb_strlen($segment) - 1, mb_strlen($segment) + 1) != '/' . $segment) {
-                        array_unshift($max_root, $segment);
-                    } else {
-                        break;
-                    }
-                }
-                $script_uri = implode('/', $max_root);
-
-                // $script_uri = trim(str_replace(str_replace('\\', '/',
-                // $document_root), '', str_replace('\\', '/', $file_dir)),
-                // '/');
-                $url = $curr_host . '/' . $script_uri;
-            } else {
-                // $script_uri = ltrim(mb_substr($file_dir, mb_strpos($file_dir,
-                // $doc_root) + mb_strlen($doc_root)), '/');
-                $file_dir = explode('/', $file_dir);
-                $max_root = array();
-                $file_dir = array_reverse($file_dir);
-                foreach ($file_dir as $segment) {
-
-                    if (mb_substr($doc_root, - mb_strlen($segment) - 1, mb_strlen($segment) + 1) != '/' . $segment) {
-                        array_unshift($max_root, $segment);
-                    } else {
-                        break;
-                    }
-                }
-                $script_uri = implode('/', $max_root);
-
-                // $script_uri = trim(str_replace(str_replace('\\', '/',
-                // $document_root), '', str_replace('\\', '/', $file_dir)),
-                // '/');
-                $request_uri = trim($request->getServer('REQUEST_URI'), '/');
-
-                $script_uri_a = /*explode('/', $script_uri)*/ $max_root;
-                $request_uri_a = explode('/', $request_uri);
-                $count = count($request_uri_a);
-                $new_url = array();
-                for ($i = 0; $i < $count; ++ $i) {
-                    if (isset($script_uri_a[$i]) && $script_uri_a[$i] == $request_uri_a[$i]) {
-                        $new_url[] = $request_uri_a[$i];
-                    } else {
-                        break;
-                    }
-                }
-                if (dirname($request_uri) != $script_uri) {
-                    foreach (explode('/', ltrim($url, '/')) as $segment) {
-                        if ($segment == '..') {
-                            array_pop($new_url);
-                        } else {
-                            $new_url[] = $segment;
-                        }
-                    }
-                }
-                if ($new_url) {
-                    $url = $curr_host . '/' . implode('/', $new_url);
-                }
-            }
-        } // echo $url.'<br />';
-
-        return $url;
-    }
-
+    /**
+     * Gera o link para acesso a arquivos armazenados.
+     *
+     * @param string     $field        Campo associado ao arquivo.
+     * @param int|string $primary_val  Valor da chave primária.
+     * @param mixed      $thumb        Identificador da miniatura, se houver.
+     * @param bool       $crop         Define se deve aplicar recorte.
+     * @param bool|string $filename    Nome do arquivo, quando definido.
+     *
+     * @return string URL para o arquivo.
+     */
     protected function file_link($field, $primary_val, $thumb = false, $crop = false, $filename = false)
     {
         $params = array(
@@ -9270,7 +9173,8 @@ class cCrud
         if ($crop) {
             $params['cCrud']['crop'] = $crop;
         }
-        return $this->config->scripts_url . '/' . $this->config->ajax_uri . '?' . http_build_query($params);
+        $ajaxUri = '/' . trim($this->config->ajax_uri, '/');
+        return $ajaxUri . '?' . http_build_query($params);
     }
 
     protected function real_file_link($filename, $params, $is_details = false)
@@ -9647,20 +9551,13 @@ class cCrud
     }
 
     /**
+     * Carrega estilos CSS configurados.
      *
-     * @author Ariel Canal
-     *         COMPATIBILIZAÇÃO COM A ARQUITETURA DO CODEIGINITER
+     * @return string HTML com as tags de estilo
      */
-    public static function load_css()
+    public static function load_css(): string
     {
-        $out    = '';
         $config = cCrudConfig::instance();
-
-        if (! self::$js_loaded && ! self::$instance) {
-            $config->scripts_url     = self::check_url($config->scripts_url, true);
-            $config->editor_url      = self::check_url($config->editor_url);
-            $config->editor_init_url = self::check_url($config->editor_init_url);
-        }
 
         if (self::$css_loaded) {
             // Estilos já carregados anteriormente
@@ -9668,84 +9565,55 @@ class cCrud
         }
 
         self::$css_loaded = true;
-        if ($config->load_bootstrap) {
-            $out .= '<link href="' . $config->scripts_url . '/' . $config->plugins_uri . '/bootstrap/css/bootstrap.min.css?' . time() . '" rel="stylesheet" type="text/css" />';
+
+        $out = '';
+        foreach ($config->css_libs as $lib) {
+            $out .= '<link href="' . $lib . '" rel="stylesheet" type="text/css" />';
         }
-        if ($config->load_jquery_ui)
-            $out .= '<link href="' . $config->scripts_url . '/' . $config->plugins_uri . '/jquery-ui/jquery-ui.min.css?' . time() . '" rel="stylesheet" type="text/css" />';
-        if ($config->load_jcrop)
-            $out .= '<link href="' . $config->scripts_url . '/' . $config->plugins_uri . '/jcrop/jquery.Jcrop.min.css?' . time() . '" rel="stylesheet" type="text/css" />';
+
         $out .= '<link href="/cCrud.css" rel="stylesheet" type="text/css" />';
 
         return $out;
     }
 
     /**
+     * Carrega scripts JavaScript configurados.
      *
-     * @author Ariel Canal
-     *         COMPATIBILIZAÇÃO COM A ARQUITETURA DO CODEIGINITER
+     * @return string HTML com as tags de script
      */
-    public static function load_js()
+    public static function load_js(): string
     {
-        $out = '';
         if (self::$instance) {
             $instance = reset(self::$instance);
-            $language = $instance->language;
             $instance->_get_language();
         } else {
-            $language = \Config\App::$defaultLocale;
             self::_get_language_static();
+            $instance = null; // usado apenas para obter o nome da tabela
         }
         $config = cCrudConfig::instance();
-
-        if (! self::$css_loaded && ! self::$instance) {
-            $config->scripts_url     = self::check_url($config->scripts_url, true);
-            $config->editor_url      = self::check_url($config->editor_url);
-            $config->editor_init_url = self::check_url($config->editor_init_url);
-        }
 
         if (self::$js_loaded) {
             // Scripts já carregados anteriormente
             throw new RuntimeException(lang('cCrud.scripts_already_rendered'));
         }
         self::$js_loaded = true;
-        if ($config->load_jquery)
-            $out .= '<script src="' . $config->scripts_url . '/' . $config->plugins_uri . '/jquery.min.js"></script>';
-        if ($config->jquery_no_conflict) {
-            $out .= '
-            <script type="text/javascript">
-            <!--
-            
-            jQuery.noConflict();
-            
-            -->
-            </script>';
-        }
-        if ($config->load_jquery_ui)
-            $out .= '<script src="' . $config->scripts_url . '/' . $config->plugins_uri . '/jquery-ui/jquery-ui.min.js?' . time() . '"></script>';
-        if ($config->load_jcrop) {
-            $out .= '<script src="' . $config->scripts_url . '/' . $config->plugins_uri . '/jcrop/jquery.Jcrop.min.js?' . time() . '"></script>';
-        }
-        if ($config->load_bootstrap)
-            $out .= '<script src="' . $config->scripts_url . '/' . $config->plugins_uri . '/bootstrap/js/bootstrap.min.js?' . time() . '"></script>';
 
-        if ($config->editor_url)
-            $out .= '<script src="' . $config->editor_url . '?' . time() . '"></script>';
-        if ($config->load_googlemap)
-            $out .= '<script src="//maps.google.com/maps/api/js?sensor=false&language=' . $language . '&' . time() . '"></script>';
-        $out .= '<script src="' . $config->scripts_url . '/' . $config->plugins_uri . '/cCrud.js?' . time() . '"></script>';
+        $out = '';
+        foreach ($config->js_libs as $lib) {
+            $out .= '<script src="' . $lib . '"></script>';
+        }
 
-        $settings = array(
-            'url' => $config->scripts_url . '/' . $config->ajax_uri,
-            'table_name' => $instance->table_name,
-            'editor_url' => $config->editor_url,
-            'editor_init_url' => $config->editor_init_url,
+        $out .= '<script src="/cCrud.js"></script>';
+
+        $settings = [
+            'url' => '/' . trim($config->ajax_uri, '/'),
+            'table_name' => $instance ? $instance->table_name : '',
             'force_editor' => $config->force_editor,
             'date_first_day' => $config->date_first_day,
             'date_format' => $config->date_format,
             'time_format' => $config->time_format,
-            'lang' => self::$lang_arr
-        );
+            'lang' => self::$lang_arr,
+        ];
         $out .= '
             <script type="text/javascript">
             <!--
@@ -9754,7 +9622,7 @@ class cCrud
 
             -->
             </script>';
-        $out .= '<script src="/cCrud.js"></script>';
+
         return $out;
     }
 
@@ -10117,7 +9985,6 @@ class cCrud
 
     protected function send_http_request($url, $data, $method, $return_result = false)
     {
-        // $path = self::check_url($url);
         $path = $url;
         $data = http_build_query($data);
         switch ($method) {
@@ -11610,10 +11477,19 @@ class cCrud
         return $filename;
     }
 
-    protected function save_file($file, &$filename, $field)
+    /**
+     * Salva o arquivo enviado no diretório configurado.
+     *
+     * @param array  $file     Dados do arquivo enviado
+     * @param string $filename Nome do arquivo a ser salvo
+     * @param string $field    Campo relacionado ao arquivo
+     *
+     * @return string Caminho completo do arquivo salvo
+     */
+    protected function save_file(array $file, string &$filename, string $field): string
     {
         $file_path = $this->get_image_folder($field) . '/' . $filename;
-        $file_path = utf8_decode($file_path);
+        $file_path = mb_convert_encoding($file_path, 'ISO-8859-1', 'UTF-8');
         move_uploaded_file($file['tmp_name'], $file_path);
         if ($this->after_upload) {
             $path = $this->check_file($this->after_upload['path'], 'save_file');
@@ -11841,12 +11717,6 @@ class cCrud
                 default:
                     $out .= $title . '<small> ' . $this->get_table_tooltip() . '</small>';
                     break;
-            }
-            if ($this->config->can_minimize) {
-                if ($to_show)
-                    $out .= '<span class="cCrud-toggle-show cCrud-toggle-down"><i class="' . $this->theme_config('slide_down_icon') . '"></i></span>';
-                else
-                    $out .= '<span class="cCrud-toggle-show cCrud-toggle-up"><i class="' . $this->theme_config('slide_up_icon') . '"></i></span>';
             }
             $out .= $this->close_tag($tag);
         }
