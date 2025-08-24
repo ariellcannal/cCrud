@@ -9,7 +9,6 @@ use Config\Services;
 use CodeIgniter\Session\Session;
 use CodeIgniter\HTTP\ResponseInterface;
 use cCrud\Postdata;
-use RuntimeException;
 
 // direct access to DB driver and config
 define('CCRUD_PATH', str_replace('\\', '/', dirname(__file__)));
@@ -510,13 +509,12 @@ class cCrud
      * Construtor que define as variáveis básicas do cCrud,
      * podendo ser alteradas por métodos públicos.
      *
-     * @throws RuntimeException Quando não estiver executando dentro do CodeIgniter 4
      */
     protected function __construct()
     {
         // Verifica se o pacote está sendo utilizado dentro do CodeIgniter 4
         if (!defined('CI_VERSION') || version_compare(CI_VERSION, '4.0.0', '<')) {
-            throw new RuntimeException(lang('cCrud.ci4_required'));
+            return Services::response()->setStatusCode(500)->setBody(lang('cCrud.ci4_required'));
         }
 
         // Inicia o manipulador de sessões do CodeIgniter 4
@@ -614,7 +612,6 @@ class cCrud
     /**
      * Retorna uma instância do cCrud utilizando o Model informado.
      *
-     * @throws RuntimeException Caso o Model informado não utilize uma Entity CI4 como returnType
      */
     public static function getInstance(Model $model, $name = false)
     {
@@ -631,7 +628,7 @@ class cCrud
 
         $returnType = method_exists($model, 'getReturnType') ? $model->getReturnType() : $model->returnType;
         if (! is_subclass_of($returnType, '\\CodeIgniter\\Entity\\Entity')) {
-            throw new RuntimeException(lang('cCrud.model_entity_required'));
+            return Services::response()->setStatusCode(500)->setBody(lang('cCrud.model_entity_required'));
         }
 
         return self::$instance[$name];
@@ -644,7 +641,6 @@ class cCrud
      *
      * @return cCrud
      *
-     * @throws RuntimeException Quando parâmetros obrigatórios não forem informados
      */
     public static function getRequestedInstance(Model $model)
     {
@@ -656,27 +652,27 @@ class cCrud
         if (is_array($postData) && isset($postData['instance'], $postData['key'], $postData['task'])) {
             self::init_prepare('post');
             if (empty($postData['key'])) {
-                throw new RuntimeException(lang('cCrud.security_key_empty'));
+                return Services::response()->setStatusCode(400)->setBody(lang('cCrud.security_key_empty'));
             }
             $key = $security->clean($postData['key']);
             if (empty($postData['instance'])) {
-                throw new RuntimeException(lang('cCrud.instance_name_empty'));
+                return Services::response()->setStatusCode(400)->setBody(lang('cCrud.instance_name_empty'));
             }
             $inst_name = $security->clean($postData['instance']);
             $is_get    = false;
         } elseif (is_array($getData) && isset($getData['instance'], $getData['key'], $getData['task']) && $getData['task'] == 'file') {
             self::init_prepare('get');
             if (empty($getData['key'])) {
-                throw new RuntimeException(lang('cCrud.security_key_empty'));
+                return Services::response()->setStatusCode(400)->setBody(lang('cCrud.security_key_empty'));
             }
             $key = $security->clean($getData['key']);
             if (empty($getData['instance'])) {
-                throw new RuntimeException(lang('cCrud.instance_name_empty'));
+                return Services::response()->setStatusCode(400)->setBody(lang('cCrud.instance_name_empty'));
             }
             $inst_name = $security->clean($getData['instance']);
             $is_get    = true;
         } else {
-            throw new RuntimeException(lang('cCrud.wrong_request'));
+            return Services::response()->setStatusCode(400)->setBody(lang('cCrud.wrong_request'));
         }
         $session = \Config\Services::session();
         $cCrud_session = $session->get('cCrud_session');
@@ -694,7 +690,7 @@ class cCrud
             return self::$instance[$inst_name]->render();
         }
 
-        throw new RuntimeException(lang('cCrud.verification_key_outdated'));
+        return Services::response()->setStatusCode(401)->setBody(lang('cCrud.verification_key_outdated'));
     }
 
     /**
@@ -2092,7 +2088,7 @@ class cCrud
     {
         if (! $this->task) {
             // Lança exceção quando método é usado fora de callbacks
-            throw new RuntimeException(lang('cCrud.call_update_only_callbacks'));
+            return Services::response()->setStatusCode(500)->setBody(lang('cCrud.call_update_only_callbacks'));
         }
         return $this->_update($postdata->toArray(), $primary);
     }
@@ -2219,7 +2215,7 @@ class cCrud
                     break;
                 default:
                     // Modo informado é inválido
-                    throw new RuntimeException(lang('cCrud.incorrect_mode'));
+                    return false;
             }
         }
         return $this;
@@ -2262,7 +2258,7 @@ class cCrud
     {
         if (! $this->task) {
             // Lança exceção quando método é usado fora de callbacks
-            throw new RuntimeException(lang('cCrud.get_only_callbacks'));
+            return Services::response()->setStatusCode(500)->setBody(lang('cCrud.get_only_callbacks'));
         }
         if ($this->_get('key')) {
             return $this->_get($name);
@@ -2339,7 +2335,7 @@ class cCrud
     {
         if ($this->after && $this->after == $this->task) {
             // Previne recursão de tarefas
-            throw new RuntimeException(lang('cCrud.task_recursion'));
+            return Services::response()->setStatusCode(500)->setBody(lang('cCrud.task_recursion'));
         }
         if (! $this->task) {
             $this->task = 'list';
@@ -2357,7 +2353,7 @@ class cCrud
             case 'save':
                 if (! $this->before) {
                     // Tarefa restrita sem callback definido
-                    throw new RuntimeException(lang('cCrud.restricted_task'));
+                    return Services::response()->setStatusCode(403)->setBody(lang('cCrud.restricted_task'));
                 }
                 $this->_set_field_types($this->before);
                 return $this->_save();
@@ -2401,7 +2397,7 @@ class cCrud
             case 'print':
                 if (! $this->is_print) {
                     // Acesso restrito à tarefa de impressão
-                    throw new RuntimeException(lang('cCrud.restricted'));
+                    return Services::response()->setStatusCode(403)->setBody(lang('cCrud.restricted'));
                 }
                 $this->_set_field_types('list', $this->config->print_all_fields);
                 $this->set_custom_lists();
@@ -2480,7 +2476,7 @@ class cCrud
             case 'print':
                 if (! $this->is_print) {
                     // Acesso restrito à tarefa de impressão
-                    throw new RuntimeException(lang('cCrud.restricted'));
+                    return Services::response()->setStatusCode(403)->setBody(lang('cCrud.restricted'));
                 }
                 $this->start = 0;
                 $this->limit = 0;
@@ -2530,7 +2526,7 @@ class cCrud
     {
         if (! $this->is_csv) {
             // CSV indisponível para esta solicitação
-            throw new RuntimeException(lang('cCrud.restricted'));
+            return Services::response()->setStatusCode(403)->setBody(lang('cCrud.restricted'));
         }
         $this->columns = $this->fields_list;
         $query = $this->parse_query_params();
@@ -2837,7 +2833,7 @@ class cCrud
     {
         if (! $this->is_csv) {
             // Acesso restrito à exportação CSV
-            throw new RuntimeException(lang('cCrud.restricted'));
+            return Services::response()->setStatusCode(403)->setBody(lang('cCrud.restricted'));
         }
         $select = $this->_build_select_list(true);
         $table_join = $this->_build_table_join();
@@ -2854,7 +2850,7 @@ class cCrud
         $query = $this->model->db->query("SELECT {$select} FROM `{$this->table}` {$table_join} {$where} {$order_by}");
         if ($query->getNumRows() > $this->config->csv_limit)
             // Quantidade de registros acima do permitido
-            throw new RuntimeException(lang('cCrud.max_records_exceeded'));
+            return Services::response()->setStatusCode(413)->setBody(lang('cCrud.max_records_exceeded'));
         ini_set('auto_detect_line_endings', true);
         header("Pragma: public");
         header("Expires: 0");
@@ -2982,7 +2978,7 @@ class cCrud
     {
         if (! $this->is_create || $this->table_ro)
             // Operação de criação não permitida
-            throw new RuntimeException(lang('cCrud.forbidden'));
+            return Services::response()->setStatusCode(403)->setBody(lang('cCrud.forbidden'));
         $this->primary_val = null;
         $this->result_row = array_merge($this->defaults, $postdata);
 
@@ -3058,7 +3054,7 @@ class cCrud
                     return $this->_run_task();
                 } else {
                     // Acesso proibido à entrada solicitada
-                    throw new RuntimeException(lang('cCrud.forbidden'));
+                    return Services::response()->setStatusCode(403)->setBody(lang('cCrud.forbidden'));
                 }
 
         $callback_method = 'before_' . $mode;
@@ -3144,7 +3140,7 @@ class cCrud
     {
         if (! $postdata) {
             // Dados de postagem ausentes
-            throw new RuntimeException(lang('cCrud.postdata_empty'));
+            return Services::response()->setStatusCode(400)->setBody(lang('cCrud.postdata_empty'));
         }
         $set = array();
         $db = $this->model->db;
@@ -3212,11 +3208,11 @@ class cCrud
         // $keys = array_keys($set[$this->table]);
         if (! $set) {
             // Nenhum dado para inserir
-            throw new RuntimeException(lang('cCrud.nothing_to_insert'));
+            return Services::response()->setStatusCode(422)->setBody(lang('cCrud.nothing_to_insert'));
         }
         if (! $this->primary_ai && ! isset($postdata[$this->table . '.' . $this->primary_key])) {
             // Registro sem valor primário
-            throw new RuntimeException(lang('cCrud.no_primary_value'));
+            return Services::response()->setStatusCode(400)->setBody(lang('cCrud.no_primary_value'));
         }
         // Inserção utilizando Query Builder
         $db->table($this->table)->insert($set[$this->table]);
@@ -3293,7 +3289,7 @@ class cCrud
     {
         if (! $postdata) {
             // Dados de postagem ausentes
-            throw new RuntimeException(lang('cCrud.postdata_empty'));
+            return Services::response()->setStatusCode(400)->setBody(lang('cCrud.postdata_empty'));
         }
         $res = false;
         $set = array();
@@ -3348,7 +3344,7 @@ class cCrud
         }
         if (! $set) {
             // Nenhum dado para atualizar
-            throw new RuntimeException(lang('cCrud.nothing_to_update'));
+            return Services::response()->setStatusCode(422)->setBody(lang('cCrud.nothing_to_update'));
         }
         $this->apply_record_changes($setStrings);
         if (! $this->join && ! $this->join_relation) {
@@ -3427,7 +3423,7 @@ class cCrud
         $del = false;
         if ($this->table_ro)
             // Operação de remoção não permitida
-            throw new RuntimeException(lang('cCrud.forbidden'));
+            return Services::response()->setStatusCode(403)->setBody(lang('cCrud.forbidden'));
         if ($this->replace_remove) {
             $path = $this->check_file($this->replace_remove['path'], 'replace_remove');
             include_once ($path);
@@ -3480,7 +3476,7 @@ class cCrud
                 }
                     if (! $this->is_remove($del_row)) {
                         // Remoção não autorizada
-                        throw new RuntimeException(lang('cCrud.forbidden'));
+                        return Services::response()->setStatusCode(403)->setBody(lang('cCrud.forbidden'));
                     }
                 $del = $db->query("DELETE FROM `{$this->table}` WHERE `{$this->primary_key}` = " . $db->escape($this->primary_val) . " LIMIT 1");
             } else {
@@ -3500,7 +3496,7 @@ class cCrud
                 }
                     if (! $this->is_remove($del_row)) {
                         // Remoção não autorizada
-                        throw new RuntimeException(lang('cCrud.forbidden'));
+                        return Services::response()->setStatusCode(403)->setBody(lang('cCrud.forbidden'));
                     }
                 $del = $db->query("DELETE " . implode(',', $tables) . " FROM `{$this->table}` AS `{$this->table}` " . implode(' ', $joins) . " WHERE `{$this->table}`.`{$this->primary_key}` = " . $db->escape($this->primary_val));
             }
@@ -3600,7 +3596,7 @@ class cCrud
         $postdata = $this->_post('postdata');
         if (! $postdata) {
             // Nenhum dado disponível para salvar
-            throw new RuntimeException(lang('cCrud.no_data_to_save'));
+            return Services::response()->setStatusCode(400)->setBody(lang('cCrud.no_data_to_save'));
         }
 
         $postdata = $this->check_postdata($postdata, $this->primary_val);
@@ -3630,7 +3626,7 @@ class cCrud
         if (! $this->primary_val) {
             if (! $this->is_create || $this->table_ro)
                 // Operação de criação não permitida
-                throw new RuntimeException(lang('cCrud.forbidden'));
+                return Services::response()->setStatusCode(403)->setBody(lang('cCrud.forbidden'));
             if (isset($this->pass_var['create'])) {
                 foreach ($this->pass_var['create'] as $field => $param) {
                     if ($param['eval']) {
@@ -3692,7 +3688,7 @@ class cCrud
         } else {
             if ($this->table_ro)
                 // Operação não permitida em tabela somente leitura
-                throw new RuntimeException(lang('cCrud.forbidden'));
+                return Services::response()->setStatusCode(403)->setBody(lang('cCrud.forbidden'));
             $fields = array();
             $row = array();
             $this->find_details_text_variables();
@@ -3723,7 +3719,7 @@ class cCrud
 
             if (! $this->is_edit($row))
                 // Edição não autorizada
-                throw new RuntimeException(lang('cCrud.forbidden'));
+                return Services::response()->setStatusCode(403)->setBody(lang('cCrud.forbidden'));
             if (isset($this->pass_var['edit'])) {
                 foreach ($this->pass_var['edit'] as $field => $param) {
                     if (isset($param['tmp_value'])) {
@@ -3805,7 +3801,7 @@ class cCrud
                         break;
                     default:
                         // Erro durante o envio de arquivo
-                        throw new RuntimeException(lang('cCrud.upload_error'));
+                        return Services::response()->setStatusCode(500)->setBody(lang('cCrud.upload_error'));
                         break;
                 }
                 break;
@@ -3914,7 +3910,7 @@ class cCrud
     {
         if (! $this->is_list) {
             // Acesso proibido à listagem
-            throw new RuntimeException(lang('cCrud.forbidden'));
+            return Services::response()->setStatusCode(403)->setBody(lang('cCrud.forbidden'));
         }
         $this->_alphabetical();
         /*
@@ -5223,7 +5219,7 @@ class cCrud
                             break;
                         default:
                             // Tabela sem chave primária ou única
-                            throw new RuntimeException(lang('cCrud.table_no_primary_or_unique', [$this->table]));
+                            return Services::response()->setStatusCode(500)->setBody(lang('cCrud.table_no_primary_or_unique', [$this->table]));
                             break;
                     }
                 }
@@ -7506,7 +7502,7 @@ class cCrud
                 break;
             default:
                 // Erro no upload
-                throw new RuntimeException(lang('cCrud.upload_error'));
+                return Services::response()->setStatusCode(500)->setBody(lang('cCrud.upload_error'));
                 break;
         }
     }
@@ -7572,7 +7568,7 @@ class cCrud
             return $out;
         } else
             // Arquivo não foi enviado
-            throw new RuntimeException(lang('cCrud.file_not_uploaded'));
+            return Services::response()->setStatusCode(400)->setBody(lang('cCrud.file_not_uploaded'));
     }
 
     protected function _upload_image()
@@ -7658,7 +7654,7 @@ class cCrud
             return $out;
         } else
             // Arquivo não foi enviado
-            throw new RuntimeException(lang('cCrud.file_not_uploaded'));
+            return Services::response()->setStatusCode(400)->setBody(lang('cCrud.file_not_uploaded'));
     }
 
     protected function render_crop_window($filename, $field)
@@ -7874,7 +7870,7 @@ class cCrud
                 break;
             default:
                 // Erro ao remover arquivo
-                throw new RuntimeException(lang('cCrud.remove_error'));
+                return Services::response()->setStatusCode(500)->setBody(lang('cCrud.remove_error'));
                 break;
         }
     }
@@ -7957,7 +7953,7 @@ class cCrud
                 break;
             default:
                 // Arquivo inexistente
-                throw new RuntimeException(lang('cCrud.no_file'));
+                return Services::response()->setStatusCode(400)->setBody(lang('cCrud.no_file'));
                 return false;
         }
         if ($srcWidth >= $srcHeight) {
@@ -8027,7 +8023,7 @@ class cCrud
                     break;
                 default:
                     // Arquivo de marca d'água inexistente
-                    throw new RuntimeException(lang('cCrud.no_watermark_file'));
+                    return Services::response()->setStatusCode(404)->setBody(lang('cCrud.no_watermark_file'));
                     return false;
             }
             imagecopy($dstHandle, $waterHandle, $offsets['x'], $offsets['y'], 0, 0, $water_w, $water_h);
@@ -8045,7 +8041,7 @@ class cCrud
                 break;
             default:
                 // Tipo de arquivo não suportado
-                throw new RuntimeException(lang('cCrud.file_type_not_supported'));
+                return Services::response()->setStatusCode(415)->setBody(lang('cCrud.file_type_not_supported'));
                 return false;
         }
         imagedestroy($dstHandle);
@@ -8074,12 +8070,12 @@ class cCrud
                 break;
             default:
                 // Arquivo inexistente
-                throw new RuntimeException(lang('cCrud.no_file'));
+                return Services::response()->setStatusCode(400)->setBody(lang('cCrud.no_file'));
                 return false;
         }
         if (! $srcHandle) {
             // Falha ao executar imagecreatefrom()
-            throw new RuntimeException(lang('cCrud.imagecreatefrom_failed'));
+            return Services::response()->setStatusCode(500)->setBody(lang('cCrud.imagecreatefrom_failed'));
             return false;
         }
         if ($srcHeight < $srcWidth) {
@@ -8129,7 +8125,7 @@ class cCrud
         }
         if (! imagecopyresampled($dstHandle, $srcHandle, 0, 0, $xOffset, $yOffset, $new_size_w, $new_size_h, $cpyWidth, $cpyHeight)) {
             // Falha ao executar imagecopyresampled()
-            throw new RuntimeException(lang('cCrud.imagecopyresampled_failed'));
+            return Services::response()->setStatusCode(500)->setBody(lang('cCrud.imagecopyresampled_failed'));
             return false;
         }
         imagedestroy($srcHandle);
@@ -8159,7 +8155,7 @@ class cCrud
                     break;
                 default:
                     // Arquivo de marca d'água inexistente
-                    throw new RuntimeException(lang('cCrud.no_watermark_file'));
+                    return Services::response()->setStatusCode(404)->setBody(lang('cCrud.no_watermark_file'));
                     return false;
             }
             imagecopy($dstHandle, $waterHandle, $offsets['x'], $offsets['y'], 0, 0, $water_w, $water_h);
@@ -8177,7 +8173,7 @@ class cCrud
             break;
         default:
             // Tipo de arquivo não suportado
-            throw new RuntimeException(lang('cCrud.file_type_not_supported'));
+            return Services::response()->setStatusCode(415)->setBody(lang('cCrud.file_type_not_supported'));
             return false;
         }
         imagedestroy($dstHandle);
@@ -8202,12 +8198,12 @@ class cCrud
                 break;
             default:
                 // Arquivo inexistente
-                throw new RuntimeException(lang('cCrud.no_file'));
+                return Services::response()->setStatusCode(400)->setBody(lang('cCrud.no_file'));
                 return false;
         }
         if (! $srcHandle) {
             // Falha ao executar imagecreatefrom()
-            throw new RuntimeException(lang('cCrud.imagecreatefrom_failed'));
+            return Services::response()->setStatusCode(500)->setBody(lang('cCrud.imagecreatefrom_failed'));
             return false;
         }
         $dstHandle = ImageCreateTrueColor($new_size_w, $new_size_h);
@@ -8228,7 +8224,7 @@ class cCrud
         }
         if (! imagecopyresampled($dstHandle, $srcHandle, 0, 0, $x, $y, $new_size_w, $new_size_h, $w, $h)) {
             // Falha ao executar imagecopyresampled()
-            throw new RuntimeException(lang('cCrud.imagecopyresampled_failed'));
+            return Services::response()->setStatusCode(500)->setBody(lang('cCrud.imagecopyresampled_failed'));
             return false;
         }
         imagedestroy($srcHandle);
@@ -8258,7 +8254,7 @@ class cCrud
                     break;
                 default:
                     // Arquivo de marca d'água inexistente
-                    throw new RuntimeException(lang('cCrud.no_watermark_file'));
+                    return Services::response()->setStatusCode(404)->setBody(lang('cCrud.no_watermark_file'));
                     return false;
             }
             imagecopy($dstHandle, $waterHandle, $offsets['x'], $offsets['y'], 0, 0, $water_w, $water_h);
@@ -8276,7 +8272,7 @@ class cCrud
                 break;
             default:
                 // Tipo de arquivo não suportado
-                throw new RuntimeException(lang('cCrud.file_type_not_supported'));
+                return Services::response()->setStatusCode(415)->setBody(lang('cCrud.file_type_not_supported'));
                 return false;
         }
         imagedestroy($dstHandle);
@@ -8301,7 +8297,7 @@ class cCrud
                 break;
             default:
                 // Arquivo inexistente
-                throw new RuntimeException(lang('cCrud.no_file'));
+                return Services::response()->setStatusCode(400)->setBody(lang('cCrud.no_file'));
                 return false;
         }
         $dstHandle = imagecreatetruecolor($srcWidth, $srcHeight);
@@ -8349,7 +8345,7 @@ class cCrud
                     break;
                 default:
                     // Arquivo de marca d'água inexistente
-                    throw new RuntimeException(lang('cCrud.no_watermark_file'));
+                    return Services::response()->setStatusCode(404)->setBody(lang('cCrud.no_watermark_file'));
                     return false;
             }
             imagecopy($dstHandle, $waterHandle, $offsets['x'], $offsets['y'], 0, 0, $water_w, $water_h);
@@ -8367,7 +8363,7 @@ class cCrud
                 break;
             default:
                 // Tipo de arquivo não suportado
-                throw new RuntimeException(lang('cCrud.file_type_not_supported'));
+                return Services::response()->setStatusCode(415)->setBody(lang('cCrud.file_type_not_supported'));
                 return false;
         }
         imagedestroy($dstHandle);
@@ -9247,7 +9243,7 @@ class cCrud
 
             if (! $this->is_duplicate($row)) {
                 // Duplicação não permitida
-                throw new RuntimeException(lang('cCrud.forbidden'));
+                return Services::response()->setStatusCode(403)->setBody(lang('cCrud.forbidden'));
             }
 
             $columns = array();
@@ -9262,7 +9258,7 @@ class cCrud
                                 }
                             } elseif ($row['Key'] == 'UNI' or $row['Key'] == 'PRI') {
                                 // Impossível duplicar: tabela possui campo único
-                                throw new RuntimeException(lang('cCrud.duplication_unique_field'));
+                                return Services::response()->setStatusCode(409)->setBody(lang('cCrud.duplication_unique_field'));
                             } else {
                                 $columns[$field_index] = array(
                                     'table' => $table,
@@ -9274,7 +9270,7 @@ class cCrud
             }
             if (! $this->primary_ai) {
                 // Impossível duplicar: tabela sem campo autoincremento
-                throw new RuntimeException(lang('cCrud.duplication_no_primary_autoincrement'));
+                return Services::response()->setStatusCode(409)->setBody(lang('cCrud.duplication_no_primary_autoincrement'));
             }
             $select = $this->_build_select_clone($columns);
             $where = $this->_build_where();
@@ -9367,7 +9363,7 @@ class cCrud
     {
         if (! $this->table && ! $this->query)
             // Tabela não definida para o método requisitado
-            throw new RuntimeException(lang('cCrud.table_not_defined', [$method]));
+            return Services::response()->setStatusCode(500)->setBody(lang('cCrud.table_not_defined', [$method]));
         else
             return $this->table ? $this->table : '';
         return false;
@@ -9419,7 +9415,7 @@ class cCrud
             $this->theme_config = $config->classes;
         } else {
             // Arquivo de configuração das views não localizado
-            throw new RuntimeException(lang('cCrud.view_config_not_found'));
+            return Services::response()->setStatusCode(404)->setBody(lang('cCrud.view_config_not_found'));
         }
     }
 
@@ -9510,7 +9506,7 @@ class cCrud
             unset($fields);
         } else
             // Nome do campo obrigatório
-            throw new RuntimeException(lang('cCrud.field_name_required', [$location]));
+            return Services::response()->setStatusCode(400)->setBody(lang('cCrud.field_name_required', [$location]));
         return $field_names;
     }
 
@@ -9561,7 +9557,7 @@ class cCrud
 
         if (self::$css_loaded) {
             // Estilos já carregados anteriormente
-            throw new RuntimeException(lang('cCrud.styles_already_rendered'));
+            return Services::response()->setStatusCode(409)->setBody(lang('cCrud.styles_already_rendered'));
         }
 
         self::$css_loaded = true;
@@ -9594,7 +9590,7 @@ class cCrud
 
         if (self::$js_loaded) {
             // Scripts já carregados anteriormente
-            throw new RuntimeException(lang('cCrud.scripts_already_rendered'));
+            return Services::response()->setStatusCode(409)->setBody(lang('cCrud.scripts_already_rendered'));
         }
         self::$js_loaded = true;
 
@@ -9688,7 +9684,7 @@ class cCrud
 
         if (! is_file($path))
             // Caminho ou arquivo inexistente
-            throw new RuntimeException(lang('cCrud.wrong_path_or_file', [$func_name, $path]));
+            return Services::response()->setStatusCode(404)->setBody(lang('cCrud.wrong_path_or_file', [$func_name, $path]));
         return $path;
     }
 
@@ -9702,7 +9698,7 @@ class cCrud
         if (! is_dir($path)) {
             if (! @mkdir($path))
                 // Caminho ou pasta inexistente
-                throw new RuntimeException(lang('cCrud.wrong_path_or_folder', [$func_name, $path]));
+                return Services::response()->setStatusCode(404)->setBody(lang('cCrud.wrong_path_or_folder', [$func_name, $path]));
         }
         return $path;
     }
@@ -11421,10 +11417,10 @@ class cCrud
         if (is_dir(implode('/', $path_array))) {
             if (! mkdir($path))
                 // Não foi possível criar o diretório
-                throw new RuntimeException(lang('cCrud.cannot_create_directory', [$path]));
+                return Services::response()->setStatusCode(500)->setBody(lang('cCrud.cannot_create_directory', [$path]));
         } else {
             // Caminho do arquivo incorreto
-            throw new RuntimeException(lang('cCrud.file_path_incorrect'));
+            return Services::response()->setStatusCode(404)->setBody(lang('cCrud.file_path_incorrect'));
         }
     }
 
@@ -11972,11 +11968,11 @@ class cCrud
                     return self::$classes[$name];
                 } else {
                     // Classe requisitada não existe
-                    throw new RuntimeException(lang('cCrud.class_not_exist', [$class]));
+                    return Services::response()->setStatusCode(500)->setBody(lang('cCrud.class_not_exist', [$class]));
                 }
             } else {
                 // Arquivo requisitado não existe
-                throw new RuntimeException(lang('cCrud.file_not_exist', [$name]));
+                return Services::response()->setStatusCode(404)->setBody(lang('cCrud.file_not_exist', [$name]));
             }
     }
 
@@ -12931,7 +12927,7 @@ class cCrud
     {
         if ($this->table_ro)
             // Operação não permitida em tabela somente leitura
-            throw new RuntimeException(lang('cCrud.forbidden'));
+            return Services::response()->setStatusCode(403)->setBody(lang('cCrud.forbidden'));
             
             $this->set_custom_lists();
             $this->_set_field_types('list');
