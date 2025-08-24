@@ -41,8 +41,6 @@ return [
     'mass_apply_confirm' => 'Apply selected actions?',
     'mass_apply' => 'Apply',
     'total' => 'Total',
-    'db_connection_error' => 'Connection error. Can not connect to database',
-    'db_query_error' => '{0}<pre>{1}</pre>',
     'security_key_empty' => 'Security key cannot be empty',
     'instance_name_empty' => 'Instance name cannot be empty',
     'wrong_request' => 'Wrong request!',
@@ -96,8 +94,5 @@ return [
     'mcrypt_algorithm_not_found' => 'MCRYPT - Supported algorithm not found',
     'class_not_exist' => 'Class "{0}" not exist!',
     'file_not_exist' => 'File "{0}.php" not exist!',
-    'not_found' => 'Not Found',
-    'db_connection_error' => 'Connection error: cannot connect to database',
-    'db_error' => 'Database error: {0}',
-    'db_error_query' => 'Database error ({2}): {0} Query: {1}'
+    'not_found' => 'Not Found'
 ];
