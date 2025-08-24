@@ -30,11 +30,11 @@ class cCrud
     protected static $classes = array();
 
     /**
-     * Indica se a rota Ajax já foi registrada.
+     * Indica se as rotas do cCrud já foram registradas.
      *
      * @var bool
      */
-    protected static bool $ajaxRouteRegistered = false;
+    protected static bool $routesRegistered = false;
 
     protected $ajax_request = false;
 
@@ -580,24 +580,26 @@ class cCrud
         );
         $this->nested_readonly_on_view = $this->config->nested_readonly_on_view;
 
-        // garante o registro da rota Ajax do cCrud
-        self::registerAjaxRoute();
+        // garante o registro das rotas do cCrud
+        self::registerRoutes();
     }
 
     protected function __clone()
     {}
 
     /**
-     * Registra a rota de processamento Ajax do cCrud.
+     * Registra as rotas utilizadas pelo cCrud.
      *
      * @return void
      */
-    private static function registerAjaxRoute(): void
+    private static function registerRoutes(): void
     {
-        if (self::$ajaxRouteRegistered === false) {
-            // registra a rota apenas uma vez
-            Services::routes()->post('ccrud/ajax', 'cCrud::ajax', ['namespace' => 'cCrud']);
-            self::$ajaxRouteRegistered = true;
+        if (self::$routesRegistered === false) {
+            // registra as rotas apenas uma vez
+            Services::routes()->post('ajax', 'cCrud::ajax', ['namespace' => 'cCrud']);
+            Services::routes()->get('cCrud.css', 'cCrud::css', ['namespace' => 'cCrud']);
+            Services::routes()->get('cCrud.js', 'cCrud::js', ['namespace' => 'cCrud']);
+            self::$routesRegistered = true;
         }
     }
 
@@ -752,6 +754,28 @@ class cCrud
 
         // retorna o conteúdo como uma resposta HTTP
         return Services::response()->setBody($output);
+    }
+
+    /**
+     * Retorna o conteúdo CSS utilizado pelo cCrud.
+     *
+     * @return ResponseInterface Resposta HTTP contendo o CSS
+     */
+    public function css(): ResponseInterface
+    {
+        $content = file_get_contents(CCRUD_PATH . '/views/cCrud.css');
+        return Services::response()->setContentType('text/css')->setBody($content);
+    }
+
+    /**
+     * Retorna o conteúdo JavaScript utilizado pelo cCrud.
+     *
+     * @return ResponseInterface Resposta HTTP contendo o JavaScript
+     */
+    public function js(): ResponseInterface
+    {
+        $content = file_get_contents(CCRUD_PATH . '/views/cCrud.js');
+        return Services::response()->setContentType('application/javascript')->setBody($content);
     }
 
     public function connection($user = '', $pass = '', $table = '', $host = 'localhost', $encode = 'utf8')
@@ -9907,6 +9931,7 @@ class cCrud
             $out .= '<link href="' . $config->scripts_url . '/' . $config->plugins_uri . '/jquery-ui/jquery-ui.min.css?' . time() . '" rel="stylesheet" type="text/css" />';
         if ($config->load_jcrop)
             $out .= '<link href="' . $config->scripts_url . '/' . $config->plugins_uri . '/jcrop/jquery.Jcrop.min.css?' . time() . '" rel="stylesheet" type="text/css" />';
+        $out .= '<link href="/cCrud.css" rel="stylesheet" type="text/css" />';
 
         return $out;
     }
@@ -9986,6 +10011,7 @@ class cCrud
 
             -->
             </script>';
+        $out .= '<script src="/cCrud.js"></script>';
         return $out;
     }
 
