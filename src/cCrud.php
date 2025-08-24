@@ -3127,10 +3127,6 @@ class cCrud
         return $this->_render_details($mode);
     }
 
-    protected function prepare_query_field($val, $key, $action, $no_processing = false)
-    {
-        return $this->model->db->escape($val);
-    }
 
     /**
      *
@@ -3155,7 +3151,6 @@ class cCrud
         $set = array();
         $db = $this->model->db;
         $fields = array_merge($this->fields, $this->hidden_fields);
-        $fk_queries = array();
         foreach ($postdata as $key => $val) {
             if (isset($fields[$key]) && ! isset($this->locked_fields[$key]) && ! isset($this->custom_fields[$key]) && ((! isset($this->disabled[$key]['create']) && ! isset($this->readonly[$key]['create'])) || isset($this->pass_var['create'][$key]))) {
                 if (isset($this->field_type[$key])) {
@@ -3173,7 +3168,8 @@ class cCrud
                     }
                 }
 
-                $set[$fields[$key]['table']]['`' . $fields[$key]['field'] . '`'] = $this->prepare_query_field($val, $key, 'create');
+                // Armazena o valor sem escape; o Query Builder cuidará do bind
+                $set[$fields[$key]['table']][$fields[$key]['field']] = $val;
 
                 /*
                  * if (is_array($val))
@@ -3212,7 +3208,7 @@ class cCrud
                  * $this->
                  * field_null[$key], isset($this->bit_field[$key])));
                  */
-                $set[$no_processing_fields[$key]['table']]['`' . $no_processing_fields[$key]['field'] . '`'] = $this->prepare_query_field($val, $key, 'create', true);
+                $set[$no_processing_fields[$key]['table']][$no_processing_fields[$key]['field']] = $val;
             }
         }
         // $keys = array_keys($set[$this->table]);
@@ -3224,56 +3220,56 @@ class cCrud
             // Registro sem valor primário
             throw new RuntimeException(lang('cCrud.no_primary_value'));
         }
-        $db->query('INSERT INTO `' . $this->table . '` (' . implode(',', array_keys($set[$this->table])) . ') VALUES (' . implode(',', $set[$this->table]) . ')');
+        // Inserção utilizando Query Builder
+        $db->table($this->table)->insert($set[$this->table]);
         if ($this->primary_ai) {
             $ins_id = $db->insertID();
-            $set[$this->table]['`' . $this->primary_key . '`'] = $ins_id;
+            $set[$this->table][$this->primary_key] = $ins_id;
             $postdata[$this->table . '.' . $this->primary_key] = $ins_id;
         } else {
             $ins_id = $postdata[$this->table . '.' . $this->primary_key];
         }
+        // Inserção das tabelas vinculadas por join
         if ($this->join) {
             foreach ($this->join as $alias => $param) {
-                @$set[$alias]['`' . $param['join_field'] . '`'] = $set[$param['table']]['`' . $param['field'] . '`'];
+                $set[$alias][$param['join_field']] = $set[$param['table']][$param['field']];
                 if (! $param['not_insert']) {
-                    $db->query("INSERT INTO `{$param['join_table']}` (" . implode(',', array_keys($set[$alias])) . ") VALUES (" . implode(',', $set[$alias]) . ")");
+                    $db->table($param['join_table'])->insert($set[$alias]);
                 }
             }
         }
 
+        // Inserção das relações de chave estrangeira
         if ($this->fk_relation) {
             foreach ($this->fk_relation as $fk) {
                 $field = $fk['table'] . '.' . $fk['field'];
                 if (array_key_exists($fk['alias'], $postdata) && array_key_exists($field, $postdata)) {
-                    $in_val = $db->escape($postdata[$field]);
-                    unset($where_q);
+                    $builder = $db->table($fk['fk_table']);
+                    $builder->where($fk['in_fk_field'], $postdata[$field]);
                     if (count($fk['add_data'])) {
                         foreach ($fk['add_data'] as $k => $v) {
-                            $where_q[] = "`" . $k . "` = '" . $v . "'";
+                            $builder->where($k, $v);
                         }
-                        $where_q = " AND (" . implode(' AND ', $where_q) . ")";
-                    } else {
-                        $where_q = '';
                     }
-                    $db->query('DELETE FROM `' . $fk['fk_table'] . '` WHERE `' . $fk['in_fk_field'] . '` = ' . $in_val . ' ' . $where_q);
+                    $builder->delete();
+
                     $fkids = $this->parse_comma_separated($postdata[$fk['alias']]);
                     if ($fkids) {
-                        $ins_vals = array();
-                        $ins_keys = array();
-                        $ins_add = array();
-                        if ($fk['add_data']) {
-                            foreach ($fk['add_data'] as $add_key => $add_val) {
-                                $ins_keys[] = '`' . $add_key . '`';
-                                $ins_add[] = $db->escape($add_val);
-                            }
-                        }
-                        $ins_add[] = /*$db->escape(*/ $in_val /*)*/;
-                        $ins_keys[] = '`' . $fk['in_fk_field'] . '`';
-                        $ins_keys[] = '`' . $fk['out_fk_field'] . '`';
+                        $batch = array();
                         foreach ($fkids as $fkid) {
-                            $ins_vals[] = '(' . implode(',', $ins_add) . ',' . $db->escape($fkid) . ')';
+                            $row = array();
+                            if ($fk['add_data']) {
+                                foreach ($fk['add_data'] as $add_key => $add_val) {
+                                    $row[$add_key] = $add_val;
+                                }
+                            }
+                            $row[$fk['in_fk_field']] = $postdata[$field];
+                            $row[$fk['out_fk_field']] = $fkid;
+                            $batch[] = $row;
                         }
-                        $db->query('INSERT INTO `' . $fk['fk_table'] . '` (' . implode(',', $ins_keys) . ') VALUES ' . implode(',', $ins_vals));
+                        if ($batch) {
+                            $db->table($fk['fk_table'])->insertBatch($batch);
+                        }
                     }
                 }
             }
@@ -3313,6 +3309,7 @@ class cCrud
         }
         $res = false;
         $set = array();
+        $setStrings = array(); // Usado para registrar alterações
         $db = $this->model->db;
         $fields = array_merge($this->fields, $this->hidden_fields);
         foreach ($postdata as $key => $val) {
@@ -3357,34 +3354,37 @@ class cCrud
                  * $this->field_type[$key],
                  * $this->field_null[$key], isset($this->bit_field[$key])));
                  */
-                $set[] = '`' . $fields[$key]['table'] . '`.`' . $fields[$key]['field'] . '` = ' . $this->prepare_query_field($val, $key, 'edit');
+                $set[$fields[$key]['table']][$fields[$key]['field']] = $val;
+                $setStrings[] = '`' . $fields[$key]['table'] . '`.`' . $fields[$key]['field'] . '` = ' . $db->escape($val);
             }
         }
         if (! $set) {
             // Nenhum dado para atualizar
             throw new RuntimeException(lang('cCrud.nothing_to_update'));
         }
-        $this->apply_record_changes($set);
+        $this->apply_record_changes($setStrings);
         if (! $this->join && ! $this->join_relation) {
-            $res = $db->query("UPDATE `{$this->table}` SET " . implode(",\r\n", $set) . " WHERE `{$this->primary_key}` = " . $db->escape($primary) . " LIMIT 1");
+            $res = $db->table($this->table)->update($set[$this->table], [$this->primary_key => $primary]);
         } else {
-            // $tables = array('`' . $this->table . '`');
-            $joins = array();
+            $builder = $db->table($this->table);
             foreach ($this->join as $alias => $param) {
-                // $tables[] = '`' . $alias . '`';
-                $joins[] = "INNER JOIN `{$param['join_table']}` AS `{$alias}`
-                    ON `{$param['table']}`.`{$param['field']}` = `{$alias}`.`{$param['join_field']}` " . $param['additional_cond'];
+                $builder->join($param['join_table'] . ' ' . $alias, "{$param['table']}.{$param['field']} = {$alias}.{$param['join_field']} {$param['additional_cond']}", 'inner');
             }
             if (count($this->join_relation)) {
                 foreach ($this->join_relation as $field => $params) {
                     if (isset($this->relation[$field])) {
                         $r_params = $this->relation[$field];
-                        $joins[] = "INNER JOIN `{$r_params['rel_tbl']}` AS `{$r_params['rel_tbl']}`
-						ON $field = `{$r_params['rel_tbl']}`.`{$r_params['rel_field']}` ";
+                        $builder->join($r_params['rel_tbl'], "$field = {$r_params['rel_tbl']}.{$r_params['rel_field']}", 'inner');
                     }
                 }
             }
-            $res = $db->query("UPDATE `{$this->table}` AS `{$this->table}` " . implode(' ', $joins) . " SET " . implode(",\r\n", $set) . " WHERE `{$this->table}`.`{$this->primary_key}` = " . $db->escape($primary));
+            foreach ($set as $table => $fieldsSet) {
+                foreach ($fieldsSet as $field => $value) {
+                    $builder->set($table . '.' . $field, $value);
+                }
+            }
+            $builder->where($this->table . '.' . $this->primary_key, $primary);
+            $res = $builder->update();
         }
         if (isset($postdata[$this->table . '.' . $this->primary_key]) && $res)
             $primary = $postdata[$this->table . '.' . $this->primary_key];
@@ -3396,26 +3396,32 @@ class cCrud
             foreach ($this->fk_relation as $fk) {
                 $field = $fk['table'] . '.' . $fk['field'];
                 if (array_key_exists($fk['alias'], $postdata) && array_key_exists($field, $postdata)) {
-                    $in_val = $db->escape($postdata[$field]);
-                    $db->query('DELETE FROM `' . $fk['fk_table'] . '` WHERE `' . $fk['in_fk_field'] . '` = ' . $in_val . ' AND ' . $this->_build_rel_ins_where($fk['alias']));
+                    $builder = $db->table($fk['fk_table']);
+                    $builder->where($fk['in_fk_field'], $postdata[$field]);
+                    if ($fk['add_data']) {
+                        foreach ($fk['add_data'] as $add_key => $add_val) {
+                            $builder->where($add_key, $add_val);
+                        }
+                    }
+                    $builder->delete();
+
                     $fkids = $this->parse_comma_separated($postdata[$fk['alias']]);
                     if ($fkids) {
-                        $ins_vals = array();
-                        $ins_keys = array();
-                        $ins_add = array();
-                        if ($fk['add_data']) {
-                            foreach ($fk['add_data'] as $add_key => $add_val) {
-                                $ins_keys[] = '`' . $add_key . '`';
-                                $ins_add[] = $db->escape($add_val);
-                            }
-                        }
-                        $ins_add[] = /*$db->escape(*/ $in_val /*)*/;
-                        $ins_keys[] = '`' . $fk['in_fk_field'] . '`';
-                        $ins_keys[] = '`' . $fk['out_fk_field'] . '`';
+                        $batch = array();
                         foreach ($fkids as $fkid) {
-                            $ins_vals[] = '(' . implode(',', $ins_add) . ',' . $db->escape($fkid) . ')';
+                            $row = array();
+                            if ($fk['add_data']) {
+                                foreach ($fk['add_data'] as $add_key => $add_val) {
+                                    $row[$add_key] = $add_val;
+                                }
+                            }
+                            $row[$fk['in_fk_field']] = $postdata[$field];
+                            $row[$fk['out_fk_field']] = $fkid;
+                            $batch[] = $row;
                         }
-                        $db->query('INSERT INTO `' . $fk['fk_table'] . '` (' . implode(',', $ins_keys) . ') VALUES ' . implode(',', $ins_vals));
+                        if ($batch) {
+                            $db->table($fk['fk_table'])->insertBatch($batch);
+                        }
                     }
                 }
             }
@@ -13515,41 +13521,37 @@ class cCrud
             if ($params['tag_support'] === true) {
                 $val = $postdata[$key];
                 $db = $this->model->db;
-                $result = $db->query('SELECT * FROM `' . $this->relation[$key]['rel_tbl'] . '` WHERE `' . $this->relation[$key]['rel_field'] . '` = "' . $val . '"');
-                $row = $result->getRowArray();
-                unset($set);
+                $builder = $db->table($this->relation[$key]['rel_tbl']);
+                $row = $builder->where($this->relation[$key]['rel_field'], $val)->get()->getRowArray();
+                $set = array();
                 if (is_array($this->join_relation[$key]['rel_additional_fields'])) {
                     foreach ($this->join_relation[$key]['rel_additional_fields'] as $k => $fdata) {
-                        $set['`' . str_replace($this->relation[$key]['rel_tbl'] . '.', '', $k) . '`'] = $db->escape($postdata[$k]);
+                        $set[str_replace($this->relation[$key]['rel_tbl'] . '.', '', $k)] = $postdata[$k];
                     }
                 }
 
                 if (! count($row)) {
                     if (is_array($this->join_relation[$key]['default_data_create'])) {
                         foreach ($this->join_relation[$key]['default_data_create'] as $k => $v) {
-                            $set['`' . $k . '`'] = $db->escape($v);
+                            $set[$k] = $v;
                         }
                     }
-                    $set['`' . $this->relation[$key]['rel_name'] . '`'] = $db->escape($val);
+                    $set[$this->relation[$key]['rel_name']] = $val;
 
                     // inserir o campo do depend_on
                     if ($this->relation[$key]['depend_on'] != "" && $this->relation[$key]['depend_field'] != "") {
-                        $set['`' . $this->relation[$key]['depend_field'] . '`'] = $db->escape($postdata[$this->relation[$key]['depend_on']]);
+                        $set[$this->relation[$key]['depend_field']] = $postdata[$this->relation[$key]['depend_on']];
                     }
 
-                    $db->query('INSERT INTO `' . $this->relation[$key]['rel_tbl'] . '` (' . implode(',', array_keys($set)) . ') VALUES (' . implode(',', $set) . ')');
+                    $db->table($this->relation[$key]['rel_tbl'])->insert($set);
                     $postdata[$key] = $db->insertID();
                 } else {
                     if (is_array($this->join_relation[$key]['default_data_edit'])) {
                         foreach ($this->join_relation[$key]['default_data_edit'] as $k => $v) {
-                            $set['`' . $k . '`'] = $db->escape($v);
+                            $set[$k] = $v;
                         }
                     }
-                    unset($update);
-                    foreach ($set as $k => $v) {
-                        $update[] = $k . ' = ' . $v;
-                    }
-                    $db->query('UPDATE `' . $this->relation[$key]['rel_tbl'] . '` SET ' . implode(',', $update) . ' WHERE `' . $this->relation[$key]['rel_field'] . '` = ' . $row[$this->relation[$key]['rel_field']]);
+                    $db->table($this->relation[$key]['rel_tbl'])->update($set, [$this->relation[$key]['rel_field'] => $row[$this->relation[$key]['rel_field']]]);
                 }
             }
             unset($set);
