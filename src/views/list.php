@@ -5,7 +5,7 @@
 else{
 ?>
 <div class="page-header">
-	<?php echo $this->render_table_name('list',array('tag'=>'h1','class'=>'page-title')); ?>
+	<?php echo $this->renderTableName('list',array('tag'=>'h1','class'=>'page-title')); ?>
 	<div class="page-header-actions">
 			<?php echo $this->render_totalizers(false)?>
 			<?php echo $this->render_custom_filter('direita')?>

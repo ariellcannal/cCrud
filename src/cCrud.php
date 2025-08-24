@@ -601,9 +601,9 @@ class cCrud
      *
      * @throws RuntimeException Caso o Model informado não utilize uma Entity CI4 como returnType
      */
-    public static function get_instance(Model $model, $name = false)
+    public static function getInstance(Model $model, $name = false)
     {
-        self::init_prepare();
+        self::initPrepare();
         if (! $name) {
             $name = sha1(rand() . microtime());
         }
@@ -631,10 +631,10 @@ class cCrud
      *
      * @throws RuntimeException Quando parâmetros obrigatórios não forem informados
      */
-    public static function get_requested_instance(Model $model)
+    public static function getRequestedInstance(Model $model)
     {
         if (isset($_POST['xcrud']['instance']) && isset($_POST['xcrud']['key']) && isset($_POST['xcrud']['task'])) {
-            self::init_prepare('post');
+            self::initPrepare('post');
             if (empty($_POST['xcrud']['key'])) {
                 throw new RuntimeException(lang('cCrud.security_key_empty'));
             }
@@ -645,7 +645,7 @@ class cCrud
             $inst_name = $_POST['xcrud']['instance'];
             $is_get = false;
         } elseif (isset($_GET['xcrud']['instance']) && isset($_GET['xcrud']['key']) && isset($_GET['xcrud']['task']) && $_GET['xcrud']['task'] == 'file') {
-            self::init_prepare('get');
+            self::initPrepare('get');
             if (empty($_GET['xcrud']['key'])) {
                 throw new RuntimeException(lang('cCrud.security_key_empty'));
             }
@@ -677,7 +677,14 @@ class cCrud
         throw new RuntimeException(lang('cCrud.verification_key_outdated'));
     }
 
-    protected static function init_prepare($method = false)
+    /**
+     * Prepara a sessão para o cCrud.
+     *
+     * @param string|false $method Método da requisição (post|get)
+     *
+     * @return void
+     */
+    protected static function initPrepare($method = false)
     {
         $session = config('Session');
         $config  = cCrudConfig::instance();
@@ -692,13 +699,22 @@ class cCrud
                 $sess_name = $session->cookieName;
                 break;
         }
-        self::session_start($sess_name);
+        self::sessionStart($sess_name);
         if (is_callable($config->before_construct)) {
             call_user_func($config->before_construct);
         }
     }
 
-    public static function session_start($sess_name = false)
+    /**
+     * Inicia a sessão do CodeIgniter.
+     *
+     * @param string|false $sess_name Nome customizado da sessão
+     *
+     * @return void
+     *
+     * @throws RuntimeException Quando os cabeçalhos já foram enviados
+     */
+    public static function sessionStart($sess_name = false)
     {
         if (! session_id()) {
             if (! headers_sent()) {
@@ -729,13 +745,27 @@ class cCrud
         return $this;
     }
 
-    public function start_minimized($bool = true)
+    /**
+     * Define se o componente inicia minimizado.
+     *
+     * @param bool $bool Verdadeiro para iniciar minimizado
+     *
+     * @return self
+     */
+    public function startMinimized($bool = true)
     {
         $this->start_minimized = (bool) $bool;
         return $this;
     }
 
-    public function remove_confirm($bool = true)
+    /**
+     * Ativa a confirmação antes de remover registros.
+     *
+     * @param bool $bool Verdadeiro para solicitar confirmação
+     *
+     * @return self
+     */
+    public function removeConfirm($bool = true)
     {
         $this->remove_confirm = (bool) $bool;
         return $this;
@@ -747,7 +777,14 @@ class cCrud
         return $this;
     }
 
-    public function limit_list($limit_list = '')
+    /**
+     * Define a lista de limites para exibição.
+     *
+     * @param array<int,string>|string $limit_list Lista de limites permitidos
+     *
+     * @return self
+     */
+    public function limitList($limit_list = '')
     {
         if ($limit_list) {
             if (is_array($limit_list))
@@ -759,13 +796,27 @@ class cCrud
         return $this;
     }
 
-    public function show_primary_ai_field($bool = true)
+    /**
+     * Exibe o campo de chave primária auto-incremento em criação/edição.
+     *
+     * @param bool $bool Verdadeiro para exibir o campo
+     *
+     * @return self
+     */
+    public function showPrimaryAiField($bool = true)
     {
         $this->show_primary_ai_field = (bool) $bool;
         return $this;
     }
 
-    public function show_primary_ai_column($bool = true)
+    /**
+     * Exibe a coluna de chave primária auto-incremento na listagem.
+     *
+     * @param bool $bool Verdadeiro para exibir a coluna
+     *
+     * @return self
+     */
+    public function showPrimaryAiColumn($bool = true)
     {
         $this->show_primary_ai_column = (bool) $bool;
         return $this;
@@ -780,7 +831,16 @@ class cCrud
         return $this;
     }
 
-    public function table_name($name = '', $tooltip = false, $icon = false)
+    /**
+     * Define o nome da tabela para exibição.
+     *
+     * @param string      $name    Nome da tabela
+     * @param string|bool $tooltip Texto de ajuda
+     * @param string|bool $icon    Ícone exibido
+     *
+     * @return self
+     */
+    public function tableName($name = '', $tooltip = false, $icon = false)
     {
         if ($name)
             $this->table_name = $name;
@@ -847,12 +907,28 @@ class cCrud
         return $this;
     }
 
-    public function or_where($fields = '', $where_val = false)
+    /**
+     * Adiciona condição OR ao filtro.
+     *
+     * @param string $fields    Campos utilizados
+     * @param mixed  $where_val Valor comparado
+     *
+     * @return self
+     */
+    public function orWhere($fields = '', $where_val = false)
     {
         return $this->where($fields = '', $where_val = '', 'OR');
     }
 
-    public function order_by($fields = '', $direction = 'asc')
+    /**
+     * Define a ordenação dos resultados.
+     *
+     * @param string $fields    Campos ordenados
+     * @param string $direction Direção da ordenação
+     *
+     * @return self
+     */
+    public function orderBy($fields = '', $direction = 'asc')
     {
         if ($fields) {
             if ($direction === false && is_string($fields)) {
@@ -868,7 +944,14 @@ class cCrud
         return $this;
     }
 
-    public function group_by($fields = '')
+    /**
+     * Agrupa os resultados conforme os campos informados.
+     *
+     * @param string $fields Campos utilizados
+     *
+     * @return self
+     */
+    public function groupBy($fields = '')
     {
         if ($fields) {
             $fdata = $this->_parse_field_names($fields, 'group_by');
@@ -912,7 +995,26 @@ class cCrud
         return $this;
     }
 
-    public function fk_relation($label = '', $fields = '', $fk_table = '', $in_fk_field = '', $out_fk_field = '', $rel_tbl = '', $rel_field = '', $rel_name = '', $rel_where = array(), $rel_orderby = '', $rel_concat_separator = ' ', $before = '', array $add_data = array())
+    /**
+     * Configura relacionamento de chave estrangeira.
+     *
+     * @param string $label              Rótulo exibido
+     * @param string $fields             Campo principal
+     * @param string $fk_table           Tabela estrangeira
+     * @param string $in_fk_field        Campo de entrada
+     * @param string $out_fk_field       Campo de saída
+     * @param string $rel_tbl            Tabela de relação
+     * @param string $rel_field          Campo de chave
+     * @param string $rel_name           Campo de exibição
+     * @param array  $rel_where          Condição adicional
+     * @param string $rel_orderby        Ordenação
+     * @param string $rel_concat_separator Separador de concatenação
+     * @param string $before             Campo precedente
+     * @param array  $add_data           Dados extras
+     *
+     * @return self
+     */
+    public function fkRelation($label = '', $fields = '', $fk_table = '', $in_fk_field = '', $out_fk_field = '', $rel_tbl = '', $rel_field = '', $rel_name = '', $rel_where = array(), $rel_orderby = '', $rel_concat_separator = ' ', $before = '', array $add_data = array())
     {
         if ($fields && $rel_tbl && $rel_field && $rel_name && $label) {
             $fdata = $this->_parse_field_names($fields, 'fk_relation');
@@ -953,7 +1055,19 @@ class cCrud
     }
 
     /* Ariel Canal */
-    public function join_custom($fields = '', $join_tbl = '', $join_field = '', $join_additional_cond = false, $alias = false, $not_insert = false)
+    /**
+     * Adiciona junção personalizada à consulta.
+     *
+     * @param string      $fields               Campos a selecionar
+     * @param string      $join_tbl             Tabela a ser unida
+     * @param string      $join_field           Campo de junção
+     * @param mixed       $join_additional_cond Condição adicional
+     * @param string|bool $alias                Apelido da tabela
+     * @param bool        $not_insert           Ignora na inserção
+     *
+     * @return void
+     */
+    public function joinCustom($fields = '', $join_tbl = '', $join_field = '', $join_additional_cond = false, $alias = false, $not_insert = false)
     {
         $this->join($fields, $join_tbl, $join_field, $alias, $not_insert, $join_additional_cond);
     }
@@ -978,17 +1092,19 @@ class cCrud
     }
 
     /**
+     * Registra tabela aninhada para exibição.
      *
-     * @author Ariel Canal
-     *         Armazena quem é a nested mãe.
+     * @param string $instance_name Nome da instância
+     * @param string $field         Campo relacionado
+     * @param string $inner_tbl     Tabela interna
+     * @param string $tbl_field     Campo da tabela interna
+     *
+     * @return self
      */
-    /**
-     * nested table constructor
-     */
-    public function nested_table($instance_name = '', $field = '', $inner_tbl = '', $tbl_field = '')
+    public function nestedTable($instance_name = '', $field = '', $inner_tbl = '', $tbl_field = '')
     {
         if ($instance_name && $field && $inner_tbl && $tbl_field) {
-            $fdata = $this->_parse_field_names($field, 'nested_table');
+            $fdata = $this->_parse_field_names($field, 'nestedTable');
             foreach ($fdata as $fitem) {
                 $this->inner_table_instance[$instance_name] = $fitem['table'] . '.' . $fitem['field']; // name
                                                                                                        // of
@@ -996,14 +1112,14 @@ class cCrud
                                                                                                        // in
                                                                                                        // parent
                                                                                                        // instance
-                $instance = cCrud::get_instance($this->model, $instance_name); // just another
+                $instance = cCrud::getInstance($this->model, $instance_name); // just another
                                                                             // xcrud object
                 $instance->table($this->prefix . $inner_tbl);
-                $instance->table_name($instance_name);
+                $instance->tableName($instance_name);
                 $instance->is_inner = true; // nested flag
                 $instance->parent = $this->instance_name;
 
-                $fdata2 = $this->_parse_field_names($tbl_field, 'nested_table', $inner_tbl);
+                $fdata2 = $this->_parse_field_names($tbl_field, 'nestedTable', $inner_tbl);
 
                 $instance->inner_where[$fitem['table'] . '.' . $fitem['field']] = key($fdata2); // this
                                                                                                 // connects
@@ -1106,7 +1222,14 @@ class cCrud
         return $this;
     }
 
-    public function columns_active($columns = '')
+    /**
+     * Define quais colunas estarão ativas.
+     *
+     * @param array|string $columns Colunas desejadas
+     *
+     * @return self
+     */
+    public function columnsActive($columns = '')
     {
         if ($columns == "") {
             return $this;
@@ -1120,7 +1243,12 @@ class cCrud
         return $this;
     }
 
-    public function render_columns_select()
+    /**
+     * Renderiza seletor de colunas.
+     *
+     * @return string|null
+     */
+    public function renderColumnsSelect()
     {
         if (! $this->columns_select)
             return null;
@@ -2099,7 +2227,7 @@ class cCrud
             // Lança exceção quando método é usado fora de callbacks
             throw new RuntimeException(lang('cCrud.call_update_only_callbacks'));
         }
-        return $this->_update($postdata->to_array(), $primary);
+        return $this->_update($postdata->toArray(), $primary);
     }
 
     public function set_var($name = null, $value = null)
@@ -2460,7 +2588,7 @@ class cCrud
                 return $this->_list();
                 break;
             case 'change_columns':
-                $this->columns_active($this->_post('columns'));
+                $this->columnsActive($this->_post('columns'));
                 $this->_set_field_types('list');
                 return $this->_list();
             case 'list':
@@ -2986,7 +3114,7 @@ class cCrud
                     $postdata,
                     $this
                 ));
-                $this->result_row = $postdata->to_array();
+                $this->result_row = $postdata->toArray();
             }
         }
 
@@ -3063,7 +3191,7 @@ class cCrud
                     $this->primary_val,
                     $this
                 ));
-                $this->result_row = $postdata->to_array();
+                $this->result_row = $postdata->toArray();
             }
         }
 
@@ -3661,7 +3789,7 @@ class cCrud
             }
 
             $pd = new Postdata($postdata, $this);
-            $postdata = $pd->to_array();
+            $postdata = $pd->toArray();
 
             if ($this->alert_create) {
                 foreach ($this->alert_create as $alert) {
@@ -3705,7 +3833,7 @@ class cCrud
                         $pd,
                         $this
                     ));
-                    $postdata = $pd->to_array();
+                    $postdata = $pd->toArray();
                     if ($this->exception) {
                         return $this->call_exception($postdata);
                     }
@@ -3720,7 +3848,7 @@ class cCrud
                         $pd,
                         $this
                     ));
-                    $postdata = $pd->to_array();
+                    $postdata = $pd->toArray();
                     if ($this->exception) {
                         return $this->call_exception($postdata);
                     }
@@ -3737,7 +3865,7 @@ class cCrud
                         $this->primary_val,
                         $this
                     ));
-                    $postdata = $pd->to_array();
+                    $postdata = $pd->toArray();
                     if ($this->exception) {
                         return $this->call_exception($postdata);
                     }
@@ -3824,7 +3952,7 @@ class cCrud
 
             $pd = new PostData($postdata, $this);
             $this->make_upload_process($pd);
-            $postdata = $pd->to_array();
+            $postdata = $pd->toArray();
 
             if ($this->alert_edit) {
                 foreach ($this->alert_edit as $alert) {
@@ -3868,7 +3996,7 @@ class cCrud
                         $this->primary_val,
                         $this
                     ));
-                    $postdata = $pd->to_array();
+                    $postdata = $pd->toArray();
 
                     if ($this->exception) {
                         return $this->call_exception($postdata);
@@ -3884,7 +4012,7 @@ class cCrud
                         $this->primary_val,
                         $this
                     ));
-                    $postdata = $pd->to_array();
+                    $postdata = $pd->toArray();
                     if ($this->exception) {
                         return $this->call_exception($postdata);
                     }
@@ -3900,7 +4028,7 @@ class cCrud
                         $this->primary_val,
                         $this
                     ));
-                    $postdata = $pd->to_array();
+                    $postdata = $pd->toArray();
                     if ($this->exception) {
                         return $this->call_exception($postdata);
                     }
@@ -4805,7 +4933,7 @@ class cCrud
         /*
          * else
          * {
-         * $or_where = array();
+         * $orWhere = array();
          * foreach ($this->relation as $column => $param)
          * {
          * if (is_array($this->relation[$column]['rel_name']))
@@ -4858,10 +4986,10 @@ class cCrud
          * `{$this->relation[$column]['table']}`.`{$this->relation[$column]['field']}`
          * LIMIT 1) \r\n";
          * }
-         * $or_where[] = $select . ' LIKE ' . $this->escapeLike($this->phrase,
+         * $orWhere[] = $select . ' LIKE ' . $this->escapeLike($this->phrase,
          * $this->search_pattern);
          * }
-         * return implode(' OR ', $or_where);
+         * return implode(' OR ', $orWhere);
          * }
          */
     }
@@ -5827,7 +5955,7 @@ class cCrud
         {
             foreach ($this->inner_table_instance as $inst_name => $field) {
                 if (isset($this->result_row[$field])) {
-                    $instance = self::get_instance($this->model, $inst_name);
+                    $instance = self::getInstance($this->model, $inst_name);
                     $instance->ajax_request = true;
                     $instance->import_vars();
                     $instance->inner_where($this->result_row[$field]);
@@ -5856,7 +5984,7 @@ class cCrud
          * {
          * if (isset($this->result_row[$field]))
          * {
-         * $instance = self::get_instance($inst_name);
+         * $instance = self::getInstance($inst_name);
          * $instance->ajax_request = true;
          * $instance->import_vars();
          * $instance->inner_where($this->result_row[$field]);
@@ -9950,7 +10078,7 @@ class cCrud
         return $out;
     }
 
-    protected function get_limit_list($limit = 20)
+    protected function getLimitList($limit = 20)
     {
         if ($this->result_total > $this->limit_list[0]) {
             $out = '';
@@ -11376,7 +11504,7 @@ class cCrud
     protected function render_limitlist()
     {
         if ($this->is_limitlist) {
-            return $this->get_limit_list($this->limit);
+            return $this->getLimitList($this->limit);
         }
         return '';
     }
@@ -11908,7 +12036,17 @@ class cCrud
     }
 
     /* OPÇÃO PARA SUBSTITUIÇÃO DO TÍTULO */
-    protected function render_table_name($mode = 'list', $tag = 'h2', $to_show = false, $replace_title = false)
+    /**
+     * Renderiza o nome da tabela conforme o modo informado.
+     *
+     * @param string      $mode          Modo de operação
+     * @param string      $tag           Tag HTML utilizada
+     * @param bool        $to_show       Indica se deve ser exibido
+     * @param bool|string $replace_title Texto alternativo
+     *
+     * @return string
+     */
+    protected function renderTableName($mode = 'list', $tag = 'h2', $to_show = false, $replace_title = false)
     {
         $out = '';
         if ($this->is_title) {
@@ -13050,7 +13188,7 @@ class cCrud
                 $out .= $this->close_tag('li');
                 $out .= $this->close_tag('ul');
             } else {
-                $out = $this->render_table_name($mode, $tag, $to_show, $icon, $replace_title);
+                $out = $this->renderTableName($mode, $tag, $to_show, $icon, $replace_title);
             }
             return $out;
 
@@ -13213,7 +13351,7 @@ class cCrud
                 $postdata = $this->_post('postdata');
                 $postdata = $this->check_postdata($postdata, true);
                 $pd = new PostData($postdata, $this);
-                $postdata = $pd->to_array();
+                $postdata = $pd->toArray();
                 // Validação dos dados em massa utilizando o Model
                 if (! $this->model->validate($postdata)) {
                     foreach ($this->model->errors() as $field => $error) {
@@ -13233,7 +13371,7 @@ class cCrud
                             $this->_post('mass_list', array()),
                             $this
                         ));
-                        $postdata = $pd->to_array();
+                        $postdata = $pd->toArray();
                         
                         if ($this->exception) {
                             return $this->call_exception($postdata);

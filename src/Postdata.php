@@ -89,7 +89,7 @@ class Postdata
      *
      * @return array<string,mixed> Dados do POST processados.
      */
-    public function to_array(): array
+    public function toArray(): array
     {
         return $this->postdata; // Entrega os dados para manipulação externa
     }

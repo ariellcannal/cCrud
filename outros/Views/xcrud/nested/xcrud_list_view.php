@@ -1,5 +1,5 @@
 <div class="panel-heading padding-0">
-	<?php echo $this->render_table_name('list',array('tag'=>'h3','class'=>'panel-title padding-0 padding-bottom-10')); ?>
+	<?php echo $this->renderTableName('list',array('tag'=>'h3','class'=>'panel-title padding-0 padding-bottom-10')); ?>
 </div>
 <div class="panel-body container-fluid padding-0">
 	<?php if ($this->is_create or $this->is_csv or $this->is_print){?>

@@ -4,7 +4,7 @@ if ($this->get_var('custom_head') != false)
 ?>
 <div class="panel margin-15">
 	<div class="panel-heading">
-		<?php echo $this->render_table_name('list',array('tag'=>'h3','class'=>'panel-title padding-0')); ?>
+		<?php echo $this->renderTableName('list',array('tag'=>'h3','class'=>'panel-title padding-0')); ?>
 	</div>
 	<?php if ($this->is_mass_remove || count($this->mass_edit)) {?>
 	<div class="panel-body">
