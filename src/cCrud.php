@@ -633,28 +633,33 @@ class cCrud
      */
     public static function get_requested_instance(Model $model)
     {
-        if (isset($_POST['xcrud']['instance']) && isset($_POST['xcrud']['key']) && isset($_POST['xcrud']['task'])) {
+        $request  = Services::request();
+        $security = Services::security();
+        $postData = $request->getPost('xcrud');
+        $getData  = $request->getGet('xcrud');
+
+        if (is_array($postData) && isset($postData['instance'], $postData['key'], $postData['task'])) {
             self::init_prepare('post');
-            if (empty($_POST['xcrud']['key'])) {
+            if (empty($postData['key'])) {
                 throw new RuntimeException(lang('cCrud.security_key_empty'));
             }
-            $key = $_POST['xcrud']['key'];
-            if (empty($_POST['xcrud']['instance'])) {
+            $key = $security->clean($postData['key']);
+            if (empty($postData['instance'])) {
                 throw new RuntimeException(lang('cCrud.instance_name_empty'));
             }
-            $inst_name = $_POST['xcrud']['instance'];
-            $is_get = false;
-        } elseif (isset($_GET['xcrud']['instance']) && isset($_GET['xcrud']['key']) && isset($_GET['xcrud']['task']) && $_GET['xcrud']['task'] == 'file') {
+            $inst_name = $security->clean($postData['instance']);
+            $is_get    = false;
+        } elseif (is_array($getData) && isset($getData['instance'], $getData['key'], $getData['task']) && $getData['task'] == 'file') {
             self::init_prepare('get');
-            if (empty($_GET['xcrud']['key'])) {
+            if (empty($getData['key'])) {
                 throw new RuntimeException(lang('cCrud.security_key_empty'));
             }
-            $key = $_GET['xcrud']['key'];
-            if (empty($_GET['xcrud']['instance'])) {
+            $key = $security->clean($getData['key']);
+            if (empty($getData['instance'])) {
                 throw new RuntimeException(lang('cCrud.instance_name_empty'));
             }
-            $inst_name = $_GET['xcrud']['instance'];
-            $is_get = true;
+            $inst_name = $security->clean($getData['instance']);
+            $is_get    = true;
         } else {
             throw new RuntimeException(lang('cCrud.wrong_request'));
         }
@@ -681,12 +686,15 @@ class cCrud
     {
         $session = config('Session');
         $config  = cCrudConfig::instance();
+        $request = Services::request();
         switch ($method) {
             case 'post':
-                $sess_name = ($config->dynamic_session && isset($_POST['xcrud']['sess_name']) && $_POST['xcrud']['sess_name']) ? $_POST['xcrud']['sess_name'] : $session->cookieName;
+                $postData = $request->getPost('xcrud');
+                $sess_name = ($config->dynamic_session && is_array($postData) && ! empty($postData['sess_name'])) ? $postData['sess_name'] : $session->cookieName;
                 break;
             case 'get':
-                $sess_name = ($config->dynamic_session && isset($_GET['xcrud']['sess_name']) && $_GET['xcrud']['sess_name']) ? $_GET['xcrud']['sess_name'] : $session->cookieName;
+                $getData  = $request->getGet('xcrud');
+                $sess_name = ($config->dynamic_session && is_array($getData) && ! empty($getData['sess_name'])) ? $getData['sess_name'] : $session->cookieName;
                 break;
             default:
                 $sess_name = $session->cookieName;
@@ -5003,11 +5011,13 @@ class cCrud
             // var_dump($this->order_column);
             $this->is_modal = $this->_post('is_modal', false);
 
-            if (isset($_POST['xcrud']['search']) && $this->_post('search', $this->search, 'int') === 0) {
+            $request  = Services::request();
+            $postData = $request->getPost('xcrud');
+            if (is_array($postData) && array_key_exists('search', $postData) && $this->_post('search', $this->search, 'int') === 0) {
                 // clicou em limpar busca
                 $this->search = $this->_post('search', $this->search, 'int');
                 $this->search_submit = array();
-            } else if (isset($_POST['xcrud']['search']) && $this->_post('search', $this->search, 'int') === 1) {
+            } else if (is_array($postData) && array_key_exists('search', $postData) && $this->_post('search', $this->search, 'int') === 1) {
                 // nova busca
                 $this->search = $this->_post('search', $this->search, 'int');
                 $this->search_submit = $this->_post('search_submit', false, array());
@@ -6089,8 +6099,9 @@ class cCrud
         $this->session->set('cCrud_session', $cCrud_session);
         if ($this->config->alt_session) {
             // Criptografa dados da sessão com o encrypter do CodeIgniter
-            $encrypter = $this->getEncrypter();
-            $data = $encrypter->encrypt(json_encode($_SESSION['lists']['xcrud_session']));
+            $encrypter   = $this->getEncrypter();
+            $sessionData = ['xcrud_session' => $cCrud_session];
+            $data        = $encrypter->encrypt(json_encode($sessionData));
             if (class_exists('Memcache')) {
                 $mc = new Memcache();
                 $mc->connect($this->config->mc_host, $this->config->mc_port);
@@ -6103,7 +6114,7 @@ class cCrud
                 // Memcache(d) não está disponível
                 throw new RuntimeException(lang('cCrud.memcache_not_available'));
             }
-            unset($_SESSION['lists']['cCrud_session']);
+            $this->session->remove('cCrud_session');
             if (! $res) {
                 // Parâmetros inválidos ou armazenamento falhou
                 throw new RuntimeException(lang('cCrud.memcache_invalid_parameters'));
@@ -6151,14 +6162,16 @@ class cCrud
             }
 
             // Descriptografa dados da sessão usando o encrypter do CodeIgniter
-            $encrypter = $this->getEncrypter();
-            $_SESSION['lists']['xcrud_session'] = json_decode($encrypter->decrypt($data), true);
+            $encrypter   = $this->getEncrypter();
+            $sessionData = json_decode($encrypter->decrypt($data), true);
             unset($data);
 
-            if (! $_SESSION['lists']['xcrud_session']) {
+            if (! $sessionData || ! isset($sessionData['xcrud_session'])) {
                 // Dados alternativos inválidos
                 throw new RuntimeException(lang('cCrud.alternative_session_data_invalid'));
             }
+
+            $this->session->set('cCrud_session', $sessionData['xcrud_session']);
         }
 
         $inst_name     = $this->instance_name;
@@ -7719,12 +7732,17 @@ class cCrud
 
     protected function _upload_file()
     {
-        $field = $this->_post('field');
+        $field   = $this->_post('field');
         $oldfile = $this->_post('oldfile', 0);
-        if (isset($_FILES) && isset($_FILES['xcrud-attach']) && ! $_FILES['xcrud-attach']['error']) {
-            $file = $_FILES['xcrud-attach'];
+        $request = Services::request();
+        $file    = $request->getFile('xcrud-attach');
+        if ($file && $file->isValid()) {
+            $fileData = [
+                'name'     => $file->getName(),
+                'tmp_name' => $file->getTempName(),
+            ];
             $this->check_file_folders($field);
-            $filename = $this->safe_file_name($file, $field);
+            $filename = $this->safe_file_name($fileData, $field);
             $filename = $this->get_filename_noconfict($filename, $field);
 
             if ($this->before_upload) {
@@ -7746,7 +7764,7 @@ class cCrud
                 }
             }
 
-            $this->save_file($file, $filename, $field);
+            $this->save_file($fileData, $filename, $field);
             if ($this->exception) {
                 $out = $this->call_exception();
                 $this->upload_to_remove[$oldfile] = $field;
@@ -7767,12 +7785,17 @@ class cCrud
 
     protected function _upload_image()
     {
-        $field = $this->_post('field');
+        $field   = $this->_post('field');
         $oldfile = $this->_post('oldfile', 0);
-        if (isset($_FILES) && isset($_FILES['xcrud-attach']) && ! $_FILES['xcrud-attach']['error']) {
-            $file = $_FILES['xcrud-attach'];
+        $request = Services::request();
+        $file    = $request->getFile('xcrud-attach');
+        if ($file && $file->isValid()) {
+            $fileData = [
+                'name'     => $file->getName(),
+                'tmp_name' => $file->getTempName(),
+            ];
             $this->check_file_folders($field);
-            $filename = $this->safe_file_name($file, $field);
+            $filename = $this->safe_file_name($fileData, $field);
             $filename = $this->get_filename_noconfict($filename, $field);
 
             if ($this->before_upload) {
@@ -7799,7 +7822,7 @@ class cCrud
             }
             $this->upload_to_save[$filename] = $field;
             if ($this->is_resize($field)) {
-                $this->save_file_to_tmp($file, $filename, $field);
+                $this->save_file_to_tmp($fileData, $filename, $field);
                 if ($this->exception) {
                     $out = $this->call_exception();
                     $this->after_render();
@@ -7821,9 +7844,9 @@ class cCrud
                     $out = $this->create_image($field, $filename, $attr, true);
                 }
             } else {
-                // $this->save_file($file, $filename, $field);
+                // $this->save_file($fileData, $filename, $field);
                 // //$this->render_image_field($filename, $field);
-                $this->save_file_to_tmp($file, $filename, $field);
+                $this->save_file_to_tmp($fileData, $filename, $field);
                 if ($this->exception) {
                     $out = $this->call_exception();
                     $this->after_render();
@@ -9333,14 +9356,17 @@ class cCrud
     {
         if (! $url && ! $scr_url)
             return false;
-        $url = rtrim($url, '/');
-        $host = trim($_SERVER['HTTP_HOST'], '/');
-        $scheme = (! isset($_SERVER['HTTPS']) or ! $_SERVER['HTTPS'] or strtolower($_SERVER['HTTPS']) == 'off' or strtolower($_SERVER['HTTPS']) == 'no') ? 'http://' : 'https://';
+        $url     = rtrim($url, '/');
+        $request = Services::request();
+        $host    = trim($request->getServer('HTTP_HOST'), '/');
+        $https   = $request->getServer('HTTPS');
+        $scheme  = (! $https or strtolower($https) == 'off' or strtolower($https) == 'no') ? 'http://' : 'https://';
         // some troubles with sym links between private and public
+        $documentRoot = $request->getServer('DOCUMENT_ROOT');
         $doc_root = trim(str_replace('\\', '/', str_replace(array(
             '/public_html',
             '/private_html'
-        ), '', $_SERVER['DOCUMENT_ROOT'])), '/');
+        ), '', $documentRoot)), '/');
         $file_dir = trim(str_replace('\\', '/', str_replace(array(
             '/public_html',
             '/private_html'
@@ -9401,7 +9427,7 @@ class cCrud
                 // $script_uri = trim(str_replace(str_replace('\\', '/',
                 // $document_root), '', str_replace('\\', '/', $file_dir)),
                 // '/');
-                $request_uri = trim($_SERVER['REQUEST_URI'], '/');
+                $request_uri = trim($request->getServer('REQUEST_URI'), '/');
 
                 $script_uri_a = /*explode('/', $script_uri)*/ $max_root;
                 $request_uri_a = explode('/', $request_uri);
@@ -10296,13 +10322,15 @@ class cCrud
 
     protected function get_browser_info($ch)
     {
-        if ($_COOKIE) {
-            $ca = http_build_query($_COOKIE);
+        $request = Services::request();
+        $cookies = $request->getCookie();
+        if (! empty($cookies)) {
+            $ca = http_build_query($cookies);
             $ca = str_replace('&', ';', $ca);
             curl_setopt($ch, CURLOPT_COOKIE, $ca);
         }
-        curl_setopt($ch, CURLOPT_REFERER, $_SERVER['HTTP_REFERER']);
-        curl_setopt($ch, CURLOPT_USERAGENT, $_SERVER['HTTP_USER_AGENT']);
+        curl_setopt($ch, CURLOPT_REFERER, $request->getServer('HTTP_REFERER'));
+        curl_setopt($ch, CURLOPT_USERAGENT, $request->getServer('HTTP_USER_AGENT'));
     }
 
     protected function send_http_request($url, $data, $method, $return_result = false)
@@ -12539,7 +12567,10 @@ class cCrud
         }
         $db = $this->model->db;
         $where_arr = array();
-        $where_arr[] = $this->relation[$name]['rel_name'] . ' LIKE "%' . $_POST['q'] . '%"';
+        $request  = Services::request();
+        $security = Services::security();
+        $q        = $security->clean($request->getPost('q'));
+        $where_arr[] = $this->relation[$name]['rel_name'] . ' LIKE "%' . $q . '%"';
         if ($this->relation[$name]['rel_where']) {
             if (is_array($this->relation[$name]['rel_where'])) {
                 foreach ($this->relation[$name]['rel_where'] as $field => $val) {
@@ -12610,8 +12641,9 @@ class cCrud
     private function set_custom_lists()
     {
         return true;
-        $db = $this->model->db;
-        $result = $db->query('SELECT * FROM core_listagensPersonalizadas WHERE lpe_entidade = "' . (($this->table != "contatos" ? $this->table : $this->table_name)) . '" AND (' . (($_SESSION['usr_id']) ? 'lpe_usuario = ' . $_SESSION['usr_id'] . ' OR ' : '') . 'lpe_usuario IS NULL)');
+        $db     = $this->model->db;
+        $userId = (int) $this->session->get('usr_id');
+        $result = $db->query('SELECT * FROM core_listagensPersonalizadas WHERE lpe_entidade = "' . (($this->table != "contatos" ? $this->table : $this->table_name)) . '" AND (' . ($userId ? 'lpe_usuario = ' . $userId . ' OR ' : '') . 'lpe_usuario IS NULL)');
 
         if (in_array($this->custom_filter_active['title'], array_keys($this->custom_lists_static))) {
             $this->columns($this->columns_default);
