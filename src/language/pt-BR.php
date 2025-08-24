@@ -41,8 +41,6 @@ return [
     'mass_apply_confirm' => 'Aplicar ações selecionadas?',
     'mass_apply' => 'Aplicar',
     'total' => 'Total',
-    'db_connection_error' => 'Erro de conexão. Não foi possível conectar ao banco de dados',
-    'db_query_error' => '{0}<pre>{1}</pre>',
     'security_key_empty' => 'A chave de segurança não pode estar vazia',
     'instance_name_empty' => 'O nome da instância não pode estar vazio',
     'wrong_request' => 'Requisição inválida!',
@@ -97,8 +95,5 @@ return [
     'mcrypt_algorithm_not_found' => 'MCRYPT - Algoritmo suportado não encontrado',
     'class_not_exist' => 'Classe "{0}" não existe!',
     'file_not_exist' => 'Arquivo "{0}.php" não existe!',
-    'not_found' => 'Não encontrado',
-    'db_connection_error' => 'Erro de conexão: não foi possível conectar ao banco de dados',
-    'db_error' => 'Erro no banco de dados: {0}',
-    'db_error_query' => 'Erro no banco de dados ({2}): {0} Consulta: {1}'
+    'not_found' => 'Não encontrado'
 ];
