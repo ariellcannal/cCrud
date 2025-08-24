@@ -6121,6 +6121,7 @@ class cCrud
             }
         }
     }
+
     protected function find_prev_task()
     {
         switch ($this->task) {
@@ -13589,95 +13590,97 @@ class cCrud
 }
 
 /**
- * Responsável por gerenciar os dados de POST.
+ * Classe responsável por manipular dados enviados via POST.
+ * Oferece métodos auxiliares para manipular, consultar e converter
+ * os valores recebidos, mantendo a consistência do cCrud.
  */
-class PostData
+class cCrudPostdata
 {
+
     /**
-     * Instância principal do cCrud.
+     * Referência ao objeto principal do cCrud.
      *
-     * @var cCrud
+     * @var cCrud|null
      */
     private $xcrud = null;
 
     /**
      * Dados recebidos via POST.
      *
-     * @var array
+     * @var array<string,mixed>
      */
     private $postdata = array();
 
     /**
-     * Construtor.
+     * Inicializa a classe com os dados do formulário.
      *
-     * @param array $postdata Dados de POST.
-     * @param cCrud $xcrud    Instância do cCrud.
+     * @param array<string,mixed> $postdata Dados do formulário.
+     * @param cCrud               $xcrud    Instância principal do cCrud.
      */
     public function __construct($postdata, $xcrud)
     {
         $this->xcrud = $xcrud;
         $this->postdata = $postdata;
-        unset($postdata);
     }
 
     /**
-     * Define um valor para o campo.
+     * Define um valor para um campo de POST.
+     *
+     * Se o nome representar múltiplos campos, todos receberão o mesmo valor.
      *
      * @param string $name  Nome do campo.
-     * @param mixed  $value Valor a ser definido.
+     * @param mixed  $value Valor a ser atribuído.
      *
      * @return self
      */
     public function set($name, $value)
     {
-        $fdata = $this->xcrud->_parse_field_names($name, 'PostData');
-        foreach ($fdata as $key => $fitem) {
+        $fdata = $this->xcrud->_parse_field_names($name, 'cCrudPostdata');
+        foreach ($fdata as $key => $_) {
             $this->postdata[$key] = $value;
         }
-        $this->xcrud->unlock_field($name);
+        $this->xcrud->unlock_field($name); // Garante que o campo possa ser reutilizado
         return $this;
     }
 
     /**
-     * Remove um campo.
+     * Remove um campo do conjunto de dados do POST.
      *
-     * @param string $name Nome do campo.
+     * @param string $name Nome do campo a ser removido.
      *
      * @return self
      */
     public function del($name)
     {
-        $fdata = $this->xcrud->_parse_field_names($name, 'PostData');
-        foreach ($fdata as $key => $fitem) {
+        $fdata = $this->xcrud->_parse_field_names($name, 'cCrudPostdata');
+        foreach ($fdata as $key => $_) {
             unset($this->postdata[$key]);
         }
         return $this;
     }
 
     /**
-     * Recupera o valor de um campo.
+     * Retorna o valor de um campo enviado.
      *
      * @param string $name Nome do campo.
      *
-     * @return mixed
+     * @return mixed|null Valor do campo ou null se não existir.
      */
-    public function get($name)
+    public function get(string $name): mixed
     {
         $fdata = $this->xcrud->_parse_field_names($name, 'PostData');
         $fname = key($fdata) /*$fdata[0]['table'] . '.' . $fdata[0]['field']*/;
-        $value = (isset($this->postdata[$fname]) ? $this->postdata[$fname] : false);
-        return /* nova instância de PostDataItem */
-        ($value);
+        return $this->postdata[$fname] ?? null;
     }
 
     /**
-     * Retorna os dados como array.
+     * Converte os dados armazenados em array.
      *
-     * @return array
+     * @return array Dados do POST processados.
      */
     public function to_array()
     {
-        return $this->postdata;
+        return $this->postdata; // Entrega os dados para manipulação externa
     }
 }
 
