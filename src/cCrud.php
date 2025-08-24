@@ -4,6 +4,7 @@ namespace cCrud;
 use cCrud\Config\cCrud as cCrudConfig;
 use cCrud\Config\Views as ViewsConfig;
 use CodeIgniter\Model;
+use Config\Services;
 use RuntimeException;
 
 // direct access to DB driver and config
@@ -128,10 +129,6 @@ class cCrud
     protected $readonly = array();
 
     protected $disabled = array();
-
-    protected $validation_required = array();
-
-    protected $validation_pattern = array();
 
     protected $before_insert = array();
 
@@ -1575,23 +1572,6 @@ class cCrud
         return $this;
     }
 
-    public function validation_required($fields = '', $chars = 1)
-    {
-        $fdata = $this->_parse_field_names($fields, 'validation_required');
-        foreach ($fdata as $fitem) {
-            $this->validation_required[$fitem['table'] . '.' . $fitem['field']] = isset($fitem['value']) ? $fitem['value'] : $chars;
-        }
-        return $this;
-    }
-
-    public function validation_pattern($fields = '', $pattern = '')
-    {
-        $fdata = $this->_parse_field_names($fields, 'validation_pattern');
-        foreach ($fdata as $fitem) {
-            $this->validation_pattern[$fitem['table'] . '.' . $fitem['field']] = isset($fitem['value']) ? $fitem['value'] : $pattern;
-        }
-        return $this;
-    }
 
     public function alert($column = '', $cc = '', $subject = '', $message = '', $link = false, $field = false, $value = false, $mode = 'all')
     {
@@ -3659,7 +3639,12 @@ class cCrud
                 $postdata[$field] = $this->inner_value;
             }
         }
-        $this->validate_postdata($postdata);
+        // Validação dos dados utilizando regras definidas no Model
+        if (! $this->model->validate($postdata)) {
+            foreach ($this->model->errors() as $field => $error) {
+                $this->set_exception_fields($field, $error);
+            }
+        }
         if ($this->exception) {
             return $this->call_exception($postdata);
         }
@@ -3954,51 +3939,6 @@ class cCrud
         $this->task = $this->after;
         $this->after = null;
         return $this->_run_task();
-    }
-
-    protected function validate_postdata($postdata)
-    {
-        foreach ($postdata as $key => $val) {
-            if (isset($this->validation_required[$key]) && mb_strlen($val) < $this->validation_required[$key]) {
-                $this->set_exception_fields($key, 'validation_error');
-            } elseif (isset($this->validation_pattern[$key]) && mb_strlen($val) > 0) {
-                switch ($this->validation_pattern[$key]) {
-                    case 'email':
-                        $reg = '/^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,4})$/u';
-                        break;
-                    case 'alpha':
-                        $reg = '/^([a-z])+$/ui';
-                        break;
-                    case 'alpha_numeric':
-                        $reg = '/^([a-z0-9])+$/ui';
-                        break;
-                    case 'alpha_dash':
-                        $reg = '/^([-a-z0-9_-])+$/ui';
-                        break;
-                    case 'numeric':
-                        $reg = '/^[\-+]?[0-9]*\.?[0-9]+$/u';
-                        break;
-                    case 'integer':
-                        $reg = '/^[\-+]?[0-9]+$/u';
-                        break;
-                    case 'decimal':
-                        $reg = '/^[\-+]?[0-9]+\.[0-9]+$/u';
-                        break;
-                    case 'point':
-                        $reg = '/^[\-+]?[0-9]+\.{0,1}[0-9]*\,[\-+]?[0-9]+\.{0,1}[0-9]*$/u';
-                        break;
-                    case 'natural':
-                        $reg = '/^[0-9]+$/u';
-                        break;
-                    default:
-                        $reg = '/' . $this->validation_pattern[$key] . '/u';
-                        break;
-                }
-                if (! preg_match($reg, $val)) {
-                    $this->set_exception_fields($key, 'validation_error');
-                }
-            }
-        }
     }
 
     protected function call_exception($postdata = array())
@@ -5195,9 +5135,6 @@ class cCrud
                         $fields_object = array();
                     }
                     $this->field_null[$field_index] = $row['Null'] == 'YES' ? true : false;
-                    if (! $this->field_null[$field_index] && $this->config->not_null_is_required && ! isset($this->validation_required[$field_index])) {
-                        $this->validation_required[$field_index] = 1;
-                    }
                     if ($row['Type'] == 'point') {
                         $this->point_field[$field_index] = true;
                     }
@@ -5600,7 +5537,6 @@ class cCrud
                     'search' => $this->config->default_coord,
                     'coords' => $this->config->default_search
                 );
-                $this->validation_pattern[$field_index] = 'point';
                 if (! isset($this->defaults[$field_index]))
                     $this->defaults[$field_index] = $this->config->default_point ? $this->config->default_point : '0,0';
                 break;
@@ -6226,16 +6162,7 @@ class cCrud
         if (! empty($this->field_attr[$name]['class'])) {
             $tag['class'] .= ' ' . $this->field_attr[$name]['class'];
         }
-        if (isset($this->validation_required[$name])) {
-            $tag['data-required'] = $this->validation_required[$name];
-            $tag['required'] = 'required';
-        }
-        if (isset($this->exception_fields[$name])) {
-            $tag['class'] .= ' ' . $this->theme_config('validation_error_field');
-        }
-        if (isset($this->validation_pattern[$name])) {
-            $tag['data-pattern'] = $this->validation_pattern[$name];
-        }
+        
         if (isset($this->readonly[$name][$mode])) {
             $tag['readonly'] = '';
         }
@@ -7645,10 +7572,6 @@ class cCrud
             }
         } else {
             $search = false;
-        }
-
-        if (isset($this->exception_fields[$name])) {
-            $tag['class'] .= ' ' . $this->theme_config('validation_error_field');
         }
 
         if ($attr['coords']) {
@@ -10499,11 +10422,7 @@ class cCrud
 
     protected function open_label_tag($field_key, $label_tag = 'td')
     {
-        if (isset($this->validation_required[$this->fields_output[$field_key]['name']])) {
-            $label_class = $this->theme_config('details_label_cell') . ' xcrud-label-required';
-        } else {
-            $label_class = $this->theme_config('details_label_cell');
-        }
+        $label_class = $this->theme_config('details_label_cell');
         $attr = [];
         if (! empty($this->field_attr[$field_key]['id'])) {
             $attr['for'] = $this->field_attr[$field_key]['id'];
@@ -10511,6 +10430,12 @@ class cCrud
         return $this->open_tag($label_tag, $label_class, $attr);
     }
 
+    /**
+     * Renderiza mensagem de erro de validação para o campo
+     *
+     * @param array $field Dados do campo
+     * @return string HTML com a mensagem de erro
+     */
     protected function render_field_exception($field)
     {
         $out = '';
@@ -13342,11 +13267,15 @@ class cCrud
                 $postdata = $this->check_postdata($postdata, true);
                 $pd = new cCrudPostdata($postdata, $this);
                 $postdata = $pd->to_array();
-                $this->validate_postdata($postdata);
+                // Validação dos dados em massa utilizando o Model
+                if (! $this->model->validate($postdata)) {
+                    foreach ($this->model->errors() as $field => $error) {
+                        $this->set_exception_fields($field, $error);
+                    }
+                }
                 if ($this->exception) {
                     return $this->call_exception($postdata);
                 }
-                
                 $this->_set_field_types('edit', true);
                 if ($this->before_update) {
                     $path = $this->check_file($this->before_update['path'], 'before_update');
