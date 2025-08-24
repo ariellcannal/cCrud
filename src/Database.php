@@ -43,7 +43,7 @@ class Database
             $instance_name = 'db_instance_default';
         }
         if (! isset(self::$_instance[$instance_name]) or null === self::$_instance[$instance_name]) {
-            $config = config('cCrud\cCrud');
+            $config = cCrudConfig::instance();
             if (! is_array($params)) {
                 $dbuser     = $config->dbuser;
                 $dbpass     = $config->dbpass;
