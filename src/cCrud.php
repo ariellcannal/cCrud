@@ -6,6 +6,9 @@ use cCrud\Config\Views as ViewsConfig;
 use CodeIgniter\Model;
 use Config\Services;
 use CodeIgniter\Encryption\EncrypterInterface;
+use CodeIgniter\Config\Services;
+use CodeIgniter\Session\Session;
+use Config\Services;
 use RuntimeException;
 
 // direct access to DB driver and config
@@ -40,6 +43,13 @@ class cCrud
      * @var Model
      */
     protected Model $model;
+
+    /**
+     * Manipulador de sessões do CodeIgniter 4.
+     *
+     * @var Session
+     */
+    protected Session $session;
 
     /**
      * Configurações do tema do cCrud.
@@ -504,7 +514,6 @@ class cCrud
 
     protected $search_lines = 2;
 
-    public $ci = null;
 
     /**
      * Construtor que define as variáveis básicas do cCrud,
@@ -518,6 +527,9 @@ class cCrud
         if (!defined('CI_VERSION') || version_compare(CI_VERSION, '4.0.0', '<')) {
             throw new RuntimeException(lang('cCrud.ci4_required'));
         }
+
+        // Inicia o manipulador de sessões do CodeIgniter 4
+        $this->session = Services::session();
 
         $this->config = cCrudConfig::instance();
 
@@ -651,10 +663,10 @@ class cCrud
             throw new RuntimeException(lang('cCrud.wrong_request'));
         }
         $session = \Config\Services::session();
-        $xcrud_session = $session->get('xcrud_session');
+        $cCrud_session = $session->get('cCrud_session');
 
-        // var_dump($xcrud_session[$inst_name]);
-        // if (isset($xcrud_session[$inst_name]['key']) && $xcrud_session[$inst_name]['key'] == $key) {
+        // var_dump($cCrud_session[$inst_name]);
+        // if (isset($cCrud_session[$inst_name]['key']) && $cCrud_session[$inst_name]['key'] == $key) {
         if (1 == 1) {
             self::$instance[$inst_name] = new self();
             self::$instance[$inst_name]->is_get = $is_get;
@@ -1130,7 +1142,7 @@ class cCrud
                 $attr['selected'] = 'selected';
             }
             $attr['value'] = $field;
-            $out .= $this->open_tag('option', null, $attr) . $this->html_safe($this->labels[$field]) . $this->close_tag('option');
+            $out .= $this->open_tag('option', null, $attr) . \esc($this->labels[$field]) . $this->close_tag('option');
         }
         $out .= $this->close_tag('select');
         return $out;
@@ -2445,7 +2457,6 @@ class cCrud
                 return $this->_csv();
                 break;
             case 'relation_search':
-                $this->ci->output->enable_profiler(false);
                 return $this->relation_search($this->_post('name', false, 'base64'), $this->_post('dependval'));
                 break;
             case 'join_relation':
@@ -2880,98 +2891,95 @@ class cCrud
     }
 
     /**
-     * returns request variable
+     * Recupera variáveis enviadas via POST.
+     *
+     * @param string $field   Nome do campo solicitado.
+     * @param mixed  $default Valor padrão se o campo não existir.
+     * @param mixed  $filter  Tipo de filtro adicional.
+     *
+     * @return mixed
      */
-    protected function _post($field = '', $default = false, $filter = false)
+    protected function _post(string $field = '', $default = false, $filter = false)
     {
-        if (isset($_POST['xcrud'][$field])) {
-            if (get_magic_quotes_gpc()) {
-                if (is_array($_POST['xcrud'][$field])) {
-                    array_walk_recursive($_POST['xcrud'][$field], array(
-                        $this,
-                        'stripslashes_callback'
-                    ));
-                } else {
-                    $_POST['xcrud'][$field] == stripslashes($_POST['xcrud'][$field]);
-                }
-            }
-            if ($this->config->auto_xss_filtering) {
-                $xss = $this->load_core_class('xss');
-            } else {
-                $xss = false;
-            }
-            if (($field == 'postdata' or $field == 'unique') && $_POST['xcrud'][$field]) {
-                $data_keys = array_keys($_POST['xcrud'][$field]);
-                foreach ($data_keys as $k => $key) {
-                    $data_keys[$k] = $xss ? $xss->xss_clean($this->fieldname_decode($key)) : $this->fieldname_decode($key);
-                    if ($xss) {
-                        $_POST['xcrud'][$field][$key] = $xss->xss_clean($_POST['xcrud'][$field][$key]);
-                    }
-                }
-                return array_combine($data_keys, $_POST['xcrud'][$field]);
-            } elseif ($filter) {
-                switch ($filter) {
-                    case 'key':
-                        return str_replace('`', '', $xss ? $xss->xss_clean($_POST['xcrud'][$field]) : $_POST['xcrud'][$field]);
-                        break;
-                    case 'int':
-                        return (int) $_POST['xcrud'][$field];
-                        break;
-                    case 'trim':
-                        return trim($xss ? $xss->xss_clean($_POST['xcrud'][$field]) : $_POST['xcrud'][$field]);
-                        break;
-                    case 'base64':
-                        return $xss ? $xss->xss_clean($this->fieldname_decode($_POST['xcrud'][$field])) : $this->fieldname_decode($_POST['xcrud'][$field]);
-                        break;
-                    default:
-                        return $xss ? $xss->xss_clean($_POST['xcrud'][$field]) : $_POST['xcrud'][$field];
-                        break;
-                }
-            } else {
-                return $xss ? $xss->xss_clean($_POST['xcrud'][$field]) : $_POST['xcrud'][$field];
-            }
-        } else
+        $request = Services::request();
+        $post    = $request->getPost('xcrud');
+
+        if (! is_array($post) || ! array_key_exists($field, $post)) {
             return $default;
+        }
+
+        $security = $this->config->auto_xss_filtering ? Services::security() : null;
+        $value    = $post[$field];
+
+        if (($field === 'postdata' || $field === 'unique') && $value) {
+            $dataKeys = array_keys($value);
+            foreach ($dataKeys as $k => $key) {
+                $dataKeys[$k] = $security ? $security->clean($this->fieldname_decode($key)) : $this->fieldname_decode($key);
+                if ($security) {
+                    $value[$key] = $security->clean($value[$key]);
+                }
+            }
+            return array_combine($dataKeys, $value);
+        }
+
+        if ($filter) {
+            switch ($filter) {
+                case 'key':
+                    $value = str_replace('`', '', $value);
+                    return $security ? $security->clean($value) : $value;
+                case 'int':
+                    return (int) $value;
+                case 'trim':
+                    $value = trim($value);
+                    return $security ? $security->clean($value) : $value;
+                case 'base64':
+                    $decoded = $this->fieldname_decode($value);
+                    return $security ? $security->clean($decoded) : $decoded;
+                default:
+                    return $security ? $security->clean($value) : $value;
+            }
+        }
+
+        return $security ? $security->clean($value) : $value;
     }
 
-    protected function _get($field = '', $default = false, $filter = false)
+    /**
+     * Recupera variáveis enviadas via GET.
+     *
+     * @param string $field   Nome do campo solicitado.
+     * @param mixed  $default Valor padrão se o campo não existir.
+     * @param mixed  $filter  Tipo de filtro adicional.
+     *
+     * @return mixed
+     */
+    protected function _get(string $field = '', $default = false, $filter = false)
     {
-        if (isset($_GET['xcrud'][$field])) {
-            if (get_magic_quotes_gpc()) {
-                if (is_array($_GET['xcrud'][$field])) {
-                    array_walk_recursive($_GET['xcrud'][$field], array(
-                        $this,
-                        'stripslashes_callback'
-                    ));
-                } else {
-                    $_GET['xcrud'][$field] == stripslashes($_GET['xcrud'][$field]);
-                }
-            }
-            if ($this->config->auto_xss_filtering) {
-                $xss = $this->load_core_class('xss');
-            } else {
-                $xss = false;
-            }
-            if ($filter) {
-                switch ($filter) {
-                    case 'key':
-                        return str_replace('`', '', $xss ? $xss->xss_clean($_GET['xcrud'][$field]) : $_GET['xcrud'][$field]);
-                        break;
-                    case 'int':
-                        return (int) $_GET['xcrud'][$field];
-                        break;
-                    case 'trim':
-                        return trim($xss ? $xss->xss_clean($_GET['xcrud'][$field]) : $_GET['xcrud'][$field]);
-                        break;
-                    default:
-                        return $xss ? $xss->xss_clean($_GET['xcrud'][$field]) : $_GET['xcrud'][$field];
-                        break;
-                }
-            } else {
-                return $xss ? $xss->xss_clean($_GET['xcrud'][$field]) : $_GET['xcrud'][$field];
-            }
-        } else
+        $request = Services::request();
+        $get     = $request->getGet('xcrud');
+
+        if (! is_array($get) || ! array_key_exists($field, $get)) {
             return $default;
+        }
+
+        $security = $this->config->auto_xss_filtering ? Services::security() : null;
+        $value    = $get[$field];
+
+        if ($filter) {
+            switch ($filter) {
+                case 'key':
+                    $value = str_replace('`', '', $value);
+                    return $security ? $security->clean($value) : $value;
+                case 'int':
+                    return (int) $value;
+                case 'trim':
+                    $value = trim($value);
+                    return $security ? $security->clean($value) : $value;
+                default:
+                    return $security ? $security->clean($value) : $value;
+            }
+        }
+
+        return $security ? $security->clean($value) : $value;
     }
 
     protected function stripslashes_callback(&$item, $key)
@@ -5064,10 +5072,10 @@ class cCrud
             $this->primary_val = $this->_post('primary');
             $this->active_tab_id = $this->_post('active_tab_id');
 
-            $xcrud_session = $this->ci->session->userdata('xcrud_session');
+            $cCrud_session = $this->session->get('cCrud_session');
 
-            if (isset($xcrud_session[$this->instance_name]))
-                $this->alphabetical_filter = $this->_post('alphabetical', $xcrud_session[$this->instance_name]['alphabetical_filter']);
+            if (isset($cCrud_session[$this->instance_name]))
+                $this->alphabetical_filter = $this->_post('alphabetical', $cCrud_session[$this->instance_name]['alphabetical_filter']);
             if ($this->search && ! $this->_post('alphabetical', false))
                 $this->alphabetical_filter = '';
 
@@ -5627,24 +5635,24 @@ class cCrud
 
         foreach ($this->columns as $key => $col) {
             if ($name = array_search($key, $subselect_before)) {
-                $this->columns_names[$name] = $this->html_safe($this->labels[$name]);
+                $this->columns_names[$name] = \esc($this->labels[$name]);
                 unset($subselect_before[$name]);
             }
             if (isset($this->column_name[$key])) {
-                $this->columns_names[$key] = $this->html_safe($this->column_name[$key]);
+                $this->columns_names[$key] = \esc($this->column_name[$key]);
             } elseif (isset($this->labels[$key])) {
-                $this->columns_names[$key] = $this->html_safe($this->labels[$key]);
+                $this->columns_names[$key] = \esc($this->labels[$key]);
             } elseif ($this->fk_relation && isset($this->fk_relation[$key])) {
                 $this->columns_names[$key] = $this->fk_relation[$key]['label'];
             } elseif (isset($entityAttributes[$col['field']])) {
-                $this->columns_names[$key] = $this->html_safe($entityAttributes[$col['field']]);
+                $this->columns_names[$key] = \esc($entityAttributes[$col['field']]);
             } else {
-                $this->columns_names[$key] = $this->html_safe($this->_humanize($col['field']));
+                $this->columns_names[$key] = \esc($this->_humanize($col['field']));
             }
         }
         if ($subselect_before) {
             foreach ($this->subselect_before as $name => $none) {
-                $this->columns_names[$name] = $this->html_safe($this->labels[$name]);
+                $this->columns_names[$name] = \esc($this->labels[$name]);
                 unset($subselect_before[$name]);
             }
         }
@@ -5663,9 +5671,9 @@ class cCrud
         }
         foreach ($render_fields as $key => $field) {
             if (isset($this->labels[$key])) {
-                $this->fields_names[$key] = $this->html_safe($this->labels[$key]);
+                $this->fields_names[$key] = \esc($this->labels[$key]);
             } else {
-                $this->fields_names[$key] = $this->html_safe($this->_humanize($field['field']));
+                $this->fields_names[$key] = \esc($this->_humanize($field['field']));
             }
         }
     }
@@ -6029,6 +6037,16 @@ class cCrud
         }
     }
 
+    /**
+     * Corta texto conforme configuração da coluna.
+     *
+     * @param string|null $string   Texto original.
+     * @param string      $field    Campo de referência.
+     * @param bool        $wordsafe Preserva palavras inteiras.
+     * @param bool        $dots     Adiciona reticências.
+     *
+     * @return string|null
+     */
     protected function _cut($string, $field, $wordsafe = true, $dots = true)
     {
         if (isset($this->column_cut_list[$field])) {
@@ -6044,7 +6062,8 @@ class cCrud
         }
 
         if (! $len) {
-            return $this->output_string($string, $this->strip_tags, $safe);
+            $string = $this->strip_tags ? strip_tags($string) : $string;
+            return $safe ? \esc($string) : $string;
         }
         if (! is_null($string)) {
             $strip_string = trim(strip_tags($string));
@@ -6052,7 +6071,8 @@ class cCrud
 
         $slen = mb_strlen($strip_string, \Config\App::$charset);
         if ($slen <= $len || $this->config->print_full_texts) {
-            return $this->output_string($string, $this->strip_tags, $safe);
+            $string = $this->strip_tags ? strip_tags($string) : $string;
+            return $safe ? \esc($string) : $string;
         }
         if ($wordsafe) {
             $end = $len;
@@ -6060,20 +6080,13 @@ class cCrud
             if ($len == 0) {
                 $len = $end;
             }
-            return $this->output_string(mb_substr($strip_string, 0, $len, \Config\App::$charset), false, $safe) . ($dots ? '&#133;' : '');
+            $sub = mb_substr($strip_string, 0, $len, \Config\App::$charset);
+            $sub = $safe ? \esc($sub) : $sub;
+            return $sub . ($dots ? '&#133;' : '');
         }
-        return $this->output_string(mb_substr($strip_string, 0, $len, \Config\App::$charset), false, $safe) . ($dots ? '&#133;' : '');
-    }
-
-    protected function output_string($string, $strip, $safe)
-    {
-        if ($strip) {
-            $string = strip_tags($string);
-        }
-        if ($safe) {
-            $string = $this->html_safe($string);
-        }
-        return $string;
+        $sub = mb_substr($strip_string, 0, $len, \Config\App::$charset);
+        $sub = $safe ? \esc($sub) : $sub;
+        return $sub . ($dots ? '&#133;' : '');
     }
 
     protected function _humanize($text)
@@ -6104,17 +6117,17 @@ class cCrud
         $inst_name = $this->instance_name;
         $this->time = $time = time();
 
-        $xcrud_session = $this->ci->session->userdata('xcrud_session');
+        $cCrud_session = $this->session->get('cCrud_session');
 
         // session auto-clearing, must start on first instance
         if ($this->instance_count == 1 && ! $this->ajax_request) {
-            if (isset($xcrud_session) && $xcrud_session) {
-                foreach ($xcrud_session as $s_key => $s_val) {
+            if (isset($cCrud_session) && $cCrud_session) {
+                foreach ($cCrud_session as $s_key => $s_val) {
                     // workaround on some servers session duplication
                     $old_time = isset($s_val['time']) ? (int) $s_val['time'] : 0;
                     if ($time > $old_time + $this->config->autoclean_timeout) {
                         // autocleaner
-                        unset($xcrud_session[$s_key]);
+                        unset($cCrud_session[$s_key]);
                     }
                 }
             }
@@ -6123,17 +6136,16 @@ class cCrud
 
         // Armazena todos os atributos atuais da instância
         $vars = get_object_vars($this);
-        unset($vars['ci']); // Evita armazenar a instância do CodeIgniter
+        unset($vars['session']); // Evita armazenar a instância de sessão
 
-        $xcrud_session[$inst_name]            = $vars;
-        $xcrud_session[$inst_name]['before'] = $this->find_prev_task();
+        $cCrud_session[$inst_name]            = $vars;
+        $cCrud_session[$inst_name]['before'] = $this->find_prev_task();
 
-        $this->ci->session->set_userdata('xcrud_session', $xcrud_session);
+        $this->session->set('cCrud_session', $cCrud_session);
         if ($this->config->alt_session) {
             // Criptografa dados da sessão com o encrypter do CodeIgniter
             $encrypter = $this->getEncrypter();
             $data = $encrypter->encrypt(json_encode($_SESSION['lists']['xcrud_session']));
-
             if (class_exists('Memcache')) {
                 $mc = new Memcache();
                 $mc->connect($this->config->mc_host, $this->config->mc_port);
@@ -6146,8 +6158,14 @@ class cCrud
                 // Memcache(d) não está disponível
                 throw new RuntimeException(lang('cCrud.memcache_not_available'));
             }
-
-            unset($_SESSION['lists']['xcrud_session']);
+            unset($_SESSION['lists']['cCrud_session']);
+                if (! $res) {
+                    // Parâmetros inválidos ou armazenamento falhou
+                    throw new RuntimeException(lang('cCrud.memcache_invalid_parameters'));
+                }
+            unset($_SESSION['lists']['cCrud_session']);
+            if (! $res) {
+                self::erro('memcache_invalid_parameters');
 
             if (! $res) {
                 // Parâmetros inválidos ou armazenamento falhou
@@ -6205,14 +6223,13 @@ class cCrud
             }
         }
 
-        $inst_name      = $this->instance_name;
-        $this->ci       = &get_instance();
-        $xcrud_session  = $this->ci->session->userdata('xcrud_session');
+        $inst_name     = $this->instance_name;
+        $cCrud_session = $this->session->get('cCrud_session');
 
-        if (isset($xcrud_session[$inst_name])) {
-            foreach ($xcrud_session[$inst_name] as $propriedade => $valor) {
-                if ($propriedade !== 'ci') {
-                    $this->{$propriedade} = $valor;
+        if (isset($cCrud_session[$inst_name])) {
+            foreach ($cCrud_session[$inst_name] as $property => $value) {
+                if ($property !== 'session') {
+                    $this->{$property} = $value;
                 }
             }
         }
@@ -6467,7 +6484,7 @@ class cCrud
             'data-type' => 'textarea'
         );
 
-        return $this->open_tag($tag, $this->theme_config('textarea_field'), $this->field_attr[$name], true) . $this->html_safe($value) . $this->close_tag($tag);
+        return $this->open_tag($tag, $this->theme_config('textarea_field'), $this->field_attr[$name], true) . \esc($value) . $this->close_tag($tag);
     }
 
     protected function create_view_textarea($name, $value = '', $tag = array())
@@ -6492,7 +6509,7 @@ class cCrud
         );
         $tag['class'] .= ' xcrud-texteditor';
 
-        return $this->open_tag($tag, $this->theme_config('texteditor_field'), $this->field_attr[$name], true) . $this->html_safe($value) . $this->close_tag($tag);
+        return $this->open_tag($tag, $this->theme_config('texteditor_field'), $this->field_attr[$name], true) . \esc($value) . $this->close_tag($tag);
     }
 
     protected function create_view_texteditor($name, $value = '', $tag = array())
@@ -6644,7 +6661,7 @@ class cCrud
                         if ($k_key == $value) {
                             $opt_tag['selected'] = '';
                         }
-                        $out .= $this->open_tag($opt_tag) . $this->html_safe($k_opt) . $this->close_tag($opt_tag);
+                        $out .= $this->open_tag($opt_tag) . \esc($k_opt) . $this->close_tag($opt_tag);
                     }
                     $out .= $this->close_tag('optgroup');
                 } else {
@@ -6655,7 +6672,7 @@ class cCrud
                     if ($optkey == $value) {
                         $opt_tag['selected'] = '';
                     }
-                    $out .= $this->open_tag($opt_tag) . $this->html_safe($opt) . $this->close_tag($opt_tag);
+                    $out .= $this->open_tag($opt_tag) . \esc($opt) . $this->close_tag($opt_tag);
                 }
             }
         } else {
@@ -6669,7 +6686,7 @@ class cCrud
                 if ($opt == $value) {
                     $opt_tag['selected'] = '';
                 }
-                $out .= $this->open_tag($opt_tag) . $this->html_safe($opt) . $this->close_tag($opt_tag);
+                $out .= $this->open_tag($opt_tag) . \esc($opt) . $this->close_tag($opt_tag);
             }
         }
         $out .= $this->close_tag($tag);
@@ -6714,7 +6731,7 @@ class cCrud
             $out .= $this->open_tag($container, $this->theme_config('radio_container'));
             $out .= $this->single_tag($field, $this->theme_config('radio_field'), array_merge($this->field_attr[$name], $attr));
             $out .= $this->open_tag($label, $this->theme_config('radio_label'));
-            $out .= $this->html_safe(val);
+            $out .= \esc(val);
             $out .= $this->close_tag($label);
             $out .= $this->close_tag($container);
         }
@@ -6790,7 +6807,7 @@ class cCrud
                         if (in_array($k_key, $values)) {
                             $opt_tag['selected'] = '';
                         }
-                        $out .= $this->open_tag($opt_tag) . $this->html_safe($k_opt) . $this->close_tag($opt_tag);
+                        $out .= $this->open_tag($opt_tag) . \esc($k_opt) . $this->close_tag($opt_tag);
                     }
                     $out .= $this->close_tag('optgroup');
                 } else {
@@ -6801,7 +6818,7 @@ class cCrud
                     if (in_array($optkey, $values)) {
                         $opt_tag['selected'] = '';
                     }
-                    $out .= $this->open_tag($opt_tag) . $this->html_safe($opt) . $this->close_tag($opt_tag);
+                    $out .= $this->open_tag($opt_tag) . \esc($opt) . $this->close_tag($opt_tag);
                 }
             }
         } else {
@@ -6815,7 +6832,7 @@ class cCrud
                 if (in_array($opt, $values)) {
                     $opt_tag['selected'] = '';
                 }
-                $out .= $this->open_tag($opt_tag) . $this->html_safe($opt) . $this->close_tag($opt_tag);
+                $out .= $this->open_tag($opt_tag) . \esc($opt) . $this->close_tag($opt_tag);
             }
         }
         $out .= $this->close_tag($tag);
@@ -6859,7 +6876,7 @@ class cCrud
             $out .= $this->open_tag($label_tag, $this->theme_config('checkboxes_label'), [
                 'for' => $optkey
             ]);
-            $out .= $this->html_safe($opt);
+            $out .= \esc($opt);
             $out .= $this->close_tag($label_tag);
 
             $out .= $this->close_tag('div');
@@ -7066,7 +7083,7 @@ class cCrud
                 if (in_array($opt['field'], $values)) {
                     $attr_opt['selected'] = "selected";
                 }
-                $out .= $this->open_tag('option', '', $attr_opt) . $this->html_safe($opt['name']) . $this->close_tag('option');
+                $out .= $this->open_tag('option', '', $attr_opt) . \esc($opt['name']) . $this->close_tag('option');
             }
         }
         $out .= $this->close_tag($tag);
@@ -7260,7 +7277,7 @@ class cCrud
                 if (in_array($opt['field'], $values)) {
                     $opt_tag['selected'] = "";
                 }
-                $out .= $this->open_tag($opt_tag) . $this->html_safe($opt['name']) . $this->close_tag($opt_tag);
+                $out .= $this->open_tag($opt_tag) . \esc($opt['name']) . $this->close_tag($opt_tag);
             }
         }
         $out .= $this->close_tag($tag);
@@ -7898,10 +7915,10 @@ class cCrud
         $out .= $this->open_tag('div', 'xcrud-upload-container');
         $tmp_name = substr($filename, 0, strrpos($filename, '.')) . '.tmp';
         if (isset($this->labels[$field]))
-            $title = $this->html_safe($this->labels[$field]);
+            $title = \esc($this->labels[$field]);
         else {
             list ($tmp, $fieldname) = explode('.', $field);
-            $title = $this->html_safe($this->_humanize($fieldname));
+            $title = \esc($this->_humanize($fieldname));
         }
         $path = $this->get_image_folder($field) . '/' . $tmp_name;
         list ($width, $height) = getimagesize($path);
@@ -9240,7 +9257,7 @@ class cCrud
                         $out .= $this->open_tag('i', $this->theme_config('grid_default_icon')) . $this->close_tag('i');
                     }
                     if ($this->config->button_labels) {
-                        $out .= ' ' . $this->html_safe($button['name']);
+                        $out .= ' ' . \esc($button['name']);
                     }
                     $out .= $this->close_tag($tag);
                 }
@@ -9531,11 +9548,6 @@ class cCrud
         return $url;
     }
 
-    protected function html_safe($text)
-    {
-        return htmlspecialchars((string) $text, ENT_QUOTES, \Config\App::$charset);
-    }
-
     /**
      *
      * @author Ariel Canal
@@ -9671,9 +9683,9 @@ class cCrud
             $column_class = array();
         }
         if (isset($this->labels[$field])) {
-            $attr['data-label'] = $this->html_safe($this->labels[$field]);
+            $attr['data-label'] = \esc($this->labels[$field]);
         } else {
-            $attr['data-label'] = $this->html_safe($this->_humanize($field));
+            $attr['data-label'] = \esc($this->_humanize($field));
         }
         if ($row_class)
             $column_class[] = $row_class;
@@ -10332,9 +10344,9 @@ class cCrud
                     $fld = $val;
                 }
                 if (! is_array($val) && ! is_null($val)) {
-                    $value = str_ireplace('{' . $key . '}', $safety ? $this->html_safe($val) : $val, $value);
+                    $value = str_ireplace('{' . $key . '}', $safety ? \esc($val) : $val, $value);
                     if ($tbl == $this->table) {
-                        $value = str_ireplace('{' . $fld . '}', $safety ? $this->html_safe($val) : $val, $value);
+                        $value = str_ireplace('{' . $fld . '}', $safety ? \esc($val) : $val, $value);
                     }
                 }
             }
@@ -10430,7 +10442,7 @@ class cCrud
                         if ($key == 'href' or $key == 'src') {
                             $out .= ' ' . (string) $key . '="' . (string) $val . '"';
                         } else {
-                            $out .= ' ' . (string) $key . '="' . $this->html_safe((string) $val) . '"';
+                            $out .= ' ' . (string) $key . '="' . \esc((string) $val) . '"';
                         }
                     }
                 }
@@ -10492,7 +10504,7 @@ class cCrud
                         if ($key == 'href' or $key == 'src') {
                             $out .= ' ' . (string) $key . '="' . (string) $val . '"';
                         } else {
-                            $out .= ' ' . (string) $key . '="' . $this->html_safe((string) $val) . '"';
+                            $out .= ' ' . (string) $key . '="' . \esc((string) $val) . '"';
                         }
                     }
                 }
@@ -10927,9 +10939,9 @@ class cCrud
                             $name = $this->columns_names[$field];
                         } else {
                             if (isset($this->labels[$field])) {
-                                $name = $this->html_safe($this->labels[$field]);
+                                $name = \esc($this->labels[$field]);
                             } else {
-                                $name = $this->html_safe($this->_humanize($tmp['field']));
+                                $name = \esc($this->_humanize($tmp['field']));
                             }
                         }
                         $option = [
@@ -11147,7 +11159,7 @@ class cCrud
                                 if ($k_key == $phrase && $field == $this->search_submit[$line]['column']) {
                                     $opt_tag['selected'] = '';
                                 }
-                                $tmp .= $this->open_tag($opt_tag) . $this->html_safe($k_opt) . $this->close_tag($opt_tag);
+                                $tmp .= $this->open_tag($opt_tag) . \esc($k_opt) . $this->close_tag($opt_tag);
                             }
                             $tmp .= $this->close_tag('optgroup');
                         } else {
@@ -11157,7 +11169,7 @@ class cCrud
                             if (isset($this->search_submit[$line]['column']) && $optkey == $phrase && $field == $this->search_submit[$line]['column']) {
                                 $opt_attr['selected'] = '';
                             }
-                            $tmp .= $this->open_tag('option', '', $opt_attr) . $this->html_safe($opt) . $this->close_tag('option');
+                            $tmp .= $this->open_tag('option', '', $opt_attr) . \esc($opt) . $this->close_tag('option');
                         }
                     }
                 } else {
@@ -11170,7 +11182,7 @@ class cCrud
                         if ($opt == $phrase && $field == $this->column) {
                             $opt_attr['selected'] = '';
                         }
-                        $tmp .= $this->open_tag('option', '', $opt_attr) . $this->html_safe($opt) . $this->close_tag('option');
+                        $tmp .= $this->open_tag('option', '', $opt_attr) . \esc($opt) . $this->close_tag('option');
                     }
                 }
                 $tmp .= $this->close_tag('select');
@@ -12222,14 +12234,24 @@ class cCrud
         return $this->_run_task();
     }
 
+    /**
+     * Importa dados para a sessão do cCrud.
+     *
+     * @param array $data Dados a serem importados
+     */
     public static function import_session($data)
     {
-        $this->ci->session->userdata('xcrud_session', $data);
+        Services::session()->set('cCrud_session', $data);
     }
 
+    /**
+     * Exporta os dados armazenados na sessão do cCrud.
+     *
+     * @return array|null Dados da sessão
+     */
     public static function export_session()
     {
-        return $this->ci->session->userdata('xcrud_session');
+        return Services::session()->get('cCrud_session');
     }
 
     public function fieldname_encode($name = '')
@@ -12345,9 +12367,9 @@ class cCrud
         if (! $number)
             return $out;
 
-        $out .= $this->html_safe($this->field_attr[$field]['prefix']);
-        $out .= number_format($number ? (float) $number : 0, $this->field_attr[$field]['decimals'], $this->field_attr[$field]['point'], $this->html_safe($this->field_attr[$field]['separator']));
-        $out .= $this->html_safe($this->field_attr[$field]['suffix']);
+        $out .= \esc($this->field_attr[$field]['prefix']);
+        $out .= number_format($number ? (float) $number : 0, $this->field_attr[$field]['decimals'], $this->field_attr[$field]['point'], \esc($this->field_attr[$field]['separator']));
+        $out .= \esc($this->field_attr[$field]['suffix']);
 
         return $out;
     }
@@ -12605,7 +12627,7 @@ class cCrud
             // var_dump($this->result_row);
             // var_dump($changes);
             if (sizeof($changes)) {
-                $this->ci->usuarios_model->registraAlteracao($this->table, $this->primary_val, implode(PHP_EOL . PHP_EOL, $changes));
+                // $this->ci->usuarios_model->registraAlteracao($this->table, $this->primary_val, implode(PHP_EOL . PHP_EOL, $changes));
             }
         }
     }
@@ -13529,7 +13551,7 @@ class cCrud
                 'operator' => $operator
             );
             $this->fields_report[$fname] = $fdata;
-            $this->fields_names[$fname] = $this->html_safe($name);
+            $this->fields_names[$fname] = \esc($name);
         }
         return $this;
     }
