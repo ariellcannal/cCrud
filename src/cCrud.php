@@ -18,6 +18,13 @@ define('CCRUD_PATH', str_replace('\\', '/', dirname(__file__)));
 // str_replace
 // - windows
 // trick
+/**
+ * Classe principal responsável pela geração do CRUD dinâmico.
+ *
+ * Centraliza configuração, renderização e processamento das
+ * operações de criação, leitura, atualização e remoção utilizando
+ * os recursos do CodeIgniter.
+ */
 class cCrud
 {
 
@@ -186,8 +193,6 @@ class cCrud
         '%',
         '%'
     );
-
-    protected $connection = false;
 
     protected $start_minimized = false;
 
@@ -591,6 +596,11 @@ class cCrud
         }
     }
 
+    /**
+     * Retorna a saída renderizada do componente.
+     *
+     * @return string HTML final do cCrud
+     */
     public function __toString()
     {
         return $this->render();
@@ -790,20 +800,6 @@ class cCrud
         return Services::response()->setContentType('application/javascript')->setBody($content);
     }
 
-    public function connection($user = '', $pass = '', $table = '', $host = 'localhost', $encode = 'utf8')
-    {
-        if ($user && $table) {
-            $this->connection = array(
-                $user,
-                $pass,
-                $table,
-                $host,
-                $encode
-            );
-        }
-        return $this;
-    }
-
     /**
      * Define se o componente inicia minimizado.
      *
@@ -830,6 +826,13 @@ class cCrud
         return $this;
     }
 
+    /**
+     * Define o número máximo de registros exibidos por página.
+     *
+     * @param int $limit Quantidade de registros
+     *
+     * @return self
+     */
     public function limit($limit = 20)
     {
         $this->limit = $limit;
@@ -881,6 +884,14 @@ class cCrud
         return $this;
     }
 
+    /**
+     * Define a tabela base utilizada nas operações CRUD.
+     *
+     * @param string      $table  Nome da tabela
+     * @param string|bool $prefix Prefixo opcional da tabela
+     *
+     * @return self
+     */
     public function table($table = '', $prefix = false)
     {
         if ($prefix !== false) {
@@ -912,6 +923,16 @@ class cCrud
         return $this;
     }
 
+    /**
+     * Adiciona cláusulas WHERE às consultas.
+     *
+     * @param string|array $fields    Campo(s) para comparação
+     * @param mixed        $where_val Valor comparativo
+     * @param string       $glue      Operador lógico entre cláusulas
+     * @param int|bool     $index     Índice específico para substituição
+     *
+     * @return self
+     */
     public function where($fields = false, $where_val = false, $glue = 'AND', $index = false)
     {
         if ($fields && $where_val !== false) {
@@ -1024,12 +1045,30 @@ class cCrud
         return $this;
     }
 
+    /**
+     * Configura relacionamento simples com outra tabela.
+     *
+     * @param string|array $fields               Campo(s) locais
+     * @param string       $rel_tbl              Tabela relacionada
+     * @param string       $rel_field            Campo de chave
+     * @param string       $rel_name             Campo de exibição
+     * @param array        $rel_where           Condições adicionais
+     * @param mixed        $order_by            Ordenação
+     * @param bool         $multi               Permite múltiplas seleções
+     * @param string       $rel_concat_separator Separador de concatenação
+     * @param mixed        $join                Dados de junção
+     * @param bool         $tree                Ativa modo em árvore
+     * @param string       $depend_field        Campo dependente
+     * @param string       $depend_on           Valor dependente
+     *
+     * @return self
+     */
     public function relation($fields = '', $rel_tbl = '', $rel_field = '', $rel_name = '', $rel_where = array(), $order_by = false, $multi = false, $rel_concat_separator = ' ',$join = null, $tree = false, $depend_field = '', $depend_on = '')
     {
         if ($fields && $rel_tbl && $rel_field && $rel_name) {
             if ($depend_on) {
                 $fdata = $this->_parse_field_names($depend_on, 'relation');
-                $depend_on = key($fdata) /*$fdata[0]['table'] . '.' . $fdata[0]['field']*/;
+                $depend_on = key($fdata);
             }
             $fdata = $this->_parse_field_names($fields, 'relation');
             foreach ($fdata as $fitem) {
