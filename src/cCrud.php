@@ -4,6 +4,7 @@ namespace cCrud;
 use cCrud\Config\cCrud as cCrudConfig;
 use cCrud\Config\Views as ViewsConfig;
 use CodeIgniter\Model;
+use CodeIgniter\I18n\Time;
 use RuntimeException;
 
 // direct access to DB driver and config
@@ -3580,43 +3581,32 @@ class cCrud
                         break;
                     case 'datetime':
                         if ($val !== '') {
-                            if (preg_match('/^\-{0,1}[0-9]+$/u', $val)) {
-                                $postdata[$key] = gmdate('Y-m-d H:i:s', $val);
-                            }
-                            $postdata[$key] = $this->br2mysqldate($val);
+                            $timeObj = is_numeric($val)
+                                ? Time::createFromFormat('U', (string) $val)
+                                : Time::createFromFormat('d/m/Y H:i', $val);
+                            $postdata[$key] = $timeObj->toDateTimeString();
                         } else {
-                            if ($this->field_null[$key]) {
-                                $postdata[$key] = null;
-                            } else {
-                                $postdata[$key] = '0000-00-00 00:00:00';
-                            }
+                            $postdata[$key] = $this->field_null[$key] ? null : '0000-00-00 00:00:00';
                         }
                         break;
                     case 'date':
                         if ($val !== '') {
-                            if (preg_match('/^\-{0,1}[0-9]+$/u', $val)) {
-                                $postdata[$key] = gmdate('Y-m-d', $val);
-                            }
-                            $postdata[$key] = $this->br2mysqldate($val);
+                            $timeObj = is_numeric($val)
+                                ? Time::createFromFormat('U', (string) $val)
+                                : Time::createFromFormat('d/m/Y', $val);
+                            $postdata[$key] = $timeObj->toDateString();
                         } else {
-                            if ($this->field_null[$key]) {
-                                $postdata[$key] = null;
-                            } else {
-                                $postdata[$key] = '0000-00-00';
-                            }
+                            $postdata[$key] = $this->field_null[$key] ? null : '0000-00-00';
                         }
                         break;
                     case 'time':
                         if ($val !== '') {
-                            if (preg_match('/^\-{0,1}[0-9]+$/u', $val)) {
-                                $postdata[$key] = gmdate('H:i:s', $val);
-                            }
+                            $timeObj = is_numeric($val)
+                                ? Time::createFromFormat('U', (string) $val)
+                                : Time::createFromFormat(strlen($val) === 5 ? 'H:i' : 'H:i:s', $val);
+                            $postdata[$key] = $timeObj->toTimeString();
                         } else {
-                            if ($this->field_null[$key]) {
-                                $postdata[$key] = null;
-                            } else {
-                                $postdata[$key] = '00:00:00';
-                            }
+                            $postdata[$key] = $this->field_null[$key] ? null : '00:00:00';
                         }
                         break;
                 }
@@ -4555,23 +4545,49 @@ class cCrud
                                     case 'datetime':
                                     case 'date':
                                     case 'time':
-                                        switch ($this->field_type[$this->search_submit[$i]['column']]) {
-                                            case 'date':
-                                                $format = 'Y-m-d';
-                                                break;
-                                            case 'time':
-                                                $format = 'H:i:s';
-                                                break;
-                                            default:
-                                                $format = 'Y-m-d H:i:s';
-                                                break;
+                                        $from = $this->search_submit[$i]['phrase']['from'];
+                                        $to = $this->search_submit[$i]['phrase']['to'];
+
+                                        if ($this->field_type[$this->search_submit[$i]['column']] === 'time') {
+                                            if ($from) {
+                                                $fmt = strlen($from) === 5 ? 'H:i' : 'H:i:s';
+                                                $from = Time::createFromFormat($fmt, $from)->toTimeString();
+                                            }
+                                            if ($to) {
+                                                $fmt = strlen($to) === 5 ? 'H:i' : 'H:i:s';
+                                                $to = Time::createFromFormat($fmt, $to)->toTimeString();
+                                            }
+                                        } else {
+                                            if ($from) {
+                                                $fmt = 'd/m/Y';
+                                                if (str_contains($from, ' ')) {
+                                                    $timePart = explode(' ', $from)[1];
+                                                    $fmt .= strlen($timePart) === 5 ? ' H:i' : ' H:i:s';
+                                                }
+                                                $fromObj = Time::createFromFormat($fmt, $from);
+                                                $from = str_contains($from, ' ')
+                                                    ? $fromObj->toDateTimeString()
+                                                    : $fromObj->toDateString();
+                                            }
+                                            if ($to) {
+                                                $fmt = 'd/m/Y';
+                                                if (str_contains($to, ' ')) {
+                                                    $timePart = explode(' ', $to)[1];
+                                                    $fmt .= strlen($timePart) === 5 ? ' H:i' : ' H:i:s';
+                                                }
+                                                $toObj = Time::createFromFormat($fmt, $to);
+                                                $to = str_contains($to, ' ')
+                                                    ? $toObj->toDateTimeString()
+                                                    : $toObj->toDateString();
+                                            }
                                         }
-                                        if ($this->search_submit[$i]['phrase']['from'] && $this->search_submit[$i]['phrase']['to']) {
-                                            $search_arr[] = '(`' . $fitem['table'] . '`.`' . $fitem['field'] . '` BETWEEN ' . $db->escape($this->br2mysqldate($this->search_submit[$i]['phrase']['from'])) . ' AND ' . $db->escape($this->br2mysqldate($this->search_submit[$i]['phrase']['to'])) . ')';
-                                        } elseif ($this->search_submit[$i]['phrase']['from']) {
-                                            $search_arr[] = '(`' . $fitem['table'] . '`.`' . $fitem['field'] . '` >= ' . $db->escape($this->br2mysqldate($this->search_submit[$i]['phrase']['from'])) . ')';
-                                        } elseif ($this->search_submit[$i]['phrase']['to']) {
-                                            $search_arr[] = '(`' . $fitem['table'] . '`.`' . $fitem['field'] . '` <= ' . $db->escape($this->br2mysqldate($this->search_submit[$i]['phrase']['to'])) . ')';
+
+                                        if ($from && $to) {
+                                            $search_arr[] = '(`' . $fitem['table'] . '`.`' . $fitem['field'] . '` BETWEEN ' . $db->escape($from) . ' AND ' . $db->escape($to) . ')';
+                                        } elseif ($from) {
+                                            $search_arr[] = '(`' . $fitem['table'] . '`.`' . $fitem['field'] . '` >= ' . $db->escape($from) . ')';
+                                        } elseif ($to) {
+                                            $search_arr[] = '(`' . $fitem['table'] . '`.`' . $fitem['field'] . '` <= ' . $db->escape($to) . ')';
                                         }
                                         break;
                                     case 'select':
@@ -6503,7 +6519,9 @@ class cCrud
             'tag' => 'input',
             'type' => 'text',
             'data-type' => 'date',
-            'value' => $this->mysql2date($value)
+            'value' => ($value && $value !== '0000-00-00')
+                ? Time::parse($value)->toDateString()
+                : ''
         );
         $tag['class'] .= ' xcrud-datepicker';
 
@@ -6523,7 +6541,9 @@ class cCrud
 
     protected function create_view_date($name, $value = '', $tag = array())
     {
-        return $this->mysql2date($value);
+        return ($value && $value !== '0000-00-00')
+            ? Time::parse($value)->toDateString()
+            : '';
     }
 
     protected function create_datetime($name, $value = '', $tag = array())
@@ -6535,7 +6555,9 @@ class cCrud
             'tag' => 'input',
             'type' => 'text',
             'data-type' => 'datetime',
-            'value' => $this->mysql2datetime($value)
+            'value' => ($value && $value !== '0000-00-00 00:00:00')
+                ? Time::parse($value)->toDateTimeString()
+                : ''
         );
         $tag['class'] .= ' xcrud-datepicker';
 
@@ -6544,7 +6566,9 @@ class cCrud
 
     protected function create_view_datetime($name, $value = '', $tag = array())
     {
-        return $this->mysql2datetime($value);
+        return ($value && $value !== '0000-00-00 00:00:00')
+            ? Time::parse($value)->toDateTimeString()
+            : '';
     }
 
     protected function create_timestamp($name, $value = '', $tag = array())
@@ -6556,7 +6580,9 @@ class cCrud
             'tag' => 'input',
             'type' => 'text',
             'data-type' => 'timestamp',
-            'value' => $this->mysql2datetime($value)
+            'value' => ($value && $value !== '0000-00-00 00:00:00')
+                ? Time::parse($value)->toDateTimeString()
+                : ''
         );
         $tag['class'] .= ' xcrud-datepicker';
 
@@ -6565,7 +6591,9 @@ class cCrud
 
     protected function create_view_timestamp($name, $value = '', $tag = array())
     {
-        return $this->mysql2datetime($value);
+        return ($value && $value !== '0000-00-00 00:00:00')
+            ? Time::parse($value)->toDateTimeString()
+            : '';
     }
 
     protected function create_time($name, $value = '', $tag = array())
@@ -6577,7 +6605,7 @@ class cCrud
             'tag' => 'input',
             'type' => 'text',
             'data-type' => 'time',
-            'value' => $this->mysql2time($value)
+            'value' => $value ? Time::parse($value)->toTimeString() : ''
         );
         $tag['class'] .= ' xcrud-datepicker';
 
@@ -6586,7 +6614,7 @@ class cCrud
 
     protected function create_view_time($name, $value = '', $tag = array())
     {
-        return $this->mysql2time($value);
+        return $value ? Time::parse($value)->toTimeString() : '';
     }
 
     protected function create_year($name, $value = '', $tag = array())
@@ -8950,18 +8978,18 @@ class cCrud
                     break;
                 case 'timestamp':
                 case 'datetime':
-                    if ($value) {
-                        $out .= $this->mysql2datetime($value);
+                    if ($value && $value !== '0000-00-00 00:00:00') {
+                        $out .= Time::parse($value)->toDateTimeString();
                     }
                     break;
                 case 'date':
-                    if ($value) {
-                        $out .= $this->mysql2date($value);
+                    if ($value && $value !== '0000-00-00') {
+                        $out .= Time::parse($value)->toDateString();
                     }
                     break;
                 case 'time':
                     if ($value) {
-                        $out .= $this->mysql2time($value);
+                        $out .= Time::parse($value)->toTimeString();
                     }
                     break;
                 case 'price':
@@ -9129,18 +9157,18 @@ class cCrud
                     break;
                 case 'timestamp':
                 case 'datetime':
-                    if ($value) {
-                        $out .= $this->mysql2datetime($value);
+                    if ($value && $value !== '0000-00-00 00:00:00') {
+                        $out .= Time::parse($value)->toDateTimeString();
                     }
                     break;
                 case 'date':
-                    if ($value) {
-                        $out .= $this->mysql2date($value);
+                    if ($value && $value !== '0000-00-00') {
+                        $out .= Time::parse($value)->toDateString();
                     }
                     break;
                 case 'time':
                     if ($value) {
-                        $out .= $this->mysql2time($value);
+                        $out .= Time::parse($value)->toTimeString();
                     }
                     break;
                 case 'price':
@@ -11950,74 +11978,6 @@ class cCrud
         return $range;
     }
 
-    protected function br2mysqldate($time)
-    {
-        if ($time == "")
-            return "";
-        $time = explode(' ', $time);
-        $time_d = explode('/', $time[0]);
-        return $time_d[2] . "-" . $time_d[1] . "-" . $time_d[0] . (isset($time[1]) ? " " . $time[1] : '');
-    }
-
-    protected function unix2date($time, $utc = false)
-    {
-        if ($time)
-            return $utc ? gmdate($this->date_format['php_d'], $time) : date($this->date_format['php_d'], $time);
-        else
-            return '';
-    }
-
-    protected function unix2datetime($time, $utc = false)
-    {
-        if ($time)
-            return $utc ? gmdate($this->date_format['php_d'] . ' ' . $this->date_format['php_t'], $time) : date($this->config->php_date_format . ' ' . $this->date_format['php_t'], $time);
-        else
-            return '';
-    }
-
-    protected function unix2time($time, $utc = false)
-    {
-        if ($time)
-            return $utc ? gmdate($this->date_format['php_t'], $time) : date($this->date_format['php_t'], $time);
-        else
-            return '';
-    }
-
-    protected function mysql2date($date)
-    {
-        if ($date && $date != '0000-00-00') {
-            $d = explode('-', $date);
-            $date = $this->unix2date(mktime((int) date('G'), (int) date('i'), (int) date('s'), (int) $d[1], (int) $d[2], (int) $d[0]));
-            return $date;
-        }
-        return '';
-    }
-
-    protected function mysql2datetime($date)
-    {
-        if ($date && $date != '0000-00-00 00:00:00') {
-            if (! preg_match('/^\-{0,1}[0-9]+$/u', $date)) {
-                $date = strtotime($date);
-            }
-            $date = $this->unix2datetime((int) $date);
-            return $date;
-        }
-        return '';
-    }
-
-    protected function mysql2time($date)
-    {
-        if ($date) {
-            if (strpos($date, ' ') !== false) {
-                list ($tmp, $date) = explode(' ', $date, 2);
-            }
-            $d = explode(':', $date);
-            $date = $this->unix2time(mktime((int) $d[0], (int) $d[1], (int) $d[2]));
-            return $date;
-        }
-        return '';
-    }
-
     /* OPÇÃO PARA SUBSTITUIÇÃO DO TÍTULO */
     protected function render_table_name($mode = 'list', $tag = 'h2', $to_show = false, $replace_title = false)
     {
@@ -12576,22 +12536,36 @@ class cCrud
         return $this->table;
     }
 
+    /**
+     * Define quais campos terão suas alterações registradas.
+     *
+     * @param string $fields Lista de campos separados por vírgula.
+     * @param bool $reverse Quando verdadeiro, inverte a seleção dos campos.
+     * @return void
+     */
     public function record_changes($fields = '', $reverse = false)
     {
         if ($fields != '' && $reverse) {
             $fdata = $this->_parse_field_names($fields, 'fields');
             foreach ($this->fields_edit as $k => $data) {
-                if (! in_array($k, array_keys($fdata)))
+                if (! in_array($k, array_keys($fdata))) {
                     $record_changes[$k] = $data;
+                }
             }
-        } else if ($fields !== '' && ! $reverse) {
+        } elseif ($fields !== '' && ! $reverse) {
             $record_changes = $fdata;
-        } else if ($fields == '') {
+        } elseif ($fields == '') {
             $record_changes = $this->fields_edit;
         }
         $this->record_changes = $record_changes;
     }
 
+    /**
+     * Aplica o registro das alterações realizadas.
+     *
+     * @param array $set Conjunto de dados atualizados.
+     * @return void
+     */
     private function apply_record_changes($set)
     {
         if (is_array($this->record_changes) && sizeof($this->record_changes)) {
@@ -12622,28 +12596,38 @@ class cCrud
             $set = $s;
 
             foreach ($this->record_changes as $key => $fdata) {
-                if ($this->field_type[$key] == "image")
+                if ($this->field_type[$key] == "image") {
                     continue;
+                }
                 $val = $result_row[$key];
                 if ($this->field_type[$key] == "datetime") {
-                    if ((! is_null($val) && $val != ''))
-                        $val = date('d/m/Y H:i', strtotime($val));
-                    if ((! is_null($set[$key]) && $set[$key] != ''))
-                        $set[$key] = date('d/m/Y H:i', strtotime($set[$key]));
+                    if (! is_null($val) && $val !== '') {
+                        $time = Time::createFromFormat('Y-m-d H:i:s', $val);
+                        $val = $time->toDateTimeString() . ' (' . $time->humanize() . ')';
+                    }
+                    if (! is_null($set[$key]) && $set[$key] !== '') {
+                        $time = Time::createFromFormat('Y-m-d H:i:s', $set[$key]);
+                        $set[$key] = $time->toDateTimeString() . ' (' . $time->humanize() . ')';
+                    }
                 }
                 if ($this->field_type[$key] == "date") {
-                    if ((! is_null($val) && $val != ''))
-                        $val = date('d/m/Y', strtotime($val));
-                    if ((! is_null($set[$key]) && $set[$key] != ''))
-                        $set[$key] = date('d/m/Y', strtotime($set[$key]));
+                    if (! is_null($val) && $val !== '') {
+                        $time = Time::createFromFormat('Y-m-d', $val);
+                        $val = $time->toDateString() . ' (' . $time->humanize() . ')';
+                    }
+                    if (! is_null($set[$key]) && $set[$key] !== '') {
+                        $time = Time::createFromFormat('Y-m-d', $set[$key]);
+                        $set[$key] = $time->toDateString() . ' (' . $time->humanize() . ')';
+                    }
                 }
                 if (array_key_exists($key, $set) && $set[$key] != $val) {
                     if (array_key_exists($key, $this->relation)) {
                         $val = $this->create_view_relation($key, $val);
                         $set[$key] = $this->create_view_relation($key, $set[$key]);
                     }
-                    if ($this->labels[$key] == "")
+                    if ($this->labels[$key] == "") {
                         $this->labels[$key] = $key;
+                    }
                     $changes[$this->labels[$key]] = "<span class='change-label'>" . $this->labels[$key] . "</span> <br/><span class='change-label'>De:</span> <span class='change-data'>" . $val . "</span><br/><span class='change-label'>Para:</span> <span class='change-data'>" . $set[$key] . "</span>";
                 }
             }
