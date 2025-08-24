@@ -4,23 +4,24 @@
         include 'nested/cCrud_list_view.php';
 else{
 ?>
-<div class="page-header">
-        <?php echo $cCrud->renderTableName('list',array('tag'=>'h1','class'=>'page-title')); ?>
-        <div class="page-header-actions">
+<div class="d-flex justify-content-between align-items-center mb-3">
+        <?php echo $cCrud->renderTableName('list',[ 'tag'=>'h1','class'=>'page-title mb-0']); ?>
+        <div>
                         <?php echo $cCrud->render_totalizers(false)?>
                         <?php echo $cCrud->render_custom_filter('direita')?>
         </div>
 </div>
-                <div class="page-content">
-                        <div class="panel">
-                                <div class="panel-heading">
-                                        <?php if ($cCrud->is_create or $cCrud->is_csv or $cCrud->is_search or $cCrud->is_print){?>
+                <div class="container-fluid">
+                        <div class="card">
+                                <div class="card-header">
+                                        <?php if ($cCrud->is_create or $cCrud->is_csv or $cCrud->is_search or $cCrud->is_print){
+?>
                                         <div class="cCrud-top-actions">
-                                                        <div class="pull-left">
+                                                        <div class="float-start">
                                                                 <?php echo $cCrud->add_button();?>
                                                                 <?php echo $cCrud->render_mass_actions();?>
                                                 </div>
-                                                        <div class="pull-right">
+                                                        <div class="float-end">
                                                         <?php echo $cCrud->render_search(); ?>
                                                     <div class="btn-group">
                                                         <?php
@@ -34,15 +35,15 @@ else{
                                                 </div>
                                         <?php } ?>
                                 </div>
-                                <div class="pull-left col-md-10">
+                                <div class="float-start col-md-10">
                                         <?php echo $cCrud->render_mass_edit_form();?>
                                         <?php echo $cCrud->render_alphabetical_filter();?>
                                 </div>
-                                <div class="pull-right col-md-2">
+                                <div class="float-end col-md-2">
                                         <?php echo $cCrud->renderColumnsSelect();?>
                                 </div>
                                 <div class="cCrud-list-container table-responsive">
-                                <table class="cCrud-list table table-striped table-hover table-condensed table-responsive" data-selectable="selectable" data-row-selectable="true">
+                                <table class="cCrud-list table table-striped table-hover table-sm" data-selectable="selectable" data-row-selectable="true">
                                                 <thead>
                                         <?php echo $cCrud->render_grid_head(); ?>
                                     </thead>
@@ -54,13 +55,12 @@ else{
                                     </tfoot>
                                         </table>
                                 </div>
-                                <div class="panel-footer">
-                                <div class="pull-right"><?php echo $cCrud->render_pagination(7,1); ?></div>
-                                        <div class="pull-right"><?php echo $cCrud->render_limitlist(); ?></div>
+                                <div class="card-footer">
+                                <div class="float-end ms-2"><?php echo $cCrud->render_pagination(7,1); ?></div>
+                                        <div class="float-end"><?php echo $cCrud->render_limitlist(); ?></div>
                                         <div class="clearfix"></div>
                                 </div>
                         </div>
                 </div>
 <?php
 }?>
-
