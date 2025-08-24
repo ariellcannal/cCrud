@@ -4,6 +4,8 @@ namespace cCrud;
 use cCrud\Config\cCrud as cCrudConfig;
 use cCrud\Config\Views as ViewsConfig;
 use CodeIgniter\Model;
+use CodeIgniter\Session\Session;
+use Config\Services;
 use RuntimeException;
 
 // direct access to DB driver and config
@@ -38,6 +40,13 @@ class cCrud
      * @var Model
      */
     protected Model $model;
+
+    /**
+     * Manipulador de sessões do CodeIgniter 4.
+     *
+     * @var Session
+     */
+    protected Session $session;
 
     /**
      * Configurações do tema do cCrud.
@@ -502,7 +511,6 @@ class cCrud
 
     protected $search_lines = 2;
 
-    public $ci = null;
 
     /**
      * Construtor que define as variáveis básicas do cCrud,
@@ -516,6 +524,9 @@ class cCrud
         if (!defined('CI_VERSION') || version_compare(CI_VERSION, '4.0.0', '<')) {
             throw new RuntimeException(lang('cCrud.ci4_required'));
         }
+
+        // Inicia o manipulador de sessões do CodeIgniter 4
+        $this->session = Services::session();
 
         $this->config = cCrudConfig::instance();
 
@@ -649,10 +660,10 @@ class cCrud
             throw new RuntimeException(lang('cCrud.wrong_request'));
         }
         $session = \Config\Services::session();
-        $xcrud_session = $session->get('xcrud_session');
+        $cCrud_session = $session->get('cCrud_session');
 
-        // var_dump($xcrud_session[$inst_name]);
-        // if (isset($xcrud_session[$inst_name]['key']) && $xcrud_session[$inst_name]['key'] == $key) {
+        // var_dump($cCrud_session[$inst_name]);
+        // if (isset($cCrud_session[$inst_name]['key']) && $cCrud_session[$inst_name]['key'] == $key) {
         if (1 == 1) {
             self::$instance[$inst_name] = new self();
             self::$instance[$inst_name]->is_get = $is_get;
@@ -2443,7 +2454,6 @@ class cCrud
                 return $this->_csv();
                 break;
             case 'relation_search':
-                $this->ci->output->enable_profiler(false);
                 return $this->relation_search($this->_post('name', false, 'base64'), $this->_post('dependval'));
                 break;
             case 'join_relation':
@@ -5062,10 +5072,10 @@ class cCrud
             $this->primary_val = $this->_post('primary');
             $this->active_tab_id = $this->_post('active_tab_id');
 
-            $xcrud_session = $this->ci->session->userdata('xcrud_session');
+            $cCrud_session = $this->session->get('cCrud_session');
 
-            if (isset($xcrud_session[$this->instance_name]))
-                $this->alphabetical_filter = $this->_post('alphabetical', $xcrud_session[$this->instance_name]['alphabetical_filter']);
+            if (isset($cCrud_session[$this->instance_name]))
+                $this->alphabetical_filter = $this->_post('alphabetical', $cCrud_session[$this->instance_name]['alphabetical_filter']);
             if ($this->search && ! $this->_post('alphabetical', false))
                 $this->alphabetical_filter = '';
 
@@ -6102,17 +6112,17 @@ class cCrud
         $inst_name = $this->instance_name;
         $this->time = $time = time();
 
-        $xcrud_session = $this->ci->session->userdata('xcrud_session');
+        $cCrud_session = $this->session->get('cCrud_session');
 
         // session auto-clearing, must start on first instance
         if ($this->instance_count == 1 && ! $this->ajax_request) {
-            if (isset($xcrud_session) && $xcrud_session) {
-                foreach ($xcrud_session as $s_key => $s_val) {
+            if (isset($cCrud_session) && $cCrud_session) {
+                foreach ($cCrud_session as $s_key => $s_val) {
                     // workaround on some servers session duplication
                     $old_time = isset($s_val['time']) ? (int) $s_val['time'] : 0;
                     if ($time > $old_time + $this->config->autoclean_timeout) {
                         // autocleaner
-                        unset($xcrud_session[$s_key]);
+                        unset($cCrud_session[$s_key]);
                     }
                 }
             }
@@ -6121,14 +6131,14 @@ class cCrud
 
         // Armazena todos os atributos atuais da instância
         $vars = get_object_vars($this);
-        unset($vars['ci']); // Evita armazenar a instância do CodeIgniter
+        unset($vars['session']); // Evita armazenar a instância de sessão
 
-        $xcrud_session[$inst_name]            = $vars;
-        $xcrud_session[$inst_name]['before'] = $this->find_prev_task();
+        $cCrud_session[$inst_name]            = $vars;
+        $cCrud_session[$inst_name]['before'] = $this->find_prev_task();
 
-        $this->ci->session->set_userdata('xcrud_session', $xcrud_session);
+        $this->session->set('cCrud_session', $cCrud_session);
         if ($this->config->alt_session) {
-            $data = $this->encrypt($_SESSION['lists']['xcrud_session']);
+            $data = $this->encrypt($_SESSION['lists']['cCrud_session']);
 
             if (class_exists('Memcache')) {
                 $mc = new Memcache();
@@ -6142,12 +6152,12 @@ class cCrud
                 // Memcache(d) não está disponível
                 throw new RuntimeException(lang('cCrud.memcache_not_available'));
             }
-            unset($_SESSION['lists']['xcrud_session']);
+            unset($_SESSION['lists']['cCrud_session']);
                 if (! $res) {
                     // Parâmetros inválidos ou armazenamento falhou
                     throw new RuntimeException(lang('cCrud.memcache_invalid_parameters'));
                 }
-            unset($_SESSION['lists']['xcrud_session']);
+            unset($_SESSION['lists']['cCrud_session']);
             if (! $res) {
                 self::erro('memcache_invalid_parameters');
 
@@ -6191,22 +6201,21 @@ class cCrud
                     // Dados alternativos inexistentes
                     throw new RuntimeException(lang('cCrud.alternative_session_data_not_exist'));
                 }
-            $_SESSION['lists']['xcrud_session'] = $this->decrypt($data[0], $data[1]);
+            $_SESSION['lists']['cCrud_session'] = $this->decrypt($data[0], $data[1]);
             unset($data);
-                if (! $_SESSION['lists']['xcrud_session']) {
+                if (! $_SESSION['lists']['cCrud_session']) {
                     // Dados alternativos inválidos
                     throw new RuntimeException(lang('cCrud.alternative_session_data_invalid'));
                 }
         }
 
-        $inst_name      = $this->instance_name;
-        $this->ci       = &get_instance();
-        $xcrud_session  = $this->ci->session->userdata('xcrud_session');
+        $inst_name     = $this->instance_name;
+        $cCrud_session = $this->session->get('cCrud_session');
 
-        if (isset($xcrud_session[$inst_name])) {
-            foreach ($xcrud_session[$inst_name] as $propriedade => $valor) {
-                if ($propriedade !== 'ci') {
-                    $this->{$propriedade} = $valor;
+        if (isset($cCrud_session[$inst_name])) {
+            foreach ($cCrud_session[$inst_name] as $property => $value) {
+                if ($property !== 'session') {
+                    $this->{$property} = $value;
                 }
             }
         }
@@ -12267,14 +12276,24 @@ class cCrud
         return $this->_run_task();
     }
 
+    /**
+     * Importa dados para a sessão do cCrud.
+     *
+     * @param array $data Dados a serem importados
+     */
     public static function import_session($data)
     {
-        $this->ci->session->userdata('xcrud_session', $data);
+        Services::session()->set('cCrud_session', $data);
     }
 
+    /**
+     * Exporta os dados armazenados na sessão do cCrud.
+     *
+     * @return array|null Dados da sessão
+     */
     public static function export_session()
     {
-        return $this->ci->session->userdata('xcrud_session');
+        return Services::session()->get('cCrud_session');
     }
 
     public function fieldname_encode($name = '')
@@ -12650,7 +12669,7 @@ class cCrud
             // var_dump($this->result_row);
             // var_dump($changes);
             if (sizeof($changes)) {
-                $this->ci->usuarios_model->registraAlteracao($this->table, $this->primary_val, implode(PHP_EOL . PHP_EOL, $changes));
+                // $this->ci->usuarios_model->registraAlteracao($this->table, $this->primary_val, implode(PHP_EOL . PHP_EOL, $changes));
             }
         }
     }
