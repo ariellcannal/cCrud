@@ -2088,7 +2088,8 @@ class cCrud
     public function call_update($postdata, $primary)
     {
         if (! $this->task) {
-            throw new RuntimeException('Sorry, but you must use <strong>call_update()</strong> only in callbacks');
+            // Lança exceção quando método é usado fora de callbacks
+            throw new RuntimeException(lang('cCrud.call_update_only_callbacks'));
         }
         return $this->_update($postdata->to_array(), $primary);
     }
@@ -2212,7 +2213,8 @@ class cCrud
                     $this->load_view[$mode] = '../' . $file;
                     break;
                 default:
-                    throw new RuntimeException('Incorrect mode.');
+                    // Modo informado é inválido
+                    throw new RuntimeException(lang('cCrud.incorrect_mode'));
             }
         }
         return $this;
@@ -2254,7 +2256,8 @@ class cCrud
     public function get($name = '')
     {
         if (! $this->task) {
-            throw new RuntimeException('Sorry, but you must use <strong>get()</strong> only in callbacks');
+            // Lança exceção quando método é usado fora de callbacks
+            throw new RuntimeException(lang('cCrud.get_only_callbacks'));
         }
         if ($this->_get('key')) {
             return $this->_get($name);
@@ -2330,7 +2333,8 @@ class cCrud
     protected function _run_task()
     {
         if ($this->after && $this->after == $this->task) {
-            throw new RuntimeException('Task recursion!');
+            // Previne recursão de tarefas
+            throw new RuntimeException(lang('cCrud.task_recursion'));
         }
         if (! $this->task) {
             $this->task = 'list';
@@ -2347,7 +2351,8 @@ class cCrud
                 break;
             case 'save':
                 if (! $this->before) {
-                    throw new RuntimeException('Restricted task!');
+                    // Tarefa restrita sem callback definido
+                    throw new RuntimeException(lang('cCrud.restricted_task'));
                 }
                 $this->_set_field_types($this->before);
                 return $this->_save();
@@ -2390,7 +2395,8 @@ class cCrud
                 break;
             case 'print':
                 if (! $this->is_print) {
-                    throw new RuntimeException('Restricted');
+                    // Acesso restrito à tarefa de impressão
+                    throw new RuntimeException(lang('cCrud.restricted'));
                 }
                 $this->_set_field_types('list', $this->config->print_all_fields);
                 $this->set_custom_lists();
@@ -2469,7 +2475,8 @@ class cCrud
         switch ($this->task) {
             case 'print':
                 if (! $this->is_print) {
-                    throw new RuntimeException('Restricted');
+                    // Acesso restrito à tarefa de impressão
+                    throw new RuntimeException(lang('cCrud.restricted'));
                 }
                 $this->start = 0;
                 $this->limit = 0;
@@ -2518,7 +2525,8 @@ class cCrud
     protected function render_custom_csv()
     {
         if (! $this->is_csv) {
-            throw new RuntimeException('Restricted');
+            // CSV indisponível para esta solicitação
+            throw new RuntimeException(lang('cCrud.restricted'));
         }
         $this->columns = $this->fields_list;
         $query = $this->parse_query_params();
@@ -2812,7 +2820,8 @@ class cCrud
     public function _csv()
     {
         if (! $this->is_csv) {
-            throw new RuntimeException('Restricted');
+            // Acesso restrito à exportação CSV
+            throw new RuntimeException(lang('cCrud.restricted'));
         }
         $select = $this->_build_select_list(true);
         $table_join = $this->_build_table_join();
@@ -2828,7 +2837,8 @@ class cCrud
         // print "SELECT {$select} FROM `{$this->table}` {$table_join} {$where} {$order_by}";exit;
         $query = $this->model->db->query("SELECT {$select} FROM `{$this->table}` {$table_join} {$where} {$order_by}");
         if ($query->getNumRows() > $this->config->csv_limit)
-            throw new RuntimeException('A quantidade de registros excede o maximo permitido para esta operacao.');
+            // Quantidade de registros acima do permitido
+            throw new RuntimeException(lang('cCrud.max_records_exceeded'));
         ini_set('auto_detect_line_endings', true);
         header("Pragma: public");
         header("Expires: 0");
@@ -2958,7 +2968,8 @@ class cCrud
     protected function _create($postdata = array())
     {
         if (! $this->is_create || $this->table_ro)
-            throw new RuntimeException('Forbidden');
+            // Operação de criação não permitida
+            throw new RuntimeException(lang('cCrud.forbidden'));
         $this->primary_val = null;
         $this->result_row = array_merge($this->defaults, $postdata);
 
@@ -3029,12 +3040,13 @@ class cCrud
 
         // moved here to support conditions for buttons
         if (((! $this->is_edit($this->result_row) || $this->table_ro) && $mode == 'edit') or (! $this->is_view($this->result_row) && $mode == 'view'))
-            if ($this->grid_restrictions[$mode][0]['alt']) {
-                $this->task = $this->grid_restrictions[$mode][0]['alt'];
-                return $this->_run_task();
-            } else {
-                throw new RuntimeException('Forbidden');
-            }
+                if ($this->grid_restrictions[$mode][0]['alt']) {
+                    $this->task = $this->grid_restrictions[$mode][0]['alt'];
+                    return $this->_run_task();
+                } else {
+                    // Acesso proibido à entrada solicitada
+                    throw new RuntimeException(lang('cCrud.forbidden'));
+                }
 
         $callback_method = 'before_' . $mode;
         if ($mode != "report" && $this->{$callback_method}) {
@@ -3122,7 +3134,8 @@ class cCrud
     protected function _insert($postdata, $no_processing = false, $no_processing_fields = array())
     {
         if (! $postdata) {
-            throw new RuntimeException('$postdata array is empty');
+            // Dados de postagem ausentes
+            throw new RuntimeException(lang('cCrud.postdata_empty'));
         }
         $set = array();
         $db = Database::get_instance($this->connection, $this->ci);
@@ -3189,10 +3202,12 @@ class cCrud
         }
         // $keys = array_keys($set[$this->table]);
         if (! $set) {
-            throw new RuntimeException('Nothing to insert');
+            // Nenhum dado para inserir
+            throw new RuntimeException(lang('cCrud.nothing_to_insert'));
         }
         if (! $this->primary_ai && ! isset($postdata[$this->table . '.' . $this->primary_key])) {
-            throw new RuntimeException('Can\'t insert a row. No primary value.');
+            // Registro sem valor primário
+            throw new RuntimeException(lang('cCrud.no_primary_value'));
         }
         $db->query('INSERT INTO `' . $this->table . '` (' . implode(',', array_keys($set[$this->table])) . ') VALUES (' . implode(',', $set[$this->table]) . ')');
         if ($this->primary_ai) {
@@ -3278,7 +3293,8 @@ class cCrud
     protected function _update($postdata, $primary)
     {
         if (! $postdata) {
-            throw new RuntimeException('$postdata array is empty');
+            // Dados de postagem ausentes
+            throw new RuntimeException(lang('cCrud.postdata_empty'));
         }
         $res = false;
         $set = array();
@@ -3330,7 +3346,8 @@ class cCrud
             }
         }
         if (! $set) {
-            throw new RuntimeException('Nothing to update');
+            // Nenhum dado para atualizar
+            throw new RuntimeException(lang('cCrud.nothing_to_update'));
         }
         $this->apply_record_changes($set);
         if (! $this->join && ! $this->join_relation) {
@@ -3400,7 +3417,8 @@ class cCrud
     {
         $del = false;
         if ($this->table_ro)
-            throw new RuntimeException('Forbidden');
+            // Operação de remoção não permitida
+            throw new RuntimeException(lang('cCrud.forbidden'));
         if ($this->before_remove) {
             $path = $this->check_file($this->before_remove['path'], 'before_remove');
             include_once ($path);
@@ -3466,9 +3484,10 @@ class cCrud
                     $db->query('SELECT ' . implode(',', $fields) . " FROM `{$this->table}` WHERE `{$this->primary_key}` = " . $db->escape($this->primary_val) . ' LIMIT 1');
                     $del_row = $db->row();
                 }
-                if (! $this->is_remove($del_row)) {
-                    throw new RuntimeException('Forbidden');
-                }
+                    if (! $this->is_remove($del_row)) {
+                        // Remoção não autorizada
+                        throw new RuntimeException(lang('cCrud.forbidden'));
+                    }
                 $del = $db->query("DELETE FROM `{$this->table}` WHERE `{$this->primary_key}` = " . $db->escape($this->primary_val) . " LIMIT 1");
             } else {
                 $tables = array(
@@ -3485,9 +3504,10 @@ class cCrud
                     $db->query('SELECT ' . implode(',', $fields) . " FROM `{$this->table}` AS `{$this->table}` " . implode(' ', $joins) . " WHERE `{$this->table}`.`{$this->primary_key}` = " . $db->escape($this->primary_val));
                     $del_row = $db->row();
                 }
-                if (! $this->is_remove($del_row)) {
-                    throw new RuntimeException('Forbidden');
-                }
+                    if (! $this->is_remove($del_row)) {
+                        // Remoção não autorizada
+                        throw new RuntimeException(lang('cCrud.forbidden'));
+                    }
                 $del = $db->query("DELETE " . implode(',', $tables) . " FROM `{$this->table}` AS `{$this->table}` " . implode(' ', $joins) . " WHERE `{$this->table}`.`{$this->primary_key}` = " . $db->escape($this->primary_val));
             }
             if ($del_row) {
@@ -3605,7 +3625,8 @@ class cCrud
     {
         $postdata = $this->_post('postdata');
         if (! $postdata) {
-            throw new RuntimeException('No data to save!');
+            // Nenhum dado disponível para salvar
+            throw new RuntimeException(lang('cCrud.no_data_to_save'));
         }
 
         $postdata = $this->check_postdata($postdata, $this->primary_val);
@@ -3629,7 +3650,8 @@ class cCrud
         }
         if (! $this->primary_val) {
             if (! $this->is_create || $this->table_ro)
-                throw new RuntimeException('Forbidden');
+                // Operação de criação não permitida
+                throw new RuntimeException(lang('cCrud.forbidden'));
             if (isset($this->pass_var['create'])) {
                 foreach ($this->pass_var['create'] as $field => $param) {
                     if ($param['eval']) {
@@ -3756,7 +3778,8 @@ class cCrud
             }
         } else {
             if ($this->table_ro)
-                throw new RuntimeException('Forbidden');
+                // Operação não permitida em tabela somente leitura
+                throw new RuntimeException(lang('cCrud.forbidden'));
             $fields = array();
             $row = array();
             $this->find_details_text_variables();
@@ -3786,7 +3809,8 @@ class cCrud
             }
 
             if (! $this->is_edit($row))
-                throw new RuntimeException('Forbidden');
+                // Edição não autorizada
+                throw new RuntimeException(lang('cCrud.forbidden'));
             if (isset($this->pass_var['edit'])) {
                 foreach ($this->pass_var['edit'] as $field => $param) {
                     if (isset($param['tmp_value'])) {
@@ -3975,7 +3999,8 @@ class cCrud
                         return $this->create_file($this->_post('field'), '') . $this->render_messages();
                         break;
                     default:
-                        throw new RuntimeException('Upload Error');
+                        // Erro durante o envio de arquivo
+                        throw new RuntimeException(lang('cCrud.upload_error'));
                         break;
                 }
                 break;
@@ -4083,7 +4108,8 @@ class cCrud
     protected function _list($render = true)
     {
         if (! $this->is_list) {
-            throw new RuntimeException('Forbidden');
+            // Acesso proibido à listagem
+            throw new RuntimeException(lang('cCrud.forbidden'));
         }
         $this->_alphabetical();
         /*
@@ -5366,10 +5392,8 @@ class cCrud
                             // $this->is_search = false;
                             break;
                         default:
-                            throw new RuntimeException('<strong>Table "' . $this->table . '" has no any primary or unique key!</strong><br />
-                                This error was made to prevent loss of your data.
-                                You must create primary key (the best - primary autoincrement) for this table.
-                                See documentation for more info.');
+                            // Tabela sem chave primária ou única
+                            throw new RuntimeException(lang('cCrud.table_no_primary_or_unique', [$this->table]));
                             break;
                     }
                 }
@@ -6100,12 +6124,14 @@ class cCrud
                 $mc->connect($this->config->mc_host, $this->config->mc_port);
                 $res = $mc->set(self::$sess_id, $data, $this->config->alt_lifetime * 60);
             } else {
-                throw new RuntimeException('Can\'t use alternative session. Memcache(d) is not available');
+                // Memcache(d) não está disponível
+                throw new RuntimeException(lang('cCrud.memcache_not_available'));
             }
             unset($_SESSION['lists']['xcrud_session']);
-            if (! $res) {
-                throw new RuntimeException('Can\'t use alternative session. Memcache(d) has invalid parameters or broken. Storing failed');
-            }
+                if (! $res) {
+                    // Parâmetros inválidos ou armazenamento falhou
+                    throw new RuntimeException(lang('cCrud.memcache_invalid_parameters'));
+                }
             unset($_SESSION['lists']['xcrud_session']);
             if (! $res) {
                 self::erro('memcache_invalid_parameters');
@@ -6143,16 +6169,19 @@ class cCrud
                 $mc->connect($this->config->mc_host, $this->config->mc_port);
                 $data = $mc->get(self::$sess_id);
             } else {
-                throw new RuntimeException('Can\'t use alternative session. Memcache(d) is not available');
+                // Memcache(d) não está disponível
+                throw new RuntimeException(lang('cCrud.memcache_not_available'));
             }
-            if (! $data) {
-                throw new RuntimeException('Can\'t use alternative session. Data is not exist');
-            }
+                if (! $data) {
+                    // Dados alternativos inexistentes
+                    throw new RuntimeException(lang('cCrud.alternative_session_data_not_exist'));
+                }
             $_SESSION['lists']['xcrud_session'] = $this->decrypt($data[0], $data[1]);
             unset($data);
-            if (! $_SESSION['lists']['xcrud_session']) {
-                throw new RuntimeException('Can\'t use alternative session. Data is invalid');
-            }
+                if (! $_SESSION['lists']['xcrud_session']) {
+                    // Dados alternativos inválidos
+                    throw new RuntimeException(lang('cCrud.alternative_session_data_invalid'));
+                }
         }
 
         $inst_name      = $this->instance_name;
@@ -7696,7 +7725,8 @@ class cCrud
                 return $this->_upload_file();
                 break;
             default:
-                throw new RuntimeException('Upload Error');
+                // Erro no upload
+                throw new RuntimeException(lang('cCrud.upload_error'));
                 break;
         }
     }
@@ -7756,7 +7786,8 @@ class cCrud
             $this->after_render();
             return $out;
         } else
-            throw new RuntimeException('File is not uploaded');
+            // Arquivo não foi enviado
+            throw new RuntimeException(lang('cCrud.file_not_uploaded'));
     }
 
     protected function _upload_image()
@@ -7836,7 +7867,8 @@ class cCrud
             $this->after_render();
             return $out;
         } else
-            throw new RuntimeException('File is not uploaded');
+            // Arquivo não foi enviado
+            throw new RuntimeException(lang('cCrud.file_not_uploaded'));
     }
 
     protected function render_crop_window($filename, $field)
@@ -8051,7 +8083,8 @@ class cCrud
                 return $this->_remove_file();
                 break;
             default:
-                throw new RuntimeException('Remove Error');
+                // Erro ao remover arquivo
+                throw new RuntimeException(lang('cCrud.remove_error'));
                 break;
         }
     }
@@ -8133,7 +8166,8 @@ class cCrud
                 $srcHandle = imagecreatefrompng($src_file);
                 break;
             default:
-                throw new RuntimeException('NO FILE');
+                // Arquivo inexistente
+                throw new RuntimeException(lang('cCrud.no_file'));
                 return false;
         }
         if ($srcWidth >= $srcHeight) {
@@ -8202,7 +8236,8 @@ class cCrud
                     break;
                     break;
                 default:
-                    throw new RuntimeException('NO WATERMARK FILE');
+                    // Arquivo de marca d'água inexistente
+                    throw new RuntimeException(lang('cCrud.no_watermark_file'));
                     return false;
             }
             imagecopy($dstHandle, $waterHandle, $offsets['x'], $offsets['y'], 0, 0, $water_w, $water_h);
@@ -8219,7 +8254,8 @@ class cCrud
                 imagepng($dstHandle, $dest_file);
                 break;
             default:
-                throw new RuntimeException('File Type Not Supported!');
+                // Tipo de arquivo não suportado
+                throw new RuntimeException(lang('cCrud.file_type_not_supported'));
                 return false;
         }
         imagedestroy($dstHandle);
@@ -8247,12 +8283,14 @@ class cCrud
                 $srcHandle = imagecreatefrompng($src_file);
                 break;
             default:
-                throw new RuntimeException('NO FILE');
+                // Arquivo inexistente
+                throw new RuntimeException(lang('cCrud.no_file'));
                 return false;
         }
         if (! $srcHandle) {
-            throw new RuntimeException('Could not execute imagecreatefrom() function! ');
-                return false;
+            // Falha ao executar imagecreatefrom()
+            throw new RuntimeException(lang('cCrud.imagecreatefrom_failed'));
+            return false;
         }
         if ($srcHeight < $srcWidth) {
             $ratio = (double) ($srcHeight / $new_size_h);
@@ -8300,7 +8338,8 @@ class cCrud
                 break;
         }
         if (! imagecopyresampled($dstHandle, $srcHandle, 0, 0, $xOffset, $yOffset, $new_size_w, $new_size_h, $cpyWidth, $cpyHeight)) {
-            throw new RuntimeException('Could not execute imagecopyresampled() function!');
+            // Falha ao executar imagecopyresampled()
+            throw new RuntimeException(lang('cCrud.imagecopyresampled_failed'));
             return false;
         }
         imagedestroy($srcHandle);
@@ -8329,7 +8368,8 @@ class cCrud
                     break;
                     break;
                 default:
-                    throw new RuntimeException('NO WATERMARK FILE');
+                    // Arquivo de marca d'água inexistente
+                    throw new RuntimeException(lang('cCrud.no_watermark_file'));
                     return false;
             }
             imagecopy($dstHandle, $waterHandle, $offsets['x'], $offsets['y'], 0, 0, $water_w, $water_h);
@@ -8342,12 +8382,13 @@ class cCrud
             case 2:
                 imagejpeg($dstHandle, $dest_file, $dest_qual);
                 break;
-            case 3:
-                imagepng($dstHandle, $dest_file);
-                break;
-            default:
-                throw new RuntimeException('File Type Not Supported!');
-                return false;
+        case 3:
+            imagepng($dstHandle, $dest_file);
+            break;
+        default:
+            // Tipo de arquivo não suportado
+            throw new RuntimeException(lang('cCrud.file_type_not_supported'));
+            return false;
         }
         imagedestroy($dstHandle);
         return true;
@@ -8370,12 +8411,14 @@ class cCrud
                 $srcHandle = imagecreatefrompng($src_file);
                 break;
             default:
-                throw new RuntimeException('NO FILE');
+                // Arquivo inexistente
+                throw new RuntimeException(lang('cCrud.no_file'));
                 return false;
         }
         if (! $srcHandle) {
-            throw new RuntimeException('Could not execute imagecreatefrom() function!');
-                return false;
+            // Falha ao executar imagecreatefrom()
+            throw new RuntimeException(lang('cCrud.imagecreatefrom_failed'));
+            return false;
         }
         $dstHandle = ImageCreateTrueColor($new_size_w, $new_size_h);
         switch ($type) {
@@ -8394,7 +8437,8 @@ class cCrud
                 break;
         }
         if (! imagecopyresampled($dstHandle, $srcHandle, 0, 0, $x, $y, $new_size_w, $new_size_h, $w, $h)) {
-            throw new RuntimeException('Could not execute imagecopyresampled() function!');
+            // Falha ao executar imagecopyresampled()
+            throw new RuntimeException(lang('cCrud.imagecopyresampled_failed'));
             return false;
         }
         imagedestroy($srcHandle);
@@ -8423,7 +8467,8 @@ class cCrud
                     break;
                     break;
                 default:
-                    throw new RuntimeException('NO WATERMARK FILE');
+                    // Arquivo de marca d'água inexistente
+                    throw new RuntimeException(lang('cCrud.no_watermark_file'));
                     return false;
             }
             imagecopy($dstHandle, $waterHandle, $offsets['x'], $offsets['y'], 0, 0, $water_w, $water_h);
@@ -8440,7 +8485,8 @@ class cCrud
                 imagepng($dstHandle, $dest_file);
                 break;
             default:
-                throw new RuntimeException('File Type Not Supported!');
+                // Tipo de arquivo não suportado
+                throw new RuntimeException(lang('cCrud.file_type_not_supported'));
                 return false;
         }
         imagedestroy($dstHandle);
@@ -8464,7 +8510,8 @@ class cCrud
                 $srcHandle = imagecreatefrompng($src_file);
                 break;
             default:
-                throw new RuntimeException('NO FILE');
+                // Arquivo inexistente
+                throw new RuntimeException(lang('cCrud.no_file'));
                 return false;
         }
         $dstHandle = imagecreatetruecolor($srcWidth, $srcHeight);
@@ -8511,7 +8558,8 @@ class cCrud
                     break;
                     break;
                 default:
-                    throw new RuntimeException('NO WATERMARK FILE');
+                    // Arquivo de marca d'água inexistente
+                    throw new RuntimeException(lang('cCrud.no_watermark_file'));
                     return false;
             }
             imagecopy($dstHandle, $waterHandle, $offsets['x'], $offsets['y'], 0, 0, $water_w, $water_h);
@@ -8528,7 +8576,8 @@ class cCrud
                 imagepng($dstHandle, $dest_file);
                 break;
             default:
-                throw new RuntimeException('File Type Not Supported!');
+                // Tipo de arquivo não suportado
+                throw new RuntimeException(lang('cCrud.file_type_not_supported'));
                 return false;
         }
         imagedestroy($dstHandle);
@@ -9506,7 +9555,8 @@ class cCrud
             }
 
             if (! $this->is_duplicate($row)) {
-                throw new RuntimeException('Forbidden');
+                // Duplicação não permitida
+                throw new RuntimeException(lang('cCrud.forbidden'));
             }
 
             $columns = array();
@@ -9514,24 +9564,26 @@ class cCrud
             foreach ($this->table_info as $table => $types) {
                 if ($table == $this->table || (isset($this->join[$table]) && $this->join[$table]['not_insert'] != true)) {
                     foreach ($types as $row) {
-                        $field_index = "{$table}.{$row['Field']}";
-                        if ($row['Key'] == 'PRI' && $row['Extra'] == 'auto_increment') {
-                            if ($table == $this->table) {
-                                $this->primary_ai = "`{$table}`.`{$row['Field']}`";
+                            $field_index = "{$table}.{$row['Field']}";
+                            if ($row['Key'] == 'PRI' && $row['Extra'] == 'auto_increment') {
+                                if ($table == $this->table) {
+                                    $this->primary_ai = "`{$table}`.`{$row['Field']}`";
+                                }
+                            } elseif ($row['Key'] == 'UNI' or $row['Key'] == 'PRI') {
+                                // Impossível duplicar: tabela possui campo único
+                                throw new RuntimeException(lang('cCrud.duplication_unique_field'));
+                            } else {
+                                $columns[$field_index] = array(
+                                    'table' => $table,
+                                    'field' => $row['Field']
+                                );
                             }
-                        } elseif ($row['Key'] == 'UNI' or $row['Key'] == 'PRI') {
-                            throw new RuntimeException('Duplication impossible. The table has a unique field.');
-                        } else {
-                            $columns[$field_index] = array(
-                                'table' => $table,
-                                'field' => $row['Field']
-                            );
-                        }
                     }
                 }
             }
             if (! $this->primary_ai) {
-                throw new RuntimeException('Duplication impossible. Table does not have a primary autoincrement field.');
+                // Impossível duplicar: tabela sem campo autoincremento
+                throw new RuntimeException(lang('cCrud.duplication_no_primary_autoincrement'));
             }
             $select = $this->_build_select_clone($columns);
             $where = $this->_build_where();
@@ -9633,7 +9685,8 @@ class cCrud
     protected function _get_table($method)
     {
         if (! $this->table && ! $this->query)
-            throw new RuntimeException('You must define your table before using the <strong>' . $method . '</strong> method.');
+            // Tabela não definida para o método requisitado
+            throw new RuntimeException(lang('cCrud.table_not_defined', [$method]));
         else
             return $this->table ? $this->table : '';
         return false;
@@ -9684,7 +9737,8 @@ class cCrud
             $config = new ViewsConfig();
             $this->theme_config = $config->classes;
         } else {
-            throw new RuntimeException('Arquivo de configuração das views não encontrado.');
+            // Arquivo de configuração das views não localizado
+            throw new RuntimeException(lang('cCrud.view_config_not_found'));
         }
     }
 
@@ -9774,7 +9828,8 @@ class cCrud
             }
             unset($fields);
         } else
-            throw new RuntimeException('You must set field name(s) for the <strong>' . $location . '</strong> method.');
+            // Nome do campo obrigatório
+            throw new RuntimeException(lang('cCrud.field_name_required', [$location]));
         return $field_names;
     }
 
@@ -9831,7 +9886,8 @@ class cCrud
         }
 
         if (self::$css_loaded) {
-            throw new RuntimeException('cCrud\'s styles already rendered! Please, set <strong>$manual_load = true</strong> in your configuração file');
+            // Estilos já carregados anteriormente
+            throw new RuntimeException(lang('cCrud.styles_already_rendered'));
         }
 
         self::$css_loaded = true;
@@ -9871,7 +9927,8 @@ class cCrud
         }
 
         if (self::$js_loaded) {
-            throw new RuntimeException('cCrud\'s scripts already rendered! Please, set <strong>$manual_load = true</strong> in your configuração file');
+            // Scripts já carregados anteriormente
+            throw new RuntimeException(lang('cCrud.scripts_already_rendered'));
         }
         self::$js_loaded = true;
         if ($config->load_jquery)
@@ -9984,7 +10041,8 @@ class cCrud
         }
 
         if (! is_file($path))
-            throw new RuntimeException('Wrong path or file is not exist! The <strong>' . $func_name . '</strong> method fails.<br /><small>' . $path . '</small>');
+            // Caminho ou arquivo inexistente
+            throw new RuntimeException(lang('cCrud.wrong_path_or_file', [$func_name, $path]));
         return $path;
     }
 
@@ -9997,7 +10055,8 @@ class cCrud
             $path = CCRUD_PATH . '/' . trim($path, '/');
         if (! is_dir($path)) {
             if (! @mkdir($path))
-                throw new RuntimeException('Wrong path or folder is not exist! The <strong>' . $func_name . '</strong> method fails.<br /><small>' . $path . '</small>');
+                // Caminho ou pasta inexistente
+                throw new RuntimeException(lang('cCrud.wrong_path_or_folder', [$func_name, $path]));
         }
         return $path;
     }
@@ -11625,9 +11684,11 @@ class cCrud
         array_pop($path_array);
         if (is_dir(implode('/', $path_array))) {
             if (! mkdir($path))
-                throw new RuntimeException('cannot create directory ' . $path);
+                // Não foi possível criar o diretório
+                throw new RuntimeException(lang('cCrud.cannot_create_directory', [$path]));
         } else {
-            throw new RuntimeException('File path is incorrect!');
+            // Caminho do arquivo incorreto
+            throw new RuntimeException(lang('cCrud.file_path_incorrect'));
         }
     }
 
@@ -11990,12 +12051,14 @@ class cCrud
     public function encrypt($obj)
     {
         if (! $this->config->alt_encription_key) {
-            throw new RuntimeException('Please, set <strong>$alt_encription_key</strong> parameter in configuration file');
+            // Chave de encriptação alternativa não definida
+            throw new RuntimeException(lang('cCrud.set_alt_encription_key'));
         }
         $text = json_encode($obj);
 
         if (! is_callable('mcrypt_module_open')) {
-            throw new RuntimeException('<strong>mcrypt_module</strong> not found');
+            // Módulo mcrypt não encontrado
+            throw new RuntimeException(lang('cCrud.mcrypt_module_not_found'));
         }
         if (defined('MCRYPT_TWOFISH') && mcrypt_module_self_test(MCRYPT_TWOFISH)) {
             $algoritm = MCRYPT_TWOFISH;
@@ -12006,7 +12069,8 @@ class cCrud
         } elseif (defined('MCRYPT_BLOWFISH') && mcrypt_module_self_test(MCRYPT_BLOWFISH)) {
             $algoritm = MCRYPT_BLOWFISH;
         } else {
-            throw new RuntimeException('MCRYPT - Supported algorytm not found');
+            // Algoritmo de criptografia não suportado
+            throw new RuntimeException(lang('cCrud.mcrypt_algorithm_not_found'));
         }
         $td = mcrypt_module_open($algoritm, '', MCRYPT_MODE_CFB, '');
         $iv = mcrypt_create_iv(mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
@@ -12026,10 +12090,12 @@ class cCrud
     public function decrypt($text, $iv)
     {
         if (! $this->config->alt_encription_key) {
-            throw new RuntimeException('Please, set <strong>$alt_encription_key</strong> parameter in configuration file');
+            // Chave de encriptação alternativa não definida
+            throw new RuntimeException(lang('cCrud.set_alt_encription_key'));
         }
         if (! is_callable('mcrypt_module_open')) {
-            throw new RuntimeException('<strong>mcrypt_module</strong> not found');
+            // Módulo mcrypt não encontrado
+            throw new RuntimeException(lang('cCrud.mcrypt_module_not_found'));
         }
         if (defined('MCRYPT_TWOFISH') && mcrypt_module_self_test(MCRYPT_TWOFISH)) {
             $algoritm = MCRYPT_TWOFISH;
@@ -12040,7 +12106,8 @@ class cCrud
         } elseif (defined('MCRYPT_BLOWFISH') && mcrypt_module_self_test(MCRYPT_BLOWFISH)) {
             $algoritm = MCRYPT_BLOWFISH;
         } else {
-            throw new RuntimeException('MCRYPT - Supported algorytm not found');
+            // Algoritmo de criptografia não suportado
+            throw new RuntimeException(lang('cCrud.mcrypt_algorithm_not_found'));
         }
         $td = mcrypt_module_open($algoritm, '', MCRYPT_MODE_CFB, '');
         $ks = mcrypt_enc_get_key_size($td);
@@ -12280,18 +12347,20 @@ class cCrud
         if (isset(self::$classes[$name])) {
             return self::$classes[$name];
         }
-        if (is_file($path)) {
-            require_once ($path);
-            $class = 'cCrud_' . $name;
-            if (class_exists($class)) {
-                self::$classes[$name] = new $class();
-                return self::$classes[$name];
+            if (is_file($path)) {
+                require_once ($path);
+                $class = 'cCrud_' . $name;
+                if (class_exists($class)) {
+                    self::$classes[$name] = new $class();
+                    return self::$classes[$name];
+                } else {
+                    // Classe requisitada não existe
+                    throw new RuntimeException(lang('cCrud.class_not_exist', [$class]));
+                }
             } else {
-                throw new RuntimeException('Class "' . $class . '" not exist!');
+                // Arquivo requisitado não existe
+                throw new RuntimeException(lang('cCrud.file_not_exist', [$name]));
             }
-        } else {
-            throw new RuntimeException('File "' . $name . '.php" not exist!');
-        }
     }
 
     /**
@@ -13247,7 +13316,8 @@ class cCrud
     public function _mass_action()
     {
         if ($this->table_ro)
-            throw new RuntimeException('Forbidden');
+            // Operação não permitida em tabela somente leitura
+            throw new RuntimeException(lang('cCrud.forbidden'));
             
             $this->set_custom_lists();
             $this->_set_field_types('list');
