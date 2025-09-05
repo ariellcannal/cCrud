@@ -32,8 +32,8 @@ class Home extends BaseController
         }
 
         // Instancia e configura o cCrud
-        $crud = new cCrud();
-        $crud->table('cCrud_testes');
+        $crud = new cCrud($model);
+        $crud->table('ccrud_testes');
         $crud->table_name('Lista de Testes');
 
         // Renderiza e retorna o conteúdo padrão da lib
@@ -69,7 +69,7 @@ class Home extends BaseController
     }
 
     /**
-     * Cria a tabela cCrud_testes e popula com dados aleatórios.
+     * Cria a tabela ccrud_testes e popula com dados aleatórios.
      *
      * @return void
      */
@@ -117,14 +117,14 @@ class Home extends BaseController
         ];
 
         // Cria a tabela caso não exista
-        if (! $db->tableExists('cCrud_testes')) {
+        if (! $db->tableExists('ccrud_testes')) {
             $forge->addField($fields);
             $forge->addKey('id', true);
-            $forge->createTable('cCrud_testes');
+            $forge->createTable('ccrud_testes');
         }
 
         // Popula a tabela com 150 registros
-        $builder = $db->table('cCrud_testes');
+        $builder = $db->table('ccrud_testes');
         $current = $builder->countAllResults();
 
         if ($current >= 150) {

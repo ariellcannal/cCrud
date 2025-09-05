@@ -9,6 +9,7 @@ use Config\Services;
 use CodeIgniter\Session\Session;
 use CodeIgniter\HTTP\ResponseInterface;
 use cCrud\Postdata;
+use Psr\Log\LoggerInterface;
 
 // direct access to DB driver and config
 define('CCRUD_PATH', str_replace('\\', '/', dirname(__file__)));
@@ -63,6 +64,13 @@ class cCrud
      * @var Session
      */
     protected Session $session;
+
+    /**
+     * Manipulador de logs do CodeIgniter 4.
+     *
+     * @var LoggerInterface|null
+     */
+    protected ?LoggerInterface $logger = null;
 
     /**
      * Configurações do tema do cCrud.
@@ -510,12 +518,23 @@ class cCrud
      * podendo ser alteradas por métodos públicos.
      *
      */
-    protected function __construct()
+    /**
+     * Construtor que inicializa dependências do cCrud.
+     *
+     * @param Model $model            Modelo do CodeIgniter utilizado pelo CRUD
+     * @param LoggerInterface|null $logger Registrador de logs opcional
+     */
+    public function __construct(Model $model, ?LoggerInterface $logger = null)
     {
         // Verifica se o pacote está sendo utilizado dentro do CodeIgniter 4
-        if (!defined('CI_VERSION') || version_compare(CI_VERSION, '4.0.0', '<')) {
-            return Services::response()->setStatusCode(500)->setBody(lang('cCrud.ci4_required'));
+        if (! defined('CI_VERSION') || version_compare(CI_VERSION, '4.0.0', '<')) {
+            Services::response()->setStatusCode(500)->setBody(lang('cCrud.ci4_required'));
+            return;
         }
+
+        // Define o Model e o Logger utilizados pelo cCrud
+        $this->model  = $model;
+        $this->logger = $logger ?? Services::logger();
 
         // Inicia o manipulador de sessões do CodeIgniter 4
         $this->session = Services::session();
@@ -612,19 +631,23 @@ class cCrud
     /**
      * Retorna uma instância do cCrud utilizando o Model informado.
      *
+     * @param Model               $model  Modelo do CodeIgniter
+     * @param LoggerInterface|null $logger Registrador de logs opcional
+     * @param string|false        $name   Nome da instância
+     *
+     * @return self|ResponseInterface
      */
-    public static function getInstance(Model $model, $name = false)
+    public static function getInstance(Model $model, ?LoggerInterface $logger = null, $name = false)
     {
         self::initPrepare();
         if (! $name) {
             $name = sha1(rand() . microtime());
         }
         if (! isset(self::$instance[$name]) || null === self::$instance[$name]) {
-            self::$instance[$name] = new self();
+            self::$instance[$name]             = new self($model, $logger);
             self::$instance[$name]->instance_name = $name;
         }
         self::$instance[$name]->instance_count = count(self::$instance);
-        self::$instance[$name]->model = $model;
 
         $returnType = method_exists($model, 'getReturnType') ? $model->getReturnType() : $model->returnType;
         if (! is_subclass_of($returnType, '\\CodeIgniter\\Entity\\Entity')) {
@@ -637,12 +660,12 @@ class cCrud
     /**
      * Recupera a instância solicitada via requisição Ajax.
      *
-     * @param Model $model Modelo associado
+     * @param Model               $model  Modelo associado
+     * @param LoggerInterface|null $logger Registrador de logs opcional
      *
-     * @return cCrud
-     *
+     * @return string|ResponseInterface
      */
-    public static function getRequestedInstance(Model $model)
+    public static function getRequestedInstance(Model $model, ?LoggerInterface $logger = null)
     {
         $request  = Services::request();
         $security = Services::security();
@@ -680,11 +703,10 @@ class cCrud
         // var_dump($cCrud_session[$inst_name]);
         // if (isset($cCrud_session[$inst_name]['key']) && $cCrud_session[$inst_name]['key'] == $key) {
         if (1 == 1) {
-            self::$instance[$inst_name] = new self();
-            self::$instance[$inst_name]->is_get = $is_get;
+            self::$instance[$inst_name]             = new self($model, $logger);
+            self::$instance[$inst_name]->is_get     = $is_get;
             self::$instance[$inst_name]->ajax_request = true;
             self::$instance[$inst_name]->instance_name = $inst_name;
-            self::$instance[$inst_name]->model = $model;
             self::$instance[$inst_name]->import_vars($key);
             self::$instance[$inst_name]->inner_where();
             return self::$instance[$inst_name]->render();
@@ -715,10 +737,12 @@ class cCrud
     public function ajax(): ResponseInterface
     {
         // obtém a resposta processada pela instância solicitada
-        $output = self::get_requested_instance($this->model);
+        $output = self::getRequestedInstance($this->model, $this->logger);
 
         // retorna o conteúdo como uma resposta HTTP
-        return Services::response()->setBody($output);
+        return $output instanceof ResponseInterface
+            ? $output
+            : Services::response()->setBody($output);
     }
 
     /**
@@ -1140,7 +1164,7 @@ class cCrud
                                                                                                        // in
                                                                                                        // parent
                                                                                                        // instance
-                $instance = cCrud::getInstance($this->model, $instance_name); // just another
+                $instance = cCrud::getInstance($this->model, $this->logger, $instance_name); // just another
                                                                             // cCrud object
                 $instance->table($this->prefix . $inner_tbl);
                 $instance->tableName($instance_name);
@@ -5683,7 +5707,7 @@ class cCrud
         {
             foreach ($this->inner_table_instance as $inst_name => $field) {
                 if (isset($this->result_row[$field])) {
-                    $instance = self::getInstance($this->model, $inst_name);
+                    $instance = self::getInstance($this->model, $this->logger, $inst_name);
                     $instance->ajax_request = true;
                     $instance->import_vars();
                     $instance->inner_where($this->result_row[$field]);
