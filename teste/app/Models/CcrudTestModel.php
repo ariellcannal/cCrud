@@ -5,12 +5,12 @@ use CodeIgniter\Model;
 use App\Entities\CcrudTest;
 
 /**
- * Model para manipular a tabela cCrud_testes.
+ * Model para manipular a tabela ccrud_testes.
  */
 class CcrudTestModel extends Model
 {
     /** @var string Nome da tabela */
-    protected $table = 'cCrud_testes';
+    protected $table = 'ccrud_testes';
 
     /** @var string Chave primária */
     protected $primaryKey = 'id';

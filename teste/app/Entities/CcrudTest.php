@@ -4,7 +4,7 @@ namespace App\Entities;
 use CodeIgniter\Entity\Entity;
 
 /**
- * Entidade para representar os registros da tabela de testes cCrud.
+ * Entidade para representar os registros da tabela de testes ccrud.
  */
 class CcrudTest extends Entity
 {

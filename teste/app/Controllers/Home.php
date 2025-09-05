@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controllers;
 
 use Faker\Factory;
@@ -12,31 +14,13 @@ use App\Models\CcrudTestModel;
 class Home extends BaseController
 {
     /**
-     * Exibe a página inicial e prepara o ambiente de testes.
+     * Exibe o cCrud da tabela de testes quando o ambiente está configurado.
      *
      * @return string
      */
     public function index(): string
     {
         // Verifica se o arquivo .env existe e possui configurações de banco
-        if (! $this->hasDatabaseEnv()) {
-            return view('setup', ['hasEnv' => false]);
-        }
-
-        // Cria tabela e popula dados quando possível
-        $this->createAndSeedTable();
-
-        return view('setup', ['hasEnv' => true]);
-    }
-
-    /**
-     * Exibe um cCrud da tabela de testes com todas as funcionalidades.
-     *
-     * @return string
-     */
-    public function crud(): string
-    {
-        // Garante que o ambiente está pronto
         if (! $this->hasDatabaseEnv()) {
             return view('setup', ['hasEnv' => false]);
         }
@@ -48,14 +32,12 @@ class Home extends BaseController
         }
 
         // Instancia e configura o cCrud
-        $crud = new cCrud();
-        $crud->table('cCrud_testes');
+        $crud = new cCrud($model);
+        $crud->table('ccrud_testes');
         $crud->table_name('Lista de Testes');
 
-        // Renderiza a saída
-        $output = $crud->render();
-
-        return view('crud', ['cCrud' => $output]);
+        // Renderiza e retorna o conteúdo padrão da lib
+        return $crud->render();
     }
 
     /**
@@ -87,7 +69,7 @@ class Home extends BaseController
     }
 
     /**
-     * Cria a tabela cCrud_testes e popula com dados aleatórios.
+     * Cria a tabela ccrud_testes e popula com dados aleatórios.
      *
      * @return void
      */
@@ -135,14 +117,14 @@ class Home extends BaseController
         ];
 
         // Cria a tabela caso não exista
-        if (! $db->tableExists('cCrud_testes')) {
+        if (! $db->tableExists('ccrud_testes')) {
             $forge->addField($fields);
             $forge->addKey('id', true);
-            $forge->createTable('cCrud_testes');
+            $forge->createTable('ccrud_testes');
         }
 
         // Popula a tabela com 150 registros
-        $builder = $db->table('cCrud_testes');
+        $builder = $db->table('ccrud_testes');
         $current = $builder->countAllResults();
 
         if ($current >= 150) {
