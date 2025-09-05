@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controllers;
 
 use Faker\Factory;
@@ -12,31 +14,13 @@ use App\Models\CcrudTestModel;
 class Home extends BaseController
 {
     /**
-     * Exibe a página inicial e prepara o ambiente de testes.
+     * Exibe o cCrud da tabela de testes quando o ambiente está configurado.
      *
      * @return string
      */
     public function index(): string
     {
         // Verifica se o arquivo .env existe e possui configurações de banco
-        if (! $this->hasDatabaseEnv()) {
-            return view('setup', ['hasEnv' => false]);
-        }
-
-        // Cria tabela e popula dados quando possível
-        $this->createAndSeedTable();
-
-        return view('setup', ['hasEnv' => true]);
-    }
-
-    /**
-     * Exibe um cCrud da tabela de testes com todas as funcionalidades.
-     *
-     * @return string
-     */
-    public function crud(): string
-    {
-        // Garante que o ambiente está pronto
         if (! $this->hasDatabaseEnv()) {
             return view('setup', ['hasEnv' => false]);
         }
@@ -52,10 +36,8 @@ class Home extends BaseController
         $crud->table('cCrud_testes');
         $crud->table_name('Lista de Testes');
 
-        // Renderiza a saída
-        $output = $crud->render();
-
-        return view('crud', ['cCrud' => $output]);
+        // Renderiza e retorna o conteúdo padrão da lib
+        return $crud->render();
     }
 
     /**
