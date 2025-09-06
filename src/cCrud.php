@@ -604,7 +604,7 @@ class cCrud
         $this->is_limitlist = $this->config->enable_limitlist;
         $this->is_sortable = $this->config->enable_sorting;
 
-        $this->language = \Config\App::$defaultLocale;
+        $this->language = config('App')->defaultLocale;
 
         $this->search_pattern = $this->config->search_pattern;
 
@@ -5908,7 +5908,7 @@ class cCrud
      *
      * @return string|null
      */
-    protected function _cut($string, $field, $wordsafe = true, $dots = true)
+    protected function _cut(?string $string, string $field, bool $wordsafe = true, bool $dots = true): ?string
     {
         if (isset($this->column_cut_list[$field])) {
             $len = $this->column_cut_list[$field]['count'];
@@ -5918,8 +5918,10 @@ class cCrud
             $safe = $this->safe_output;
         }
 
+        $charset = config('App')->charset;
+
         if (! is_null($string)) {
-            $string = html_entity_decode($string, ENT_QUOTES, \Config\App::$charset);
+            $string = html_entity_decode($string, ENT_QUOTES, $charset);
         }
 
         if (! $len) {
@@ -5930,29 +5932,38 @@ class cCrud
             $strip_string = trim(strip_tags($string));
         }
 
-        $slen = mb_strlen($strip_string, \Config\App::$charset);
+        $slen = mb_strlen($strip_string, $charset);
         if ($slen <= $len || $this->config->print_full_texts) {
             $string = $this->strip_tags ? strip_tags($string) : $string;
             return $safe ? \esc($string) : $string;
         }
         if ($wordsafe) {
             $end = $len;
-            while ((mb_substr($strip_string, -- $len, 1, \Config\App::$charset) != ' ') && ($len > 0)) {}
+            while ((mb_substr($strip_string, -- $len, 1, $charset) != ' ') && ($len > 0)) {}
             if ($len == 0) {
                 $len = $end;
             }
-            $sub = mb_substr($strip_string, 0, $len, \Config\App::$charset);
+            $sub = mb_substr($strip_string, 0, $len, $charset);
             $sub = $safe ? \esc($sub) : $sub;
             return $sub . ($dots ? '&#133;' : '');
         }
-        $sub = mb_substr($strip_string, 0, $len, \Config\App::$charset);
+        $sub = mb_substr($strip_string, 0, $len, $charset);
         $sub = $safe ? \esc($sub) : $sub;
         return $sub . ($dots ? '&#133;' : '');
     }
 
-    protected function _humanize($text)
+    /**
+     * Converte texto com underscores para formato legível.
+     *
+     * @param string $text Texto a ser humanizado.
+     *
+     * @return string Texto humanizado.
+     */
+    protected function _humanize(string $text): string
     {
-        return mb_convert_case(str_replace('_', ' ', $text), MB_CASE_TITLE, \Config\App::$charset);
+        $charset = config('App')->charset;
+
+        return mb_convert_case(str_replace('_', ' ', $text), MB_CASE_TITLE, $charset);
     }
 
     protected function _regenerate_key()
@@ -8675,13 +8686,19 @@ class cCrud
     }
 
     /**
+     * Compara valores utilizando operador especificado.
+     * Inserido os operadores IN e NOT IN.
      *
-     * @author Ariel Canal
-     *         Inserido os operadores IN e NOT IN
-     *        
+     * @param mixed  $val1     Primeiro valor.
+     * @param string $operator Operador de comparação.
+     * @param mixed  $val2     Segundo valor.
+     *
+     * @return bool Resultado da comparação.
      */
-    protected function _compare($val1, $operator, $val2)
+    protected function _compare(mixed $val1, string $operator, mixed $val2): bool
     {
+        $charset = config('App')->charset;
+
         switch ($operator) {
             case 'IN':
                 if (! is_array($val2))
@@ -8704,11 +8721,11 @@ class cCrud
             case '!=':
                 return ($val1 != $val2) ? true : false;
             case '^=':
-                return (mb_strpos($val1, $val2, 0, \Config\App::$charset) === 0) ? true : false;
+                return (mb_strpos($val1, $val2, 0, $charset) === 0) ? true : false;
             case '$=':
-                return (mb_strpos($val1, $val2, 0, \Config\App::$charset) == (mb_strlen($val1, \Config\App::$charset) - mb_strlen($val2, \Config\App::$charset))) ? true : false;
+                return (mb_strpos($val1, $val2, 0, $charset) == (mb_strlen($val1, $charset) - mb_strlen($val2, $charset))) ? true : false;
             case '~=':
-                return (mb_strpos($val1, $val2, 0, \Config\App::$charset) !== false) ? true : false;
+                return (mb_strpos($val1, $val2, 0, $charset) !== false) ? true : false;
             default:
                 return false;
         }
@@ -9446,9 +9463,15 @@ class cCrud
      * @author Ariel Canal
      *         COMPATIBILIZAÇÃO COM A ARQUITETURA DO CODEIGINITER
      */
-    protected static function _get_language_static()
+    /**
+     * Carrega o arquivo de idioma padrão.
+     *
+     * @return void
+     */
+    protected static function _get_language_static(): void
     {
-        self::$lang_arr = lang('cCrud', [], \Config\App::$defaultLocale);
+        self::$lang_arr = lang('cCrud', [], config('App')->defaultLocale);
+
         if (! self::$lang_arr) {
             self::$lang_arr = lang('cCrud', [], 'en');
         }
@@ -9473,16 +9496,34 @@ class cCrud
         }
     }
 
-    protected function lang($text = '')
+    /**
+     * Retorna texto traduzido.
+     *
+     * @param string $text Chave de tradução.
+     *
+     * @return string Texto traduzido.
+     */
+    protected function lang(string $text = ''): string
     {
-        $langtext = mb_convert_case($text, MB_CASE_LOWER, \Config\App::$charset);
+        $charset = config('App')->charset;
+        $langtext = mb_convert_case($text, MB_CASE_LOWER, $charset);
+
         return lang('cCrud.' . $langtext);
     }
 
-    protected function theme_config($text = '')
+    /**
+     * Obtém configuração visual do tema.
+     *
+     * @param string $text Chave da configuração.
+     *
+     * @return string Valor sanitizado da configuração.
+     */
+    protected function theme_config(string $text = ''): string
     {
-        $text = mb_convert_case($text, MB_CASE_LOWER, \Config\App::$charset);
-        return htmlspecialchars((isset($this->theme_config[$text]) ? $this->theme_config[$text] : ''), ENT_QUOTES, \Config\App::$charset);
+        $charset = config('App')->charset;
+        $text = mb_convert_case($text, MB_CASE_LOWER, $charset);
+
+        return htmlspecialchars((isset($this->theme_config[$text]) ? $this->theme_config[$text] : ''), ENT_QUOTES, $charset);
     }
 
     protected function _thumb_name($name, $marker)
@@ -10033,13 +10074,25 @@ class cCrud
         curl_setopt($ch, CURLOPT_USERAGENT, $request->getServer('HTTP_USER_AGENT'));
     }
 
-    protected function send_http_request($url, $data, $method, $return_result = false)
+    /**
+     * Envia uma requisição HTTP.
+     *
+     * @param string $url           Endereço da requisição.
+     * @param array  $data          Dados a serem enviados.
+     * @param string $method        Método HTTP utilizado.
+     * @param bool   $return_result Define se o resultado deve ser retornado.
+     *
+     * @return mixed Resultado da requisição ou null.
+     */
+    protected function send_http_request(string $url, array $data, string $method, bool $return_result = false): mixed
     {
-        $path = $url;
-        $data = http_build_query($data);
+        $charset = config('App')->charset;
+        $path    = $url;
+        $data    = http_build_query($data);
+
         switch ($method) {
             case 'get':
-                $ch = curl_init($path . ((mb_strpos($path, '?', 0, \Config\App::$charset) === false) ? '?' : '&') . $data);
+                $ch = curl_init($path . ((mb_strpos($path, '?', 0, $charset) === false) ? '?' : '&') . $data);
                 break;
             case 'post':
                 $ch = curl_init($path);
@@ -10047,8 +10100,7 @@ class cCrud
                 curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
                 break;
             default:
-                return;
-                break;
+                return null;
         }
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_HEADER, 0);
