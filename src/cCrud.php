@@ -49,9 +49,9 @@ class cCrud
     /**
      * Model utilizado para todas as consultas ao banco de dados.
      *
-     * @var Model
+     * @var Model|null
      */
-    protected Model $model;
+    protected ?Model $model = null;
 
     /**
      * Manipulador de sessões do CodeIgniter 4.
@@ -519,48 +519,37 @@ class cCrud
      * @param Model $model            Modelo do CodeIgniter utilizado pelo CRUD
      * @param LoggerInterface|null $logger Registrador de logs opcional
      */
-    public function __construct(Model $model, ?LoggerInterface $logger = null)
+    /**
+     * Construtor da classe principal do cCrud.
+     *
+     * @param Model|null          $model  Modelo do CodeIgniter utilizado pelo CRUD
+     * @param LoggerInterface|null $logger Manipulador de logs do framework
+     */
+    public function __construct(?Model $model = null, ?LoggerInterface $logger = null)
     {
-        // Define o Model e o Logger utilizados pelo cCrud
+        // Define o Model e o Logger utilizados pelo cCrud, quando fornecidos
         $this->model  = $model;
         $this->logger = $logger ?? Services::logger();
 
-        // Define automaticamente a tabela e o nome exibido a partir do Model
-        $this->table      = property_exists($model, 'table') ? $model->table : '';
-        $this->table_name = $model->tableName;
+        if ($model !== null) {
+            // Define automaticamente a tabela e o nome exibido a partir do Model
+            $this->table      = property_exists($model, 'table') ? $model->table : '';
+            $this->table_name = $model->tableName;
 
-        // Carrega rótulos definidos na Entity associada, caso existam
-        $returnType = method_exists($model, 'getReturnType') ? $model->getReturnType() : $model->returnType;
-        if ($returnType && class_exists($returnType)) {
-            $entity = new $returnType();
-            if (property_exists($entity, 'labels') && is_array($entity->labels)) {
-                foreach ($entity->labels as $field => $label) {
-                    $this->labels[$field] = $label;
-                    if ($this->table) {
-                        $this->labels[$this->table . '.' . $field] = $label;
+            // Carrega rótulos definidos na Entity associada, caso existam
+            $returnType = method_exists($model, 'getReturnType') ? $model->getReturnType() : $model->returnType;
+            if ($returnType && class_exists($returnType)) {
+                $entity = new $returnType();
+                if (property_exists($entity, 'labels') && is_array($entity->labels)) {
+                    foreach ($entity->labels as $field => $label) {
+                        $this->labels[$field] = $label;
+                        if ($this->table) {
+                            $this->labels[$this->table . '.' . $field] = $label;
+                        }
                     }
                 }
             }
         }
-        $this->table_name = $model->tableName;
-
-        // Carrega rótulos definidos na Entity associada, caso existam
-        $returnType = method_exists($model, 'getReturnType') ? $model->getReturnType() : $model->returnType;
-        if ($returnType && class_exists($returnType)) {
-            $entity = new $returnType();
-            if (property_exists($entity, 'labels') && is_array($entity->labels)) {
-                foreach ($entity->labels as $field => $label) {
-                    $this->labels[$field] = $label;
-                    if ($this->table) {
-                        $this->labels[$this->table . '.' . $field] = $label;
-                    }
-                }
-            }
-        }
-
-        // Define o Model e o Logger utilizados pelo cCrud
-        $this->model  = $model;
-        $this->logger = $logger ?? Services::logger();
 
         // Inicia o manipulador de sessões do CodeIgniter 4
         $this->session = Services::session();
@@ -584,8 +573,28 @@ class cCrud
             throw new RuntimeException($message);
         }
 
-        $this->limit = $this->config->limit;
-        $this->limit_list = $this->config->limit_list;
+        // Verifica se as rotas base estão configuradas no CodeIgniter
+        $requestUri = trim($this->config->request_uri, '/');
+        $routes     = Services::routes();
+        $configured = false;
+        foreach ($routes->getRoutes() as $methods) {
+            foreach (array_keys($methods) as $route) {
+                if (strpos($route, $requestUri) === 0) {
+                    $configured = true;
+                    break 2;
+                }
+            }
+        }
+        if (! $configured) {
+            $message = "Rota base \"{$requestUri}\" não configurada. Adicione ao arquivo app/Config/Routes.php:\n" .
+                "\$routes->group('{$requestUri}', ['namespace' => 'cCrud'], static function (RouteCollection \$routes): void {\n" .
+                "    \$routes->add('(:any)', 'cCrud::router');\n" .
+                "});";
+            throw new RuntimeException($message);
+        }
+
+        $this->limit              = $this->config->limit;
+        $this->limit_list         = $this->config->limit_list;
         $this->column_cut = $this->config->column_cut;
         $this->show_primary_ai_field = $this->config->show_primary_ai_field;
         $this->show_primary_ai_column = $this->config->show_primary_ai_column;
@@ -697,12 +706,12 @@ class cCrud
     /**
      * Recupera a instância solicitada via requisição Ajax.
      *
-     * @param Model               $model  Modelo associado
+     * @param Model|null          $model  Modelo associado, quando disponível
      * @param LoggerInterface|null $logger Registrador de logs opcional
      *
      * @return string|ResponseInterface
      */
-    public static function getRequestedInstance(Model $model, ?LoggerInterface $logger = null)
+    public static function getRequestedInstance(?Model $model = null, ?LoggerInterface $logger = null)
     {
         $request  = Services::request();
         $security = Services::security();
