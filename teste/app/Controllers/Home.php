@@ -7,6 +7,7 @@ namespace App\Controllers;
 use Faker\Factory;
 use cCrud\cCrud;
 use App\Models\CcrudTestModel;
+use CodeIgniter\Database\Exceptions\DatabaseException;
 
 /**
  * Controlador principal para testes do cCrud.
@@ -27,45 +28,38 @@ class Home extends BaseController
 
         // Verifica se a tabela existe e possui dados
         $model = new CcrudTestModel();
-        if (! $model->db->tableExists($model->getTable()) || $model->countAll() === 0) {
-            $this->createAndSeedTable();
+
+        if (! $this->databaseReady($model)) {
+            try {
+                $this->createAndSeedTable();
+            } catch (DatabaseException $e) {
+                return view('setup', ['hasEnv' => false]);
+            }
         }
 
-        // Instancia e configura o cCrud
         $crud = new cCrud($model);
-        $crud->table('ccrud_testes');
-        $crud->table_name('Lista de Testes');
 
-        // Renderiza e retorna o conteúdo padrão da lib
         return $crud->render();
     }
 
     /**
-     * Verifica a existência do arquivo .env com dados de conexão.
+     * Verifica se a base de dados e a tabela estão prontas para uso.
+     *
+     * @param CcrudTestModel $model Instância do model de testes.
      *
      * @return bool
      */
-    private function hasDatabaseEnv(): bool
+    private function databaseReady(CcrudTestModel $model): bool
     {
-        // Garante que o arquivo .env está presente
-        if (! is_file(ROOTPATH . '.env')) {
-            return false;
-        }
-
-        // Checa variáveis essenciais do banco
-        $required = [
-            env('database.default.hostname'),
-            env('database.default.database'),
-            env('database.default.username'),
-        ];
-
-        foreach ($required as $value) {
-            if (empty($value)) {
+        try {
+            if (! $model->db->tableExists($model->getTable())) {
                 return false;
             }
-        }
 
-        return true;
+            return $model->countAll() > 0;
+        } catch (DatabaseException $e) {
+            return false;
+        }
     }
 
     /**
@@ -114,13 +108,16 @@ class Home extends BaseController
             'ccrud_datetime' => ['type' => 'DATETIME', 'null' => true],
             'ccrud_time'     => ['type' => 'TIME', 'null' => true],
             'ccrud_json'     => ['type' => 'JSON', 'null' => true],
+            'created_at'     => ['type' => 'DATETIME', 'null' => true],
+            'updated_at'     => ['type' => 'DATETIME', 'null' => true],
+            'deleted_at'     => ['type' => 'DATETIME', 'null' => true],
         ];
 
         // Cria a tabela caso não exista
         if (! $db->tableExists('ccrud_testes')) {
             $forge->addField($fields);
             $forge->addKey('id', true);
-            $forge->createTable('ccrud_testes');
+            $forge->createTable('ccrud_testes', true);
         }
 
         // Popula a tabela com 150 registros
@@ -167,6 +164,8 @@ class Home extends BaseController
                 'ccrud_datetime' => $faker->date('Y-m-d H:i:s'),
                 'ccrud_time'     => $faker->time('H:i:s'),
                 'ccrud_json'     => json_encode(['value' => $faker->word]),
+                'created_at'     => $faker->date('Y-m-d H:i:s'),
+                'updated_at'     => $faker->date('Y-m-d H:i:s'),
             ]);
         }
     }

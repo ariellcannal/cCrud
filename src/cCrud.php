@@ -536,6 +536,28 @@ class cCrud
         $this->model  = $model;
         $this->logger = $logger ?? Services::logger();
 
+        // Define automaticamente a tabela e o nome exibido a partir do Model
+        $this->table      = method_exists($model, 'getTable') ? $model->getTable() : '';
+        $this->table_name = $model->tableName;
+
+        // Carrega rótulos definidos na Entity associada, caso existam
+        $returnType = method_exists($model, 'getReturnType') ? $model->getReturnType() : $model->returnType;
+        if ($returnType && class_exists($returnType)) {
+            $entity = new $returnType();
+            if (property_exists($entity, 'labels') && is_array($entity->labels)) {
+                foreach ($entity->labels as $field => $label) {
+                    $this->labels[$field] = $label;
+                    if ($this->table) {
+                        $this->labels[$this->table . '.' . $field] = $label;
+                    }
+                }
+            }
+        }
+
+        // Define o Model e o Logger utilizados pelo cCrud
+        $this->model  = $model;
+        $this->logger = $logger ?? Services::logger();
+
         // Inicia o manipulador de sessões do CodeIgniter 4
         $this->session = Services::session();
 
@@ -1146,42 +1168,35 @@ class cCrud
     /**
      * Registra tabela aninhada para exibição.
      *
+     * @param string $field         Campo relacionado na tabela principal
+     * @param Model  $inner_model   Modelo da tabela interna
+     * @param string $inner_field   Campo relacionado na tabela interna
      * @param string $instance_name Nome da instância
-     * @param string $field         Campo relacionado
-     * @param string $inner_tbl     Tabela interna
-     * @param string $tbl_field     Campo da tabela interna
      *
-     * @return self
+     * @return self|null Instância da tabela interna ou null
      */
-    public function nestedTable($instance_name = '', $field = '', $inner_tbl = '', $tbl_field = '')
+    public function nestedTable(string $field, Model $inner_model, string $inner_field, string $instance_name)
     {
-        if ($instance_name && $field && $inner_tbl && $tbl_field) {
-            $fdata = $this->_parse_field_names($field, 'nestedTable');
+        if ($field && $inner_field && $instance_name) {
+            $fdata     = $this->_parse_field_names($field, 'nestedTable');
+            $inner_tbl = method_exists($inner_model, 'getTable') ? $inner_model->getTable() : '';
             foreach ($fdata as $fitem) {
-                $this->inner_table_instance[$instance_name] = $fitem['table'] . '.' . $fitem['field']; // name
-                                                                                                       // of
-                                                                                                       // stored
-                                                                                                       // in
-                                                                                                       // parent
-                                                                                                       // instance
-                $instance = cCrud::getInstance($this->model, $this->logger, $instance_name); // just another
-                                                                            // cCrud object
-                $instance->table($this->prefix . $inner_tbl);
-                $instance->tableName($instance_name);
-                $instance->is_inner = true; // nested flag
-                $instance->parent = $this->instance_name;
+                // nome do campo armazenado na instância pai
+                $this->inner_table_instance[$instance_name] = $fitem['table'] . '.' . $fitem['field'];
 
-                $fdata2 = $this->_parse_field_names($tbl_field, 'nestedTable', $inner_tbl);
+                // nova instância do cCrud para a tabela interna
+                $instance           = cCrud::getInstance($inner_model, $this->logger, $instance_name);
+                $instance->is_inner = true; // flag de aninhamento
+                $instance->parent   = $this->instance_name;
 
-                $instance->inner_where[$fitem['table'] . '.' . $fitem['field']] = key($fdata2); // this
-                                                                                                // connects
-                                                                                                // nested
-                                                                                                // table
-                                                                                                // with
-                                                                                                // parent
-                return $instance; // only one cycle
+                // conecta os campos entre as tabelas
+                $fdata2 = $this->_parse_field_names($inner_field, 'nestedTable', $inner_tbl);
+                $instance->inner_where[$fitem['table'] . '.' . $fitem['field']] = key($fdata2);
+
+                return $instance; // apenas um ciclo
             }
         }
+        return null;
     }
 
     public function fields($fields = '', $reverse = false, $tabname = false, $mode = false)
@@ -5441,21 +5456,14 @@ class cCrud
         }
     }
 
+    /**
+     * Define os nomes das colunas utilizando rótulos informados e humanização.
+     *
+     * @return void
+     */
     protected function _set_column_names()
     {
         $subselect_before = $this->subselect_before;
-
-        // Recupera os atributos definidos na Entity para utilizar como labels padrão
-        $entityAttributes = [];
-        $returnType = method_exists($this->model, 'getReturnType') ? $this->model->getReturnType() : $this->model->returnType;
-        if ($returnType && class_exists($returnType)) {
-            $ref = new \ReflectionClass($returnType);
-            if ($ref->hasProperty('attributes')) {
-                $property = $ref->getProperty('attributes');
-                $property->setAccessible(true);
-                $entityAttributes = (array) $property->getValue($ref->newInstance());
-            }
-        }
 
         foreach ($this->columns as $key => $col) {
             if ($name = array_search($key, $subselect_before)) {
@@ -5468,8 +5476,8 @@ class cCrud
                 $this->columns_names[$key] = \esc($this->labels[$key]);
             } elseif ($this->fk_relation && isset($this->fk_relation[$key])) {
                 $this->columns_names[$key] = $this->fk_relation[$key]['label'];
-            } elseif (isset($entityAttributes[$col['field']])) {
-                $this->columns_names[$key] = \esc($entityAttributes[$col['field']]);
+            } elseif (isset($this->labels[$col['field']])) {
+                $this->columns_names[$key] = \esc($this->labels[$col['field']]);
             } else {
                 $this->columns_names[$key] = \esc($this->_humanize($col['field']));
             }
@@ -13312,6 +13320,23 @@ class cCrud
     public function search_lines($lines = 1)
     {
         $this->search_lines = (int) $lines;
+    }
+
+    /**
+     * Encaminha chamadas desconhecidas para o Model associado.
+     *
+     * @param string $name Nome do método chamado.
+     * @param array<int,mixed> $arguments Argumentos do método.
+     *
+     * @return mixed
+     */
+    public function __call(string $name, array $arguments)
+    {
+        if (method_exists($this->model, $name)) {
+            return $this->model->$name(...$arguments);
+        }
+
+        throw new \BadMethodCallException("Método {$name} não encontrado");
     }
 }
 
