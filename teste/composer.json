@@ -20,8 +20,8 @@
 	"require" : {
 		"php" : "^8.1",
 		"codeigniter4/framework" : "^4.0",
-		"ariellcannal/ccrud" : "dev"
-	},
+                "ariellcannal/ccrud" : "dev-work"
+        },
 	"require-dev" : {
 		"fakerphp/faker" : "^1.9",
 		"mikey179/vfsstream" : "^1.6",
