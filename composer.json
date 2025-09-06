@@ -1,28 +1,28 @@
 {
-    "name": "ariellcannal/ccrud",
-    "description": "cCrud",
-    "license": "MIT",
-    "type": "library",
-    "version": "dev-main",
-    "require": {
-        "php": "^8.2",
-        "codeigniter4/translations": "~4.5",
-        "codeigniter4/framework": "~4.5",
-        "codeigniter4/settings": "~2.2",
-        "twbs/bootstrap": "^5.3",
-        "components/jquery": "^3.7"
-    },
-    "autoload": {
-        "psr-4": {
-            "cCrud\\": "src/",
-            "cCrud\\Config\\": "src/config/"
-        }
-    },
-    "minimum-stability": "dev",
-    "prefer-stable": true,
-    "config": {
-        "optimize-autoloader": true,
-        "preferred-install": "dist",
-        "sort-packages": true
-    }
+	"name" : "ariellcannal/ccrud",
+	"description" : "cCrud",
+	"license" : "MIT",
+	"type" : "library",
+	"version" : "dev",
+	"require" : {
+		"php" : "^8.2",
+		"codeigniter4/translations" : "~4.5",
+		"codeigniter4/framework" : "~4.5",
+		"codeigniter4/settings" : "~2.2",
+		"twbs/bootstrap" : "^5.3",
+		"components/jquery" : "^3.7"
+	},
+	"autoload" : {
+		"psr-4" : {
+			"cCrud\\" : "src/",
+			"cCrud\\Config\\" : "src/config/"
+		}
+	},
+	"minimum-stability" : "dev",
+	"prefer-stable" : true,
+	"config" : {
+		"optimize-autoloader" : true,
+		"preferred-install" : "dist",
+		"sort-packages" : true
+	}
 }

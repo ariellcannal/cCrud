@@ -45,7 +45,7 @@ class Home extends BaseController
      *
      * @return bool
      */
-    private function hasDatabaseEnv(): bool
+    private function databaseReady(CcrudTestModel $model): bool
     {
         if (! is_file(ROOTPATH . '.env')) {
             return false;
@@ -61,9 +61,11 @@ class Home extends BaseController
             if (empty($value)) {
                 return false;
             }
-        }
 
-        return true;
+            return $model->countAll() > 0;
+        } catch (DatabaseException $e) {
+            return false;
+        }
     }
 
     /**

@@ -554,6 +554,32 @@ class cCrud
             }
         }
 
+        // Define o Model e o Logger utilizados pelo cCrud
+        $this->model  = $model;
+        $this->logger = $logger ?? Services::logger();
+
+        // Define automaticamente a tabela e o nome exibido a partir do Model
+        $this->table      = method_exists($model, 'getTable') ? $model->getTable() : '';
+        $this->table_name = $model->tableName;
+
+        // Carrega rótulos definidos na Entity associada, caso existam
+        $returnType = method_exists($model, 'getReturnType') ? $model->getReturnType() : $model->returnType;
+        if ($returnType && class_exists($returnType)) {
+            $entity = new $returnType();
+            if (property_exists($entity, 'labels') && is_array($entity->labels)) {
+                foreach ($entity->labels as $field => $label) {
+                    $this->labels[$field] = $label;
+                    if ($this->table) {
+                        $this->labels[$this->table . '.' . $field] = $label;
+                    }
+                }
+            }
+        }
+
+        // Define o Model e o Logger utilizados pelo cCrud
+        $this->model  = $model;
+        $this->logger = $logger ?? Services::logger();
+
         // Inicia o manipulador de sessões do CodeIgniter 4
         $this->session = Services::session();
 
