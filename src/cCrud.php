@@ -61,9 +61,9 @@ class cCrud
     /**
      * Manipulador de sessões do CodeIgniter 4.
      *
-     * @var Session
+     * @var Session|null
      */
-    protected Session $session;
+    protected ?Session $session = null;
 
     /**
      * Manipulador de logs do CodeIgniter 4.
@@ -655,6 +655,20 @@ class cCrud
     public function __toString()
     {
         return $this->render();
+    }
+
+    /**
+     * Garante a instância da sessão do CodeIgniter 4.
+     *
+     * @return Session Instância de sessão.
+     */
+    protected function getSession(): Session
+    {
+        if (! $this->session instanceof Session) {
+            $this->session = Services::session();
+        }
+
+        return $this->session;
     }
 
     /**
@@ -4937,7 +4951,7 @@ class cCrud
             $this->primary_val = $this->_post('primary');
             $this->active_tab_id = $this->_post('active_tab_id');
 
-            $cCrud_session = $this->session->get('cCrud_session');
+            $cCrud_session = $this->getSession()->get('cCrud_session');
 
             if (isset($cCrud_session[$this->instance_name]))
                 $this->alphabetical_filter = $this->_post('alphabetical', $cCrud_session[$this->instance_name]['alphabetical_filter']);
@@ -5989,7 +6003,7 @@ class cCrud
         $inst_name = $this->instance_name;
         $this->time = $time = time();
 
-        $cCrud_session = $this->session->get('cCrud_session');
+        $cCrud_session = $this->getSession()->get('cCrud_session');
 
         // session auto-clearing, must start on first instance
         if ($this->instance_count == 1 && ! $this->ajax_request) {
@@ -6013,7 +6027,7 @@ class cCrud
         $cCrud_session[$inst_name]            = $vars;
         $cCrud_session[$inst_name]['before'] = $this->find_prev_task();
 
-        $this->session->set('cCrud_session', $cCrud_session);
+        $this->getSession()->set('cCrud_session', $cCrud_session);
     }
 
     protected function find_prev_task()
@@ -6037,7 +6051,7 @@ class cCrud
     public function import_vars($key = false)
     {
         $inst_name     = $this->instance_name;
-        $cCrud_session = $this->session->get('cCrud_session');
+        $cCrud_session = $this->getSession()->get('cCrud_session');
 
         if (isset($cCrud_session[$inst_name])) {
             foreach ($cCrud_session[$inst_name] as $property => $value) {
@@ -12470,7 +12484,7 @@ class cCrud
     {
         return true;
         $db     = $this->model->db;
-        $userId = (int) $this->session->get('usr_id');
+        $userId = (int) $this->getSession()->get('usr_id');
         $result = $db->query('SELECT * FROM core_listagensPersonalizadas WHERE lpe_entidade = "' . (($this->table != "contatos" ? $this->table : $this->table_name)) . '" AND (' . ($userId ? 'lpe_usuario = ' . $userId . ' OR ' : '') . 'lpe_usuario IS NULL)');
 
         if (in_array($this->custom_filter_active['title'], array_keys($this->custom_lists_static))) {
