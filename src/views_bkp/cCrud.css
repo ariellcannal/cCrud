@@ -293,26 +293,3 @@ h2{
     display: block;
     width: 100%;
 }
-/* Estilo semelhante ao Notion para tabelas */
-.cCrud-list {
-    border-collapse: separate;
-    border-spacing: 0;
-}
-
-.cCrud-list th,
-.cCrud-list td {
-    border-bottom: 1px solid #e5e5e5;
-    padding: .5rem;
-}
-
-.cCrud-list tr:last-child td {
-    border-bottom: 0;
-}
-
-.cCrud-actions .btn {
-    visibility: hidden;
-}
-
-.cCrud-list tr:hover .cCrud-actions .btn {
-    visibility: visible;
-}
