@@ -568,14 +568,12 @@ class cCrud
         $this->config = cCrudConfig::instance();
         // Verifica se as rotas base estão configuradas no CodeIgniter
         $requestUri = trim($this->config->request_uri, '/');
-        $routes = Services::routes();
+        $routes = Services::routes()->getRoutes();
         $configured = false;
-        foreach ($routes->getRoutes() as $methods) {
-            foreach (array_keys($methods) as $route) {
-                if (strpos($route, $requestUri) === 0) {
-                    $configured = true;
-                    break 2;
-                }
+        foreach ($routes as $route=>$closure) {
+            if (strpos($route, $requestUri) === 0) {
+                $configured = true;
+                break;
             }
         }
         if (! $configured) {
