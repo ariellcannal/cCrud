@@ -39,11 +39,11 @@ class cCrud extends BaseConfig
     ];
 
     /**
-     * Endpoint utilizado para as requisições AJAX do cCrud.
+     * URI base utilizada pelo cCrud para processar requisições.
      *
      * @var string
      */
-    public string $ajax_uri = 'ajax';
+    public string $request_uri = 'ccrud';
 
     
     // editor
