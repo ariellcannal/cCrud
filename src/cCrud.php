@@ -9,6 +9,7 @@ use Config\Services;
 use CodeIgniter\Session\Session;
 use CodeIgniter\HTTP\ResponseInterface;
 use cCrud\Postdata;
+use Psr\Log\LoggerInterface;
 
 // direct access to DB driver and config
 define('CCRUD_PATH', str_replace('\\', '/', dirname(__file__)));
@@ -63,6 +64,13 @@ class cCrud
      * @var Session
      */
     protected Session $session;
+
+    /**
+     * Manipulador de logs do CodeIgniter 4.
+     *
+     * @var LoggerInterface|null
+     */
+    protected ?LoggerInterface $logger = null;
 
     /**
      * Configurações do tema do cCrud.
@@ -510,11 +518,40 @@ class cCrud
      * podendo ser alteradas por métodos públicos.
      *
      */
-    protected function __construct()
+    /**
+     * Construtor que inicializa dependências do cCrud.
+     *
+     * @param Model $model            Modelo do CodeIgniter utilizado pelo CRUD
+     * @param LoggerInterface|null $logger Registrador de logs opcional
+     */
+    public function __construct(Model $model, ?LoggerInterface $logger = null)
     {
         // Verifica se o pacote está sendo utilizado dentro do CodeIgniter 4
-        if (!defined('CI_VERSION') || version_compare(CI_VERSION, '4.0.0', '<')) {
-            return Services::response()->setStatusCode(500)->setBody(lang('cCrud.ci4_required'));
+        if (! defined('CI_VERSION') || version_compare(CI_VERSION, '4.0.0', '<')) {
+            Services::response()->setStatusCode(500)->setBody(lang('cCrud.ci4_required'));
+            return;
+        }
+
+        // Define o Model e o Logger utilizados pelo cCrud
+        $this->model  = $model;
+        $this->logger = $logger ?? Services::logger();
+
+        // Define automaticamente a tabela e o nome exibido a partir do Model
+        $this->table      = method_exists($model, 'getTable') ? $model->getTable() : '';
+        $this->table_name = $model->tableName;
+
+        // Carrega rótulos definidos na Entity associada, caso existam
+        $returnType = method_exists($model, 'getReturnType') ? $model->getReturnType() : $model->returnType;
+        if ($returnType && class_exists($returnType)) {
+            $entity = new $returnType();
+            if (property_exists($entity, 'labels') && is_array($entity->labels)) {
+                foreach ($entity->labels as $field => $label) {
+                    $this->labels[$field] = $label;
+                    if ($this->table) {
+                        $this->labels[$this->table . '.' . $field] = $label;
+                    }
+                }
+            }
         }
 
         // Inicia o manipulador de sessões do CodeIgniter 4
@@ -612,19 +649,23 @@ class cCrud
     /**
      * Retorna uma instância do cCrud utilizando o Model informado.
      *
+     * @param Model               $model  Modelo do CodeIgniter
+     * @param LoggerInterface|null $logger Registrador de logs opcional
+     * @param string|false        $name   Nome da instância
+     *
+     * @return self|ResponseInterface
      */
-    public static function getInstance(Model $model, $name = false)
+    public static function getInstance(Model $model, ?LoggerInterface $logger = null, $name = false)
     {
         self::initPrepare();
         if (! $name) {
             $name = sha1(rand() . microtime());
         }
         if (! isset(self::$instance[$name]) || null === self::$instance[$name]) {
-            self::$instance[$name] = new self();
+            self::$instance[$name]             = new self($model, $logger);
             self::$instance[$name]->instance_name = $name;
         }
         self::$instance[$name]->instance_count = count(self::$instance);
-        self::$instance[$name]->model = $model;
 
         $returnType = method_exists($model, 'getReturnType') ? $model->getReturnType() : $model->returnType;
         if (! is_subclass_of($returnType, '\\CodeIgniter\\Entity\\Entity')) {
@@ -637,12 +678,12 @@ class cCrud
     /**
      * Recupera a instância solicitada via requisição Ajax.
      *
-     * @param Model $model Modelo associado
+     * @param Model               $model  Modelo associado
+     * @param LoggerInterface|null $logger Registrador de logs opcional
      *
-     * @return cCrud
-     *
+     * @return string|ResponseInterface
      */
-    public static function getRequestedInstance(Model $model)
+    public static function getRequestedInstance(Model $model, ?LoggerInterface $logger = null)
     {
         $request  = Services::request();
         $security = Services::security();
@@ -680,11 +721,10 @@ class cCrud
         // var_dump($cCrud_session[$inst_name]);
         // if (isset($cCrud_session[$inst_name]['key']) && $cCrud_session[$inst_name]['key'] == $key) {
         if (1 == 1) {
-            self::$instance[$inst_name] = new self();
-            self::$instance[$inst_name]->is_get = $is_get;
+            self::$instance[$inst_name]             = new self($model, $logger);
+            self::$instance[$inst_name]->is_get     = $is_get;
             self::$instance[$inst_name]->ajax_request = true;
             self::$instance[$inst_name]->instance_name = $inst_name;
-            self::$instance[$inst_name]->model = $model;
             self::$instance[$inst_name]->import_vars($key);
             self::$instance[$inst_name]->inner_where();
             return self::$instance[$inst_name]->render();
@@ -715,10 +755,12 @@ class cCrud
     public function ajax(): ResponseInterface
     {
         // obtém a resposta processada pela instância solicitada
-        $output = self::get_requested_instance($this->model);
+        $output = self::getRequestedInstance($this->model, $this->logger);
 
         // retorna o conteúdo como uma resposta HTTP
-        return Services::response()->setBody($output);
+        return $output instanceof ResponseInterface
+            ? $output
+            : Services::response()->setBody($output);
     }
 
     /**
@@ -1122,42 +1164,35 @@ class cCrud
     /**
      * Registra tabela aninhada para exibição.
      *
+     * @param string $field         Campo relacionado na tabela principal
+     * @param Model  $inner_model   Modelo da tabela interna
+     * @param string $inner_field   Campo relacionado na tabela interna
      * @param string $instance_name Nome da instância
-     * @param string $field         Campo relacionado
-     * @param string $inner_tbl     Tabela interna
-     * @param string $tbl_field     Campo da tabela interna
      *
-     * @return self
+     * @return self|null Instância da tabela interna ou null
      */
-    public function nestedTable($instance_name = '', $field = '', $inner_tbl = '', $tbl_field = '')
+    public function nestedTable(string $field, Model $inner_model, string $inner_field, string $instance_name)
     {
-        if ($instance_name && $field && $inner_tbl && $tbl_field) {
-            $fdata = $this->_parse_field_names($field, 'nestedTable');
+        if ($field && $inner_field && $instance_name) {
+            $fdata     = $this->_parse_field_names($field, 'nestedTable');
+            $inner_tbl = method_exists($inner_model, 'getTable') ? $inner_model->getTable() : '';
             foreach ($fdata as $fitem) {
-                $this->inner_table_instance[$instance_name] = $fitem['table'] . '.' . $fitem['field']; // name
-                                                                                                       // of
-                                                                                                       // stored
-                                                                                                       // in
-                                                                                                       // parent
-                                                                                                       // instance
-                $instance = cCrud::getInstance($this->model, $instance_name); // just another
-                                                                            // cCrud object
-                $instance->table($this->prefix . $inner_tbl);
-                $instance->tableName($instance_name);
-                $instance->is_inner = true; // nested flag
-                $instance->parent = $this->instance_name;
+                // nome do campo armazenado na instância pai
+                $this->inner_table_instance[$instance_name] = $fitem['table'] . '.' . $fitem['field'];
 
-                $fdata2 = $this->_parse_field_names($tbl_field, 'nestedTable', $inner_tbl);
+                // nova instância do cCrud para a tabela interna
+                $instance           = cCrud::getInstance($inner_model, $this->logger, $instance_name);
+                $instance->is_inner = true; // flag de aninhamento
+                $instance->parent   = $this->instance_name;
 
-                $instance->inner_where[$fitem['table'] . '.' . $fitem['field']] = key($fdata2); // this
-                                                                                                // connects
-                                                                                                // nested
-                                                                                                // table
-                                                                                                // with
-                                                                                                // parent
-                return $instance; // only one cycle
+                // conecta os campos entre as tabelas
+                $fdata2 = $this->_parse_field_names($inner_field, 'nestedTable', $inner_tbl);
+                $instance->inner_where[$fitem['table'] . '.' . $fitem['field']] = key($fdata2);
+
+                return $instance; // apenas um ciclo
             }
         }
+        return null;
     }
 
     public function fields($fields = '', $reverse = false, $tabname = false, $mode = false)
@@ -5417,21 +5452,14 @@ class cCrud
         }
     }
 
+    /**
+     * Define os nomes das colunas utilizando rótulos informados e humanização.
+     *
+     * @return void
+     */
     protected function _set_column_names()
     {
         $subselect_before = $this->subselect_before;
-
-        // Recupera os atributos definidos na Entity para utilizar como labels padrão
-        $entityAttributes = [];
-        $returnType = method_exists($this->model, 'getReturnType') ? $this->model->getReturnType() : $this->model->returnType;
-        if ($returnType && class_exists($returnType)) {
-            $ref = new \ReflectionClass($returnType);
-            if ($ref->hasProperty('attributes')) {
-                $property = $ref->getProperty('attributes');
-                $property->setAccessible(true);
-                $entityAttributes = (array) $property->getValue($ref->newInstance());
-            }
-        }
 
         foreach ($this->columns as $key => $col) {
             if ($name = array_search($key, $subselect_before)) {
@@ -5444,8 +5472,8 @@ class cCrud
                 $this->columns_names[$key] = \esc($this->labels[$key]);
             } elseif ($this->fk_relation && isset($this->fk_relation[$key])) {
                 $this->columns_names[$key] = $this->fk_relation[$key]['label'];
-            } elseif (isset($entityAttributes[$col['field']])) {
-                $this->columns_names[$key] = \esc($entityAttributes[$col['field']]);
+            } elseif (isset($this->labels[$col['field']])) {
+                $this->columns_names[$key] = \esc($this->labels[$col['field']]);
             } else {
                 $this->columns_names[$key] = \esc($this->_humanize($col['field']));
             }
@@ -5683,7 +5711,7 @@ class cCrud
         {
             foreach ($this->inner_table_instance as $inst_name => $field) {
                 if (isset($this->result_row[$field])) {
-                    $instance = self::getInstance($this->model, $inst_name);
+                    $instance = self::getInstance($this->model, $this->logger, $inst_name);
                     $instance->ajax_request = true;
                     $instance->import_vars();
                     $instance->inner_where($this->result_row[$field]);
@@ -13288,6 +13316,23 @@ class cCrud
     public function search_lines($lines = 1)
     {
         $this->search_lines = (int) $lines;
+    }
+
+    /**
+     * Encaminha chamadas desconhecidas para o Model associado.
+     *
+     * @param string $name Nome do método chamado.
+     * @param array<int,mixed> $arguments Argumentos do método.
+     *
+     * @return mixed
+     */
+    public function __call(string $name, array $arguments)
+    {
+        if (method_exists($this->model, $name)) {
+            return $this->model->$name(...$arguments);
+        }
+
+        throw new \BadMethodCallException("Método {$name} não encontrado");
     }
 }
 

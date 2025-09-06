@@ -19,7 +19,7 @@ database.default.password=senha</pre>
     <?php else: ?>
         <div class="alert alert-success" role="alert">
             <h1 class="h4">Ambiente pronto</h1>
-            <p>A tabela <code>cCrud_testes</code> foi criada e populada com 150 registros.</p>
+            <p>A tabela <code>ccrud_testes</code> foi criada e populada com 150 registros.</p>
         </div>
     <?php endif; ?>
 </div>
