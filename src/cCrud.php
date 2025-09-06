@@ -554,6 +554,10 @@ class cCrud
             }
         }
 
+        // Define o Model e o Logger utilizados pelo cCrud
+        $this->model  = $model;
+        $this->logger = $logger ?? Services::logger();
+
         // Inicia o manipulador de sessões do CodeIgniter 4
         $this->session = Services::session();
 

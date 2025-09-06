@@ -21,6 +21,12 @@ class Home extends BaseController
      */
     public function index(): string
     {
+        // Verifica se o arquivo .env existe e possui configurações de banco
+        if (! $this->hasDatabaseEnv()) {
+            return view('setup', ['hasEnv' => false]);
+        }
+
+        // Verifica se a tabela existe e possui dados
         $model = new CcrudTestModel();
 
         if (! $this->databaseReady($model)) {
