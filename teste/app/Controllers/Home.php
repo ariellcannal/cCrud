@@ -21,13 +21,11 @@ class Home extends BaseController
      */
     public function index(): string
     {
-        // Verifica se o arquivo .env existe e possui configurações de banco
+        $model = new CcrudTestModel();
+
         if (! $this->hasDatabaseEnv()) {
             return view('setup', ['hasEnv' => false]);
         }
-
-        // Verifica se a tabela existe e possui dados
-        $model = new CcrudTestModel();
 
         if (! $this->databaseReady($model)) {
             try {
@@ -40,6 +38,34 @@ class Home extends BaseController
         $crud = new cCrud($model);
 
         return $crud->render();
+    }
+
+    /**
+     * Verifica a existência do arquivo de configuração e variáveis essenciais de banco.
+     *
+     * @return bool
+     */
+    private function databaseReady(CcrudTestModel $model): bool
+    {
+        if (! is_file(ROOTPATH . '.env')) {
+            return false;
+        }
+
+        $required = [
+            env('database.default.hostname'),
+            env('database.default.database'),
+            env('database.default.username'),
+        ];
+
+        foreach ($required as $value) {
+            if (empty($value)) {
+                return false;
+            }
+
+            return $model->countAll() > 0;
+        } catch (DatabaseException $e) {
+            return false;
+        }
     }
 
     /**
