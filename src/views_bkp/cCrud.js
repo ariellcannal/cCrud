@@ -1839,11 +1839,3 @@ $.extend({
 		return data;
 	}
 });
-// Destaque das linhas ao passar o mouse, estilo Notion
-$(document).on('mouseenter', '.cCrud-list .cCrud-row', function () {
-    $(this).addClass('table-active');
-}).on('mouseleave', '.cCrud-list .cCrud-row', function () {
-    $(this).removeClass('table-active');
-});
-
-
