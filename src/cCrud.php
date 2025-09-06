@@ -54,9 +54,9 @@ class cCrud
     /**
      * Model utilizado para todas as consultas ao banco de dados.
      *
-     * @var Model
+     * @var Model|null
      */
-    protected Model $model;
+    protected ?Model $model = null;
 
     /**
      * Manipulador de sessões do CodeIgniter 4.
