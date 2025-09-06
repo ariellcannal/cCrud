@@ -18,7 +18,7 @@ $routes->get('/', 'Home::index');
 /**
  * Rotas de integração com o cCrud.
  */
-$routes->group('c', ['namespace' => 'cCrud'], static function (RouteCollection $routes): void {
+$routes->group('ccrud', ['namespace' => 'cCrud'], static function (RouteCollection $routes): void {
     $routes->add('(:any)', 'cCrud::router');
 });
 

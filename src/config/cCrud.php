@@ -43,8 +43,8 @@ class cCrud extends BaseConfig
      *
      * @var string
      */
-    public string $request_uri = 'c';
 
+    public string $request_uri = 'ccrud';
     
     // editor
     public bool $force_editor = false; // força a inicialização do editor visual

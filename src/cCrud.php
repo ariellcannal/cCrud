@@ -555,6 +555,23 @@ class cCrud
         $this->session = Services::session();
 
         $this->config = cCrudConfig::instance();
+        // Verifica se as rotas base estão configuradas no CodeIgniter
+        $requestUri = trim($this->config->request_uri, '/');
+        $routes = Services::routes()->getRoutes();
+        $configured = false;
+        foreach ($routes as $route=>$closure) {
+            if (strpos($route, $requestUri) === 0) {
+                $configured = true;
+                break;
+            }
+        }
+        if (! $configured) {
+            $message = "Rota base \"{$requestUri}\" não configurada. Adicione ao arquivo app/Config/Routes.php:\n" .
+                "\$routes->group('{$requestUri}', ['namespace' => 'cCrud'], static function (RouteCollection \$routes): void {\n" .
+                "    \$routes->add('(:any)', 'cCrud::router');\n" .
+                "});";
+            throw new RuntimeException($message);
+        }
 
         // Verifica se as rotas base estão configuradas no CodeIgniter
         $requestUri = trim($this->config->request_uri, '/');
