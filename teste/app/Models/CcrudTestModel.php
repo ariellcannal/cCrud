@@ -15,72 +15,62 @@ class CcrudTestModel extends Model
     /**
      * Nome da tabela.
      *
-     * @var string
      */
-    protected string $table = 'ccrud_testes';
+    protected $table = 'ccrud_testes';
 
     /**
      * Nome humanizado da tabela.
      *
-     * @var string|null
      */
-    public ?string $tableName = 'Lista de Testes';
+    public $tableName = 'Lista de Testes';
 
     /**
      * Chave primária da tabela.
      *
-     * @var string
      */
-    protected string $primaryKey = 'id';
+    protected $primaryKey = 'id';
 
     /**
      * Classe de retorno para os resultados.
      *
-     * @var string
      */
-    protected string $returnType = CcrudTest::class;
+    protected $returnType = CcrudTest::class;
 
     /**
      * Utiliza timestamps automáticos.
      *
-     * @var bool
      */
-    protected bool $useTimestamps = true;
+    protected $useTimestamps = true;
 
     /**
      * Habilita soft deletes.
      *
-     * @var bool
      */
-    protected bool $useSoftDeletes = true;
+    protected $useSoftDeletes = true;
 
     /**
      * Nome do campo de criação.
      *
-     * @var string
      */
-    protected string $createdField = 'created_at';
+    protected $createdField = 'created_at';
 
     /**
      * Nome do campo de atualização.
      *
-     * @var string
      */
-    protected string $updatedField = 'updated_at';
+    protected $updatedField = 'updated_at';
 
     /**
      * Nome do campo de exclusão lógica.
      *
-     * @var string
      */
-    protected string $deletedField = 'deleted_at';
+    protected $deletedField = 'deleted_at';
 
     /**
      * Campos permitidos para escrita em massa.
      *
-     * @var array<int,string>
      */
-    protected array $allowedFields = [
+    protected $allowedFields = [
         'tinyint_col',
         'smallint_col',
         'mediumint_col',
@@ -121,9 +111,8 @@ class CcrudTestModel extends Model
     /**
      * Regras de validação.
      *
-     * @var array<string,string>
      */
-    protected array $validationRules = [
+    protected $validationRules = [
         'varchar_col'  => 'permit_empty|max_length[255]',
         'ccrud_string' => 'permit_empty|max_length[255]',
     ];
@@ -131,9 +120,8 @@ class CcrudTestModel extends Model
     /**
      * Mensagens de validação personalizadas.
      *
-     * @var array<string,array<string,string>>
      */
-    protected array $validationMessages = [
+    protected $validationMessages = [
         'varchar_col' => [
             'max_length' => 'O campo varchar_col excede o tamanho máximo.',
         ],
@@ -145,23 +133,20 @@ class CcrudTestModel extends Model
     /**
      * Callbacks antes de inserir registros.
      *
-     * @var array<int,string>
      */
-    protected array $beforeInsert = ['sanitizeData'];
+    protected $beforeInsert = ['sanitizeData'];
 
     /**
      * Callbacks após buscas.
      *
-     * @var array<int,string>
      */
-    protected array $afterFind = ['decodeJson'];
+    protected $afterFind = ['decodeJson'];
 
     /**
      * Callbacks após atualizações.
      *
-     * @var array<int,string>
      */
-    protected array $afterUpdate = ['reportUpdate'];
+    protected $afterUpdate = ['reportUpdate'];
 
     /**
      * Sanitiza dados antes de inserir.
