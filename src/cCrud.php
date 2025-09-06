@@ -54,9 +54,9 @@ class cCrud
     /**
      * Model utilizado para todas as consultas ao banco de dados.
      *
-     * @var Model|null
+     * @var Model
      */
-    protected ?Model $model = null;
+    protected Model $model;
 
     /**
      * Manipulador de sessões do CodeIgniter 4.
@@ -526,18 +526,12 @@ class cCrud
      */
     public function __construct(Model $model, ?LoggerInterface $logger = null)
     {
-        // Verifica se o pacote está sendo utilizado dentro do CodeIgniter 4
-        if (! defined('CI_VERSION') || version_compare(CI_VERSION, '4.0.0', '<')) {
-            Services::response()->setStatusCode(500)->setBody(lang('cCrud.ci4_required'));
-            return;
-        }
-
         // Define o Model e o Logger utilizados pelo cCrud
         $this->model  = $model;
         $this->logger = $logger ?? Services::logger();
 
         // Define automaticamente a tabela e o nome exibido a partir do Model
-        $this->table      = method_exists($model, 'getTable') ? $model->getTable() : '';
+        $this->table      = property_exists($model, 'table') ? $model->table : '';
         $this->table_name = $model->tableName;
 
         // Carrega rótulos definidos na Entity associada, caso existam
@@ -553,13 +547,6 @@ class cCrud
                 }
             }
         }
-
-        // Define o Model e o Logger utilizados pelo cCrud
-        $this->model  = $model;
-        $this->logger = $logger ?? Services::logger();
-
-        // Define automaticamente a tabela e o nome exibido a partir do Model
-        $this->table      = method_exists($model, 'getTable') ? $model->getTable() : '';
         $this->table_name = $model->tableName;
 
         // Carrega rótulos definidos na Entity associada, caso existam
@@ -2700,7 +2687,7 @@ class cCrud
 
             $viewPath = __DIR__ . '/views';
             $renderer = Services::renderer($viewPath);
-            $contents .= $renderer->setVars([
+            $contents .= $renderer->setData([
                 'cCrud'    => $this,
                 'content' => $content
             ])->render('container.php');
@@ -2728,9 +2715,9 @@ class cCrud
      *
      * @return ResponseInterface
      */
-    protected function set_output(string $output): ResponseInterface
+    protected function set_output(string $output): string
     {
-        return Services::response()->setBody($output);
+        return $output;
     }
 
     protected function after_render()
@@ -4099,6 +4086,11 @@ class cCrud
     protected function _build_select_list($csv = false)
     {
         $this->find_grid_text_variables();
+
+        if ($this->model->db === null) {
+            return '';
+        }
+
         $db = $this->model->db;
         $columns = array();
 
@@ -4334,6 +4326,10 @@ class cCrud
      */
     protected function _build_where($build_alphabetical = true, $is_totalizer = false)
     {
+        if ($this->model->db === null) {
+            return '';
+        }
+
         $db = $this->model->db;
         $where_arr = array();
         $where_arr_pri = array();
@@ -5043,12 +5039,18 @@ class cCrud
     }
 
     /**
-     * alterado do padrão - JOIN_RELATION
-     * informatiuon about table columns
+     * Recupera informações das colunas das tabelas utilizadas.
+     *
+     * @return void
      */
-    protected function _get_table_info()
+    protected function _get_table_info(): void
     {
         $this->table_info = array();
+
+        if ($this->model->db === null) {
+            return;
+        }
+
         $db = $this->model->db;
         $query = $db->query("SHOW COLUMNS FROM `{$this->table}`");
         $this->table_info[$this->table] = $query->getResultArray();
@@ -5064,7 +5066,6 @@ class cCrud
                 $this->table_info[$item['rel_table']] = $query->getResultArray();
             }
         }
-        return true;
     }
 
     protected function _set_field_types($mode = 'create', $all_fields = false)
@@ -5770,7 +5771,7 @@ class cCrud
         $view_file = $this->check_file($view_file, 'render');
         $viewPath = dirname($view_file);
         $renderer = Services::renderer($viewPath);
-        $content = $renderer->setVars([
+        $content = $renderer->setData([
             'cCrud' => $this,
             'mode' => $mode,
             'title' => $this->get_var('title')
@@ -9897,9 +9898,9 @@ class cCrud
         }
     }
 
-    protected function find_grid_text_variables()
+    protected function find_grid_text_variables(): void
     {
-        if (! $this->config->performance_mode) {
+        if (! isset($this->config) || ! $this->config->performance_mode) {
             if ($this->column_pattern) {
                 foreach ($this->column_pattern as $item) {
                     $this->extract_fields_from_text($item, 'columns');
@@ -11800,26 +11801,27 @@ class cCrud
     /**
      * Renderiza o nome da tabela conforme o modo informado.
      *
-     * @param string      $mode          Modo de operação
-     * @param string      $tag           Tag HTML utilizada
-     * @param bool        $to_show       Indica se deve ser exibido
-     * @param bool|string $replace_title Texto alternativo
+     * @param string      $mode          Modo de operação.
+     * @param string      $tag           Tag HTML utilizada.
+     * @param bool        $to_show       Indica se deve ser exibido.
+     * @param bool|string $replace_title Texto alternativo.
      *
      * @return string
      */
-    protected function renderTableName($mode = 'list', $tag = 'h2', $to_show = false, $replace_title = false)
+    public function renderTableName(string $mode = 'list', $tag = 'h2', bool $to_show = false, $replace_title = false): string
     {
         $out = '';
         if ($this->is_title) {
-            $attr = array();
-            if ($to_show) {
+            $attr = [];
+            if (is_array($tag)) {
+                $attr = $tag;
+                $tag  = $attr['tag'] ?? 'h2';
+            } elseif ($to_show) {
                 $attr['class'] = 'cCrud-main-tab';
             }
-            if ($replace_title)
-                $title = $replace_title;
-            else
-                $title = $this->table_name;
-            $out .= $this->open_tag($tag, '', $attr);
+
+            $title = $replace_title ?: $this->table_name;
+            $out  .= $this->open_tag($tag, '', $attr);
             switch ($mode) {
                 case 'create':
                     $out .= $title . '<small> - ' . $this->lang('add') . '</small>';
@@ -12480,73 +12482,83 @@ class cCrud
         $this->unset_custom_columns = $f;
     }
 
-    private function set_custom_lists()
+    /**
+     * Configura as listas personalizadas do usuário.
+     *
+     * @return void
+     */
+    private function set_custom_lists(): void
     {
-        return true;
-        $db     = $this->model->db;
+        $db = $this->model->db;
+        if (! $db->tableExists('core_listagensPersonalizadas')) {
+            return;
+        }
         $userId = (int) $this->getSession()->get('usr_id');
-        $result = $db->query('SELECT * FROM core_listagensPersonalizadas WHERE lpe_entidade = "' . (($this->table != "contatos" ? $this->table : $this->table_name)) . '" AND (' . ($userId ? 'lpe_usuario = ' . $userId . ' OR ' : '') . 'lpe_usuario IS NULL)');
+        $result = $db->query(
+            'SELECT * FROM core_listagensPersonalizadas WHERE lpe_entidade = "' . (($this->table != "contatos" ? $this->table : $this->table_name)) . '" AND (' . ($userId ? 'lpe_usuario = ' . $userId . ' OR ' : '') . 'lpe_usuario IS NULL)'
+        );
 
         if (in_array($this->custom_filter_active['title'], array_keys($this->custom_lists_static))) {
             $this->columns($this->columns_default);
         }
+
         foreach ($result->getResultArray() as $list) {
             if ($this->custom_filter_active['title'] == $list['lpe_nome']) {
                 $this->custom_lists_active = $list;
                 unset($colunas);
                 if ($list['lpe_colunas'] != "") {
                     $colunas = json_decode($list['lpe_colunas'], true);
-                    if (count($colunas))
+                    if (count($colunas)) {
                         $this->columns(implode(',', $colunas), false, false);
-                    else
+                    } else {
                         $this->columns($this->columns_default);
-                } else
+                    }
+                } else {
                     $this->columns($this->columns_default);
+                }
             }
+
             $where = array();
             foreach (json_decode($list['lpe_filtros'], true) as $field => $c) {
                 $w = '';
-                if ($c[0] == "=")
+                if ($c[0] == "=") {
                     $w .= ' ' . $c[0] . ' "' . $c[1] . '"';
-                else if ($c[0] == "maior")
+                } elseif ($c[0] == "maior") {
                     $w .= ' > "' . $c[1] . '"';
-                else if ($c[0] == "menor")
+                } elseif ($c[0] == "menor") {
                     $w .= ' < "' . $c[1] . '"';
-                else if ($c[0] == "maior_i")
+                } elseif ($c[0] == "maior_i") {
                     $w .= ' >= "' . $c[1] . '"';
-                else if ($c[0] == "menor_i")
+                } elseif ($c[0] == "menor_i") {
                     $w .= ' <= "' . $c[1] . '"';
-                else if (in_array($c[0], array(
-                    'IS NULL'
-                )))
+                } elseif (in_array($c[0], array('IS NULL'))) {
                     $w .= ' (' . $c[0] . ' OR ' . $c[0] . ' = "")';
-                else if (in_array($c[0], array(
-                    'IS NOT NULL'
-                )))
+                } elseif (in_array($c[0], array('IS NOT NULL'))) {
                     $w .= ' (' . $c[0] . ' OR ' . $c[0] . ' <> "")';
-                else if (in_array($c[0], array(
-                    'LIKE',
-                    'NOT LIKE'
-                )))
+                } elseif (in_array($c[0], array('LIKE', 'NOT LIKE'))) {
                     $w .= ' ' . $c[0] . ' "%' . $c[1] . '%"';
-                else if (in_array($c[0], array(
-                    'IN',
-                    'NOT IN'
-                )))
+                } elseif (in_array($c[0], array('IN', 'NOT IN'))) {
                     $w .= ' ' . $c[0] . ' ("' . implode('","', explode(',', $c[1])) . '")';
-                if ($w != "")
+                }
+                if ($w != "") {
                     $where[] = $field . $w;
+                }
             }
+
             foreach (json_decode($list['lpe_filtrosAdicionais'], true) as $filtro => $value) {
                 $w = '';
-                if ($filtro == 'propostaProduto')
+                if ($filtro == 'propostaProduto') {
                     $w .= '"' . $value . '" IN (SELECT fk_pro_id FROM propostas_itens WHERE fk_prp_id = prp_id)';
-                if ($w != "")
+                }
+                if ($w != "") {
                     $where[] = $w;
+                }
             }
+
             $where = implode(' AND ', $where);
-            if ($where == "")
+            if ($where == "") {
                 $where = "1 = 1";
+            }
             $filtro_titulo[$list['lpe_nome']] = $where;
             $line = true;
         }
@@ -13377,7 +13389,7 @@ class cCrud
         $view_file = $this->check_file($view_file, 'render');
         $viewPath = dirname($view_file);
         $renderer = Services::renderer($viewPath);
-        $content = $renderer->setVars([
+        $content = $renderer->setData([
             'cCrud' => $this,
             'mode' => $mode,
             'title' => $this->get_var('title')

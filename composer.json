@@ -3,7 +3,6 @@
 	"description" : "cCrud",
 	"license" : "MIT",
 	"type" : "library",
-	"version" : "dev",
 	"require" : {
 		"php" : "^8.2",
 		"codeigniter4/translations" : "~4.5",

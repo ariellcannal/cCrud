@@ -16,14 +16,14 @@ class CcrudTest extends Entity
      *
      * @var array<int,string>
      */
-    protected array $dates = ['created_at', 'updated_at', 'deleted_at'];
+    protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
     /**
      * Conversões automáticas de tipos.
      *
      * @var array<string,string>
      */
-    protected array $casts = [
+    protected $casts = [
         'json_col'   => 'array',
         'ccrud_json' => 'array',
     ];
@@ -33,7 +33,7 @@ class CcrudTest extends Entity
      *
      * @var array<string,string>
      */
-    protected array $datamap = [
+    protected $datamap = [
         'stringField' => 'ccrud_string',
         'jsonField'   => 'ccrud_json',
     ];
@@ -43,7 +43,7 @@ class CcrudTest extends Entity
      *
      * @var array<string,mixed>
      */
-    protected array $attributes = [
+    protected $attributes = [
         'json_col'   => [],
         'ccrud_json' => [],
     ];

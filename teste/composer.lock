@@ -4,15 +4,15 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "93a0470ee6dd7df2090c2e64b5092913",
+    "content-hash": "5597fdc396e8e7845e7a28e903cfa854",
     "packages": [
         {
             "name": "ariellcannal/ccrud",
-            "version": "dev-main",
+            "version": "dev-work",
             "dist": {
                 "type": "path",
                 "url": "..",
-                "reference": "a8c6ef65ae1c4691f5af7c1cacf600753e4dbe4f"
+                "reference": "f2af93aa4e721df4049237f2119aaf8be5436148"
             },
             "require": {
                 "codeigniter4/framework": "~4.5",
