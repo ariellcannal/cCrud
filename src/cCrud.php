@@ -10,6 +10,7 @@ use CodeIgniter\Session\Session;
 use CodeIgniter\HTTP\ResponseInterface;
 use cCrud\Postdata;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 // direct access to DB driver and config
 define('CCRUD_PATH', str_replace('\\', '/', dirname(__file__)));
@@ -35,12 +36,6 @@ class cCrud
 
     protected static $classes = array();
 
-    /**
-     * Indica se as rotas do cCrud já foram registradas.
-     *
-     * @var bool
-     */
-    protected static bool $routesRegistered = false;
 
     protected $ajax_request = false;
 
@@ -571,6 +566,25 @@ class cCrud
         $this->session = Services::session();
 
         $this->config = cCrudConfig::instance();
+        // Verifica se as rotas base estão configuradas no CodeIgniter
+        $requestUri = trim($this->config->request_uri, '/');
+        $routes = Services::routes();
+        $configured = false;
+        foreach ($routes->getRoutes() as $methods) {
+            foreach (array_keys($methods) as $route) {
+                if (strpos($route, $requestUri) === 0) {
+                    $configured = true;
+                    break 2;
+                }
+            }
+        }
+        if (! $configured) {
+            $message = "Rota base \"{$requestUri}\" não configurada. Adicione ao arquivo app/Config/Routes.php:\n" .
+                "\$routes->group('{$requestUri}', ['namespace' => 'cCrud'], static function (RouteCollection \$routes): void {\n" .
+                "    \$routes->add('(:any)', 'cCrud::router');\n" .
+                "});";
+            throw new RuntimeException($message);
+        }
 
         $this->limit = $this->config->limit;
         $this->limit_list = $this->config->limit_list;
@@ -609,30 +623,10 @@ class cCrud
         );
         $this->nested_readonly_on_view = $this->config->nested_readonly_on_view;
 
-        // garante o registro das rotas do cCrud
-        self::registerRoutes();
     }
 
     protected function __clone()
     {}
-
-    /**
-     * Registra as rotas utilizadas pelo cCrud.
-     *
-     * @return void
-     */
-    private static function registerRoutes(): void
-    {
-        if (self::$routesRegistered === false) {
-            // registra as rotas apenas uma vez
-            $config    = cCrudConfig::instance();
-            $ajaxRoute = trim($config->ajax_uri, '/');
-            Services::routes()->post($ajaxRoute, 'cCrud::ajax', ['namespace' => 'cCrud']);
-            Services::routes()->get('cCrud.css', 'cCrud::css', ['namespace' => 'cCrud']);
-            Services::routes()->get('cCrud.js', 'cCrud::js', ['namespace' => 'cCrud']);
-            self::$routesRegistered = true;
-        }
-    }
 
     /**
      * Retorna a saída renderizada do componente.
@@ -772,6 +766,23 @@ class cCrud
         if (is_callable($config->before_construct)) {
             call_user_func($config->before_construct);
         }
+    }
+
+    /**
+     * Encaminha as requisições recebidas para o manipulador adequado.
+     *
+     * @return ResponseInterface Resposta HTTP do recurso solicitado
+     */
+    public function router(): ResponseInterface
+    {
+        $segment = Services::uri()->getSegment(2);
+
+        return match ($segment) {
+            'ajax' => $this->ajax(),
+            'css'  => $this->css(),
+            'js'   => $this->js(),
+            default => Services::response()->setStatusCode(ResponseInterface::HTTP_NOT_FOUND),
+        };
     }
 
     /**
@@ -9255,8 +9266,8 @@ class cCrud
         if ($crop) {
             $params['cCrud']['crop'] = $crop;
         }
-        $ajaxUri = '/' . trim($this->config->ajax_uri, '/');
-        return $ajaxUri . '?' . http_build_query($params);
+        $requestUri = '/' . trim($this->config->request_uri, '/') . '/ajax';
+        return $requestUri . '?' . http_build_query($params);
     }
 
     protected function real_file_link($filename, $params, $is_details = false)
@@ -9677,7 +9688,7 @@ class cCrud
             $out .= '<link href="' . $lib . '" rel="stylesheet" type="text/css" />';
         }
 
-        $out .= '<link href="/cCrud.css" rel="stylesheet" type="text/css" />';
+        $out .= '<link href="/' . trim($config->request_uri, '/') . '/css" rel="stylesheet" type="text/css" />';
 
         return $out;
     }
@@ -9709,10 +9720,10 @@ class cCrud
             $out .= '<script src="' . $lib . '"></script>';
         }
 
-        $out .= '<script src="/cCrud.js"></script>';
+        $out .= '<script src="/' . trim($config->request_uri, '/') . '/js"></script>';
 
         $settings = [
-            'url' => '/' . trim($config->ajax_uri, '/'),
+            'url' => '/' . trim($config->request_uri, '/') . '/ajax',
             'table_name' => $instance ? $instance->table_name : '',
             'force_editor' => $config->force_editor,
             'date_first_day' => $config->date_first_day,
