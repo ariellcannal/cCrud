@@ -58,7 +58,7 @@ class Route
         $content = file_get_contents(CCRUD_PATH . '/views/cCrud.css');
         return Services::response()->setContentType('text/css')->setBody($content);
     }
-
+    
     /**
      * Retorna o conteúdo JavaScript do cCrud.
      *

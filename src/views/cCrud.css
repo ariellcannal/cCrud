@@ -57,9 +57,10 @@ td.cCrud-actions{
     top: 0;
     left: 0;
     bottom: 0;
-    background: #fff 50% 50% no-repeat url(loading.gif);
+    background: #ffffff;
     opacity: 0.5;
     width: 100%;
+    z-index: 9;
 }
 .cCrud-num{
     color: #bbb;

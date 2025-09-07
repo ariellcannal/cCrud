@@ -7,11 +7,12 @@
  */
 ?>
 <div class="cCrud container-fluid">
-    <?php echo $cCrud->renderTableName(false, 'div', true) ?>
-    <div class="cCrud-container position-relative">
-        <div class="cCrud-ajax">
-            <?php echo $content ?>
-        </div>
-        <div class="cCrud-overlay"></div>
+	<div class="cCrud-ajax">
+    	<?=$content ?>
     </div>
+	<div class="cCrud-overlay">
+		<div class="spinner-border" style="width: 3rem; height: 3rem;" role="status">
+			<span class="visually-hidden">Loading...</span>
+		</div>
+	</div>
 </div>
