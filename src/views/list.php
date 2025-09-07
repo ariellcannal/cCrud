@@ -12,9 +12,10 @@ if ($cCrud->is_inner) {
     include 'nested/cCrud_list_view.php';
 } else {
 ?>
-<div class="container-fluid">
+
+<div class="container-fluid notion-table">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <?php echo $cCrud->renderTableName('list', ['tag' => 'h1', 'class' => 'h4 mb-0']); ?>
+        <?php echo $cCrud->renderTableName('list', ['tag' => 'h2', 'class' => 'fs-4 mb-0 fw-semibold']); ?>
         <div class="d-flex align-items-center gap-2">
             <?php echo $cCrud->add_button(); ?>
             <?php echo $cCrud->render_mass_actions(); ?>
@@ -28,7 +29,7 @@ if ($cCrud->is_inner) {
             </div>
         </div>
     </div>
-    <div class="card cCrud-table-card">
+    <div class="card cCrud-table-card shadow-none">
         <div class="table-responsive">
             <table class="cCrud-list table table-sm table-hover align-middle mb-0" data-selectable="selectable" data-row-selectable="true">
                 <thead>
@@ -43,8 +44,8 @@ if ($cCrud->is_inner) {
             </table>
         </div>
     </div>
-    <div class="d-flex justify-content-end mt-3">
-        <div class="me-2"><?php echo $cCrud->render_limitlist(); ?></div>
+    <div class="d-flex justify-content-end mt-3 gap-2">
+        <div><?php echo $cCrud->render_limitlist(); ?></div>
         <div><?php echo $cCrud->render_pagination(7,1); ?></div>
     </div>
 </div>

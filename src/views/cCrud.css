@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
 .cCrud{
     margin-bottom: 20px;
 }
@@ -295,50 +297,61 @@ h2{
     width: 100%;
 }
 /* Estilo semelhante ao Notion para tabelas */
-.cCrud-table-card {
-    border: 1px solid #e5e5e5;
+.notion-table {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    color: #37352F;
+}
+
+.notion-table .cCrud-table-card {
+    border: 1px solid #e3e2e0;
     border-radius: .25rem;
 }
 
-.cCrud-list {
+.notion-table .cCrud-list {
     border-collapse: separate;
     border-spacing: 0;
     width: 100%;
 }
 
-.cCrud-list thead th {
-    font-weight: 600;
-    border-bottom: 1px solid #e5e5e5;
+.notion-table .cCrud-list thead th {
+    font-size: 12px;
+    font-weight: 500;
+    color: #6B6E68;
+    border-bottom: 1px solid #e3e2e0;
     padding: .5rem .75rem;
 }
 
-.cCrud-list tbody td {
+.notion-table .cCrud-list tbody td {
+    font-size: 14px;
+    color: #37352F;
     padding: .5rem .75rem;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid #e3e2e0;
 }
 
-.cCrud-list td,
-.cCrud-list th {
-    border-right: 1px solid #e5e5e5;
+.notion-table .cCrud-list td,
+.notion-table .cCrud-list th {
+    border-right: 1px solid #e3e2e0;
 }
 
-.cCrud-list td:last-child,
-.cCrud-list th:last-child {
+.notion-table .cCrud-list td:last-child,
+.notion-table .cCrud-list th:last-child {
     border-right: 0;
 }
 
-.cCrud-list tbody tr:hover td {
-    background-color: #fafafa;
+.notion-table .cCrud-list tbody tr:hover td {
+    background-color: #f7f6f3;
 }
 
-.cCrud-list tbody tr:last-child td {
+.notion-table .cCrud-list tbody tr:last-child td {
+
     border-bottom: 0;
 }
 
-.cCrud-actions .btn {
+.notion-table .cCrud-actions .btn {
     visibility: hidden;
 }
 
-.cCrud-list tr:hover .cCrud-actions .btn {
+.notion-table .cCrud-list tr:hover .cCrud-actions .btn {
     visibility: visible;
 }
