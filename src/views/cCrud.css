@@ -50,17 +50,17 @@ td.cCrud-actions{
     border-left: none;
     margin-top: -1px;
 }
-
+/* Overlay de carregamento em tela cheia */
 .cCrud-overlay{
-    /*display: none;*/
-    position: absolute;
+    display: none;
+    position: fixed;
     top: 0;
     left: 0;
-    bottom: 0;
+    width: 100vw;
+    height: 100vh;
     background: #ffffff;
     opacity: 0.5;
-    width: 100%;
-    z-index: 9;
+    z-index: 1050;
 }
 .cCrud-num{
     color: #bbb;
