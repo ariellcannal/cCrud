@@ -12,6 +12,7 @@ if ($cCrud->is_inner) {
     include 'nested/cCrud_list_view.php';
 } else {
 ?>
+
 <div class="container-fluid notion-table">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <?php echo $cCrud->renderTableName('list', ['tag' => 'h2', 'class' => 'fs-4 mb-0 fw-semibold']); ?>
