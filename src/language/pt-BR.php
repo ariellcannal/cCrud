@@ -12,6 +12,7 @@ return [
     'add_file' => 'Adicionar arquivo',
     'replace_image' => 'Substituir imagem',
     'add_image' => 'Adicionar imagem',
+    'add' => 'Adicionar',
     'remove' => 'Remover',
     'no_image' => 'Nenhuma imagem',
     'exec_time' => 'Tempo de execução',
