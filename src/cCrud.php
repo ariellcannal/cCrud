@@ -594,26 +594,6 @@ class cCrud
         $requestUri = trim($this->config->request_uri, '/');
         $routes     = Services::routes();
         $configured = false;
-        foreach ($routes->getRoutes() as $methods) {
-            foreach (array_keys($methods) as $route) {
-                if (strpos($route, $requestUri) === 0) {
-                    $configured = true;
-                    break 2;
-                }
-            }
-        }
-        if (! $configured) {
-            $message = "Rota base \"{$requestUri}\" não configurada. Adicione ao arquivo app/Config/Routes.php:\n" .
-                "\$routes->group('{$requestUri}', ['namespace' => 'cCrud'], static function (RouteCollection \$routes): void {\n" .
-                "    \$routes->add('(:any)', 'cCrud::router');\n" .
-                "});";
-            throw new RuntimeException($message);
-        }
-
-        // Verifica se as rotas base estão configuradas no CodeIgniter
-        $requestUri = trim($this->config->request_uri, '/');
-        $routes     = Services::routes();
-        $configured = false;
         foreach ($routes->getRoutes() as $route => $closure) {
             if (strpos($route, $requestUri) === 0) {
                 $configured = true;

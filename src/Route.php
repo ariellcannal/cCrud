@@ -3,7 +3,6 @@ namespace cCrud;
 
 use CodeIgniter\HTTP\ResponseInterface;
 use Config\Services;
-
 if (! defined('CCRUD_PATH')) {
     define('CCRUD_PATH', str_replace('\\', '/', __DIR__));
 }
@@ -13,6 +12,12 @@ if (! defined('CCRUD_PATH')) {
  */
 class Route
 {
+
+    public function initController()
+    {
+        return;
+    }
+
     /**
      * Encaminha a requisição para o manipulador correspondente.
      *
@@ -24,9 +29,9 @@ class Route
 
         return match ($segment) {
             'ajax' => $this->ajax(),
-            'css'  => $this->css(),
-            'js'   => $this->js(),
-            default => Services::response()->setStatusCode(ResponseInterface::HTTP_NOT_FOUND),
+            'css' => $this->css(),
+            'js' => $this->js(),
+            default => Services::response()->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)
         };
     }
 
@@ -40,9 +45,7 @@ class Route
         $logger = Services::logger();
         $output = cCrud::getRequestedInstance($logger);
 
-        return $output instanceof ResponseInterface
-            ? $output
-            : Services::response()->setBody($output);
+        return $output instanceof ResponseInterface ? $output : Services::response()->setBody($output);
     }
 
     /**
