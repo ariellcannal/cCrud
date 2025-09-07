@@ -572,6 +572,43 @@ class cCrud
         $this->session = Services::session();
 
         $this->config = cCrudConfig::instance();
+        // Verifica se as rotas base estão configuradas no CodeIgniter
+        $requestUri = trim($this->config->request_uri, '/');
+        $routes = Services::routes()->getRoutes();
+        $configured = false;
+        foreach ($routes as $route=>$closure) {
+            if (strpos($route, $requestUri) === 0) {
+                $configured = true;
+                break;
+            }
+        }
+        if (! $configured) {
+            $message = "Rota base \"{$requestUri}\" não configurada. Adicione ao arquivo app/Config/Routes.php:\n" .
+                "\$routes->group('{$requestUri}', ['namespace' => 'cCrud'], static function (RouteCollection \$routes): void {\n" .
+                "    \$routes->add('(:any)', 'cCrud::router');\n" .
+                "});";
+            throw new RuntimeException($message);
+        }
+
+        // Verifica se as rotas base estão configuradas no CodeIgniter
+        $requestUri = trim($this->config->request_uri, '/');
+        $routes     = Services::routes();
+        $configured = false;
+        foreach ($routes->getRoutes() as $methods) {
+            foreach (array_keys($methods) as $route) {
+                if (strpos($route, $requestUri) === 0) {
+                    $configured = true;
+                    break 2;
+                }
+            }
+        }
+        if (! $configured) {
+            $message = "Rota base \"{$requestUri}\" não configurada. Adicione ao arquivo app/Config/Routes.php:\n" .
+                "\$routes->group('{$requestUri}', ['namespace' => 'cCrud'], static function (RouteCollection \$routes): void {\n" .
+                "    \$routes->add('(:any)', 'cCrud::router');\n" .
+                "});";
+            throw new RuntimeException($message);
+        }
 
         // Verifica se as rotas base estão configuradas no CodeIgniter
         $requestUri = trim($this->config->request_uri, '/');
@@ -670,6 +707,7 @@ class cCrud
     /**
      * Recupera a instância solicitada via requisição Ajax.
      *
+     * @param Model|null          $model  Modelo associado, quando disponível
      * @param LoggerInterface|null $logger Registrador de logs opcional
      *
      * @return string|ResponseInterface
@@ -734,6 +772,61 @@ class cCrud
         if (is_callable($config->before_construct)) {
             call_user_func($config->before_construct);
         }
+    }
+
+    /**
+     * Encaminha as requisições recebidas para o manipulador adequado.
+     *
+     * @return ResponseInterface Resposta HTTP do recurso solicitado
+     */
+    public function router(): ResponseInterface
+    {
+        $segment = Services::uri()->getSegment(2);
+
+        return match ($segment) {
+            'ajax' => $this->ajax(),
+            'css'  => $this->css(),
+            'js'   => $this->js(),
+            default => Services::response()->setStatusCode(ResponseInterface::HTTP_NOT_FOUND),
+        };
+    }
+
+    /**
+     * Processa requisições Ajax encaminhadas ao cCrud.
+     *
+     * @return ResponseInterface Resposta HTTP contendo o resultado da operação
+     */
+    public function ajax(): ResponseInterface
+    {
+        // obtém a resposta processada pela instância solicitada
+        $output = self::getRequestedInstance($this->model, $this->logger);
+
+        // retorna o conteúdo como uma resposta HTTP
+        return $output instanceof ResponseInterface
+            ? $output
+            : Services::response()->setBody($output);
+    }
+
+    /**
+     * Retorna o conteúdo CSS utilizado pelo cCrud.
+     *
+     * @return ResponseInterface Resposta HTTP contendo o CSS
+     */
+    public function css(): ResponseInterface
+    {
+        $content = file_get_contents(CCRUD_PATH . '/views/cCrud.css');
+        return Services::response()->setContentType('text/css')->setBody($content);
+    }
+
+    /**
+     * Retorna o conteúdo JavaScript utilizado pelo cCrud.
+     *
+     * @return ResponseInterface Resposta HTTP contendo o JavaScript
+     */
+    public function js(): ResponseInterface
+    {
+        $content = file_get_contents(CCRUD_PATH . '/views/cCrud.js');
+        return Services::response()->setContentType('application/javascript')->setBody($content);
     }
 
     /**
