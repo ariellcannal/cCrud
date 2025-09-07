@@ -1,6 +1,8 @@
 <?php
 namespace cCrud;
 
+defined('CCRUD_PATH') OR define('CCRUD_PATH', str_replace('\\', '/', dirname(__file__)));
+
 /**
  * Classe responsável por manipular dados enviados via POST.
  * Fornece métodos auxiliares para manipular, consultar e converter

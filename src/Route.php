@@ -3,9 +3,8 @@ namespace cCrud;
 
 use CodeIgniter\HTTP\ResponseInterface;
 use Config\Services;
-if (! defined('CCRUD_PATH')) {
-    define('CCRUD_PATH', str_replace('\\', '/', __DIR__));
-}
+
+defined('CCRUD_PATH') or define('CCRUD_PATH', str_replace('\\', '/', dirname(__file__)));
 
 /**
  * Responsável por rotear as requisições do cCrud.
@@ -58,7 +57,7 @@ class Route
         $content = file_get_contents(CCRUD_PATH . '/views/cCrud.css');
         return Services::response()->setContentType('text/css')->setBody($content);
     }
-    
+
     /**
      * Retorna o conteúdo JavaScript do cCrud.
      *

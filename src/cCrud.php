@@ -12,8 +12,7 @@ use cCrud\Postdata;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
-// direct access to DB driver and config
-define('CCRUD_PATH', str_replace('\\', '/', dirname(__file__)));
+defined('CCRUD_PATH') OR define('CCRUD_PATH', str_replace('\\', '/', dirname(__file__))); 
 
 // str_replace
 // - windows
