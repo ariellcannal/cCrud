@@ -39,11 +39,11 @@ class cCrud extends BaseConfig
     ];
 
     /**
-     * Endpoint utilizado para as requisições AJAX do cCrud.
+     * URI base utilizada pelo cCrud para processar requisições.
      *
      * @var string
      */
-    public string $ajax_uri = 'ajax';
+    public string $request_uri = 'ccrud';
 
     
     // editor
@@ -52,20 +52,17 @@ class cCrud extends BaseConfig
     
     
     // grid settings
-    public $show_primary_ai_field = false; // Show primary auto-increment field in create/edit view.
-    public $show_primary_ai_column = false; // Show primary auto-increment column in list view.
+    public $show_primary_ai_column = true; // Show primary auto-increment column in list view.
     public $remove_confirm = true; // Show confirmation dialog on remove action.
     public $column_cut = 100; // Sets the maximum number of characters in the column.
     public $limit = 25; // default limit of rows per page
     public $limit_list = array('25', '50', '100', '150', '200'); // default limits list
-    public $clickable_list_links = false; // make all links, emails clikable in list view
+    public $clickable_list_links = true; // make all links, emails clikable in list view
     public $clickable_filenames = true; // makes filenames clikable in list view
     public $fixed_action_buttons = true; // it allows to fix the action buttons on the right side of the table. Appears when you hover on row.
     public $images_in_grid = true; // shows images in list view
     public $images_in_grid_height = 55; // maximal height of thumbnails in list view
-    public $button_labels = false; // displays button labels in grid
-    public $strip_tags = false; // remove all tags from data in grid view. This is not affected to user patterns or other custom.
-    public $safe_output = false; // encodes special characters to html-entities in grid view
+    public $button_labels = true; // displays button labels in grid
     
     
     // print

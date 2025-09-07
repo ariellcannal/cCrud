@@ -10,6 +10,7 @@ use CodeIgniter\Session\Session;
 use CodeIgniter\HTTP\ResponseInterface;
 use cCrud\Postdata;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 // direct access to DB driver and config
 define('CCRUD_PATH', str_replace('\\', '/', dirname(__file__)));
@@ -35,12 +36,6 @@ class cCrud
 
     protected static $classes = array();
 
-    /**
-     * Indica se as rotas do cCrud já foram registradas.
-     *
-     * @var bool
-     */
-    protected static bool $routesRegistered = false;
 
     protected $ajax_request = false;
 
@@ -54,9 +49,9 @@ class cCrud
     /**
      * Model utilizado para todas as consultas ao banco de dados.
      *
-     * @var Model
+     * @var Model|null
      */
-    protected Model $model;
+    protected ?Model $model = null;
 
     /**
      * Manipulador de sessões do CodeIgniter 4.
@@ -428,9 +423,6 @@ class cCrud
     protected static $sess_id = null;
 
 
-    protected $strip_tags = true;
-
-    protected $safe_output = true;
 
     protected $before_list = array();
 
@@ -524,18 +516,46 @@ class cCrud
      * @param Model $model            Modelo do CodeIgniter utilizado pelo CRUD
      * @param LoggerInterface|null $logger Registrador de logs opcional
      */
-    public function __construct(Model $model, ?LoggerInterface $logger = null)
+    /**
+     * Construtor da classe principal do cCrud.
+     *
+     * @param Model               $model       Modelo do CodeIgniter utilizado pelo CRUD
+     * @param string|null         $inst_name   Nome da instância
+     * @param LoggerInterface|null $logger     Manipulador de logs do framework
+     *
+     * @throws RuntimeException Quando o Model é inválido ou a rota base está ausente.
+     */
+    public function __construct(Model $model, ?string $inst_name = null, ?LoggerInterface $logger = null)
     {
-        // Define o Model e o Logger utilizados pelo cCrud
+        self::initPrepare();
+
         $this->model  = $model;
         $this->logger = $logger ?? Services::logger();
+
+        if (! $inst_name) {
+            $inst_name = sha1(rand() . microtime());
+        }
+        $this->instance_name   = $inst_name;
+        self::$instance[$inst_name] = $this;
+        $this->instance_count  = count(self::$instance);
+
+        $returnType = method_exists($model, 'getReturnType') ? $model->getReturnType() : $model->returnType;
+        if (! is_subclass_of($returnType, '\\CodeIgniter\\Entity\\Entity')) {
+            throw new RuntimeException(lang('cCrud.model_entity_required'));
+        }
 
         // Define automaticamente a tabela e o nome exibido a partir do Model
-        $this->table      = property_exists($model, 'table') ? $model->table : '';
-        $this->table_name = $model->tableName;
+        if (! property_exists($model, 'table') || empty($model->table)) {
+            throw new RuntimeException('Propriedade "table" ausente no Model.');
+        }
+        $this->table = $model->table;
+
+        \helper('inflector');
+        $this->table_name = property_exists($model, 'tableName') && ! empty($model->tableName)
+            ? $model->tableName
+            : \humanize($this->table);
 
         // Carrega rótulos definidos na Entity associada, caso existam
-        $returnType = method_exists($model, 'getReturnType') ? $model->getReturnType() : $model->returnType;
         if ($returnType && class_exists($returnType)) {
             $entity = new $returnType();
             if (property_exists($entity, 'labels') && is_array($entity->labels)) {
@@ -547,35 +567,33 @@ class cCrud
                 }
             }
         }
-        $this->table_name = $model->tableName;
-
-        // Carrega rótulos definidos na Entity associada, caso existam
-        $returnType = method_exists($model, 'getReturnType') ? $model->getReturnType() : $model->returnType;
-        if ($returnType && class_exists($returnType)) {
-            $entity = new $returnType();
-            if (property_exists($entity, 'labels') && is_array($entity->labels)) {
-                foreach ($entity->labels as $field => $label) {
-                    $this->labels[$field] = $label;
-                    if ($this->table) {
-                        $this->labels[$this->table . '.' . $field] = $label;
-                    }
-                }
-            }
-        }
-
-        // Define o Model e o Logger utilizados pelo cCrud
-        $this->model  = $model;
-        $this->logger = $logger ?? Services::logger();
 
         // Inicia o manipulador de sessões do CodeIgniter 4
         $this->session = Services::session();
 
         $this->config = cCrudConfig::instance();
 
-        $this->limit = $this->config->limit;
-        $this->limit_list = $this->config->limit_list;
-        $this->column_cut = $this->config->column_cut;
-        $this->show_primary_ai_field = $this->config->show_primary_ai_field;
+        // Verifica se as rotas base estão configuradas no CodeIgniter
+        $requestUri = trim($this->config->request_uri, '/');
+        $routes     = Services::routes();
+        $configured = false;
+        foreach ($routes->getRoutes() as $route => $closure) {
+            if (strpos($route, $requestUri) === 0) {
+                $configured = true;
+                break;
+            }
+        }
+        if (! $configured) {
+            $message = "Rota base \"{$requestUri}\" não configurada. Adicione ao arquivo app/Config/Routes.php:\n" .
+                "\$routes->group('{$requestUri}', ['namespace' => 'cCrud'], static function (RouteCollection \$routes): void {\n" .
+                "    \$routes->add('(:any)', 'Route::router');\n" .
+                "});";
+            throw new RuntimeException($message);
+        }
+
+        $this->limit              = $this->config->limit;
+        $this->limit_list         = $this->config->limit_list;
+        $this->column_cut            = $this->config->column_cut;
         $this->show_primary_ai_column = $this->config->show_primary_ai_column;
 
         $this->benchmark = $this->config->benchmark;
@@ -597,10 +615,6 @@ class cCrud
 
         $this->default_tab = $this->config->default_tab;
 
-
-        $this->strip_tags = $this->config->strip_tags;
-        $this->safe_output = $this->config->safe_output;
-
         $this->lists_null_opt = $this->config->lists_null_opt;
 
         $this->date_format = array(
@@ -609,30 +623,10 @@ class cCrud
         );
         $this->nested_readonly_on_view = $this->config->nested_readonly_on_view;
 
-        // garante o registro das rotas do cCrud
-        self::registerRoutes();
     }
 
     protected function __clone()
     {}
-
-    /**
-     * Registra as rotas utilizadas pelo cCrud.
-     *
-     * @return void
-     */
-    private static function registerRoutes(): void
-    {
-        if (self::$routesRegistered === false) {
-            // registra as rotas apenas uma vez
-            $config    = cCrudConfig::instance();
-            $ajaxRoute = trim($config->ajax_uri, '/');
-            Services::routes()->post($ajaxRoute, 'cCrud::ajax', ['namespace' => 'cCrud']);
-            Services::routes()->get('cCrud.css', 'cCrud::css', ['namespace' => 'cCrud']);
-            Services::routes()->get('cCrud.js', 'cCrud::js', ['namespace' => 'cCrud']);
-            self::$routesRegistered = true;
-        }
-    }
 
     /**
      * Retorna a saída renderizada do componente.
@@ -674,43 +668,13 @@ class cCrud
     }
 
     /**
-     * Retorna uma instância do cCrud utilizando o Model informado.
-     *
-     * @param Model               $model  Modelo do CodeIgniter
-     * @param LoggerInterface|null $logger Registrador de logs opcional
-     * @param string|false        $name   Nome da instância
-     *
-     * @return self|ResponseInterface
-     */
-    public static function getInstance(Model $model, ?LoggerInterface $logger = null, $name = false)
-    {
-        self::initPrepare();
-        if (! $name) {
-            $name = sha1(rand() . microtime());
-        }
-        if (! isset(self::$instance[$name]) || null === self::$instance[$name]) {
-            self::$instance[$name]             = new self($model, $logger);
-            self::$instance[$name]->instance_name = $name;
-        }
-        self::$instance[$name]->instance_count = count(self::$instance);
-
-        $returnType = method_exists($model, 'getReturnType') ? $model->getReturnType() : $model->returnType;
-        if (! is_subclass_of($returnType, '\\CodeIgniter\\Entity\\Entity')) {
-            return Services::response()->setStatusCode(500)->setBody(lang('cCrud.model_entity_required'));
-        }
-
-        return self::$instance[$name];
-    }
-
-    /**
      * Recupera a instância solicitada via requisição Ajax.
      *
-     * @param Model               $model  Modelo associado
      * @param LoggerInterface|null $logger Registrador de logs opcional
      *
      * @return string|ResponseInterface
      */
-    public static function getRequestedInstance(Model $model, ?LoggerInterface $logger = null)
+    public static function getRequestedInstance(?LoggerInterface $logger = null)
     {
         $request  = Services::request();
         $security = Services::security();
@@ -718,7 +682,7 @@ class cCrud
         $getData  = $request->getGet('cCrud');
 
         if (is_array($postData) && isset($postData['instance'], $postData['key'], $postData['task'])) {
-            self::init_prepare('post');
+            self::initPrepare();
             if (empty($postData['key'])) {
                 return Services::response()->setStatusCode(400)->setBody(lang('cCrud.security_key_empty'));
             }
@@ -729,7 +693,7 @@ class cCrud
             $inst_name = $security->clean($postData['instance']);
             $is_get    = false;
         } elseif (is_array($getData) && isset($getData['instance'], $getData['key'], $getData['task']) && $getData['task'] == 'file') {
-            self::init_prepare('get');
+            self::initPrepare();
             if (empty($getData['key'])) {
                 return Services::response()->setStatusCode(400)->setBody(lang('cCrud.security_key_empty'));
             }
@@ -742,22 +706,20 @@ class cCrud
         } else {
             return Services::response()->setStatusCode(400)->setBody(lang('cCrud.wrong_request'));
         }
-        $session = \Config\Services::session();
+        $session       = Services::session();
         $cCrud_session = $session->get('cCrud_session');
 
-        // var_dump($cCrud_session[$inst_name]);
-        // if (isset($cCrud_session[$inst_name]['key']) && $cCrud_session[$inst_name]['key'] == $key) {
-        if (1 == 1) {
-            self::$instance[$inst_name]             = new self($model, $logger);
-            self::$instance[$inst_name]->is_get     = $is_get;
-            self::$instance[$inst_name]->ajax_request = true;
-            self::$instance[$inst_name]->instance_name = $inst_name;
-            self::$instance[$inst_name]->import_vars($key);
-            self::$instance[$inst_name]->inner_where();
-            return self::$instance[$inst_name]->render();
+        $model = $cCrud_session[$inst_name]['model'] ?? null;
+        if (! $model instanceof Model) {
+            return Services::response()->setStatusCode(500)->setBody(lang('cCrud.model_entity_required'));
         }
 
-        return Services::response()->setStatusCode(401)->setBody(lang('cCrud.verification_key_outdated'));
+        self::$instance[$inst_name]             = new self($model, $inst_name, $logger);
+        self::$instance[$inst_name]->is_get     = $is_get;
+        self::$instance[$inst_name]->ajax_request = true;
+        self::$instance[$inst_name]->import_vars($key);
+        self::$instance[$inst_name]->inner_where();
+        return self::$instance[$inst_name]->render();
     }
 
     /**
@@ -772,44 +734,6 @@ class cCrud
         if (is_callable($config->before_construct)) {
             call_user_func($config->before_construct);
         }
-    }
-
-    /**
-     * Processa requisições Ajax encaminhadas ao cCrud.
-     *
-     * @return ResponseInterface Resposta HTTP contendo o resultado da operação
-     */
-    public function ajax(): ResponseInterface
-    {
-        // obtém a resposta processada pela instância solicitada
-        $output = self::getRequestedInstance($this->model, $this->logger);
-
-        // retorna o conteúdo como uma resposta HTTP
-        return $output instanceof ResponseInterface
-            ? $output
-            : Services::response()->setBody($output);
-    }
-
-    /**
-     * Retorna o conteúdo CSS utilizado pelo cCrud.
-     *
-     * @return ResponseInterface Resposta HTTP contendo o CSS
-     */
-    public function css(): ResponseInterface
-    {
-        $content = file_get_contents(CCRUD_PATH . '/views/cCrud.css');
-        return Services::response()->setContentType('text/css')->setBody($content);
-    }
-
-    /**
-     * Retorna o conteúdo JavaScript utilizado pelo cCrud.
-     *
-     * @return ResponseInterface Resposta HTTP contendo o JavaScript
-     */
-    public function js(): ResponseInterface
-    {
-        $content = file_get_contents(CCRUD_PATH . '/views/cCrud.js');
-        return Services::response()->setContentType('application/javascript')->setBody($content);
     }
 
     /**
@@ -1208,7 +1132,7 @@ class cCrud
                 $this->inner_table_instance[$instance_name] = $fitem['table'] . '.' . $fitem['field'];
 
                 // nova instância do cCrud para a tabela interna
-                $instance           = cCrud::getInstance($inner_model, $this->logger, $instance_name);
+                $instance           = new self($inner_model, $instance_name, $this->logger);
                 $instance->is_inner = true; // flag de aninhamento
                 $instance->parent   = $this->instance_name;
 
@@ -1761,17 +1685,15 @@ class cCrud
         return $this;
     }
 
-    public function column_cut($int = 50, $fields = false, $safe_output = false)
+    public function column_cut($int = 50, $fields = false)
     {
         if ($fields === false) {
             $this->column_cut = (int) $int ? (int) $int : false;
-            $this->safe_output = $safe_output;
         } else {
             $fdata = $this->_parse_field_names($fields, 'column_cut');
             foreach ($fdata as $fitem) {
                 $this->column_cut_list[$fitem['table'] . '.' . $fitem['field']] = array(
-                    'count' => $int,
-                    'safe' => $safe_output
+                    'count' => $int
                 );
             }
         }
@@ -5752,7 +5674,14 @@ class cCrud
         {
             foreach ($this->inner_table_instance as $inst_name => $field) {
                 if (isset($this->result_row[$field])) {
-                    $instance = self::getInstance($this->model, $this->logger, $inst_name);
+                    $session       = $this->getSession();
+                    $cCrud_session = $session->get('cCrud_session');
+                    $model         = $cCrud_session[$inst_name]['model'] ?? null;
+                    if (! $model instanceof Model) {
+                        throw new RuntimeException(lang('cCrud.model_entity_required'));
+                    }
+
+                    $instance = new self($model, $inst_name, $this->logger);
                     $instance->ajax_request = true;
                     $instance->import_vars();
                     $instance->inner_where($this->result_row[$field]);
@@ -5778,38 +5707,6 @@ class cCrud
         ])->render(basename($view_file));
 
         $content = $this->render_search_hidden() . $content;
-        /*
-         * if ($this->inner_table_instance && ($mode == 'view' or $mode ==
-         * 'edit')) // restoring nested objects
-         * {
-         * foreach ($this->inner_table_instance as $inst_name => $field)
-         * {
-         * if (isset($this->result_row[$field]))
-         * {
-         * $instance = self::getInstance($inst_name);
-         * $instance->ajax_request = true;
-         * $instance->import_vars();
-         * $instance->inner_where($this->result_row[$field]);
-         * if ($mode == 'view' && $this->config->nested_readonly_on_view)
-         * {
-         * $instance->table_ro = true;
-         * }
-         * else
-         * {
-         * $instance->table_ro = false;
-         * }
-         * cCrud-container"><div class="cCrud-ajax" id="cCrud-ajax-' .
-         * // base_convert(rand(), 10, 36) . '">' . $instance->render('list') .
-         * '</div></div>';
-         * $this->nested_rendered[$inst_name] = '<div
-         * class="cCrud-nested-container cCrud-container"><div
-         * class="cCrud-ajax" id="cCrud-ajax-' .
-         * base_convert(rand(), 10, 36) . '">' . $instance->render('list') .
-         * '</div></div>';
-         * }
-         * }
-         * }
-         */
         if ($this->nested_rendered) {
             $content .= implode('', $this->nested_rendered);
         }
@@ -5927,10 +5824,8 @@ class cCrud
     {
         if (isset($this->column_cut_list[$field])) {
             $len = $this->column_cut_list[$field]['count'];
-            $safe = $this->column_cut_list[$field]['safe'];
         } else {
             $len = $this->column_cut;
-            $safe = $this->safe_output;
         }
 
         $charset = config('App')->charset;
@@ -5940,8 +5835,8 @@ class cCrud
         }
 
         if (! $len) {
-            $string = $this->strip_tags ? strip_tags($string) : $string;
-            return $safe ? \esc($string) : $string;
+            $string = strip_tags($string);
+            return \esc($string);
         }
         if (! is_null($string)) {
             $strip_string = trim(strip_tags($string));
@@ -5949,8 +5844,8 @@ class cCrud
 
         $slen = mb_strlen($strip_string, $charset);
         if ($slen <= $len || $this->config->print_full_texts) {
-            $string = $this->strip_tags ? strip_tags($string) : $string;
-            return $safe ? \esc($string) : $string;
+            $string = strip_tags($string);
+            return \esc($string);
         }
         if ($wordsafe) {
             $end = $len;
@@ -5959,12 +5854,10 @@ class cCrud
                 $len = $end;
             }
             $sub = mb_substr($strip_string, 0, $len, $charset);
-            $sub = $safe ? \esc($sub) : $sub;
-            return $sub . ($dots ? '&#133;' : '');
+            return \esc($sub) . ($dots ? '&#133;' : '');
         }
         $sub = mb_substr($strip_string, 0, $len, $charset);
-        $sub = $safe ? \esc($sub) : $sub;
-        return $sub . ($dots ? '&#133;' : '');
+        return \esc($sub) . ($dots ? '&#133;' : '');
     }
 
     /**
@@ -9255,8 +9148,8 @@ class cCrud
         if ($crop) {
             $params['cCrud']['crop'] = $crop;
         }
-        $ajaxUri = '/' . trim($this->config->ajax_uri, '/');
-        return $ajaxUri . '?' . http_build_query($params);
+        $requestUri = '/' . trim($this->config->request_uri, '/') . '/ajax';
+        return $requestUri . '?' . http_build_query($params);
     }
 
     protected function real_file_link($filename, $params, $is_details = false)
@@ -9677,7 +9570,7 @@ class cCrud
             $out .= '<link href="' . $lib . '" rel="stylesheet" type="text/css" />';
         }
 
-        $out .= '<link href="/cCrud.css" rel="stylesheet" type="text/css" />';
+        $out .= '<link href="/' . trim($config->request_uri, '/') . '/css" rel="stylesheet" type="text/css" />';
 
         return $out;
     }
@@ -9709,10 +9602,10 @@ class cCrud
             $out .= '<script src="' . $lib . '"></script>';
         }
 
-        $out .= '<script src="/cCrud.js"></script>';
+        $out .= '<script src="/' . trim($config->request_uri, '/') . '/js"></script>';
 
         $settings = [
-            'url' => '/' . trim($config->ajax_uri, '/'),
+            'url' => '/' . trim($config->request_uri, '/') . '/ajax',
             'table_name' => $instance ? $instance->table_name : '',
             'force_editor' => $config->force_editor,
             'date_first_day' => $config->date_first_day,
@@ -12397,11 +12290,6 @@ class cCrud
                 // $this->ci->usuarios_model->registraAlteracao($this->table, $this->primary_val, implode(PHP_EOL . PHP_EOL, $changes));
             }
         }
-    }
-
-    public function strip_tags($bool = true)
-    {
-        $this->strip_tags = $bool;
     }
 
     protected function relation_search($name, $dependval)
