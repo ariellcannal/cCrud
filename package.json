@@ -1,0 +1,17 @@
+{
+  "name": "ccrud",
+  "version": "1.0.0",
+  "description": "Dependencies for cCrud front-end resources",
+  "private": true,
+  "dependencies": {
+    "alertifyjs": "^1.14.0",
+    "bootstrap": "^5.3.8",
+    "jquery": "^3.7.1",
+    "jquery-ui-dist": "^1.13.3",
+    "jcrop": "^3.0.1",
+    "google-maps": "^4.3.3",
+    "ckeditor4": "^4.25.1",
+    "select2": "^4.1.0-rc.0",
+    "jquery-mask-plugin": "^1.14.16"
+  }
+}

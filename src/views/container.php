@@ -7,8 +7,8 @@
  */
 ?>
 <div class="cCrud container-fluid">
-	<div class="cCrud-ajax">
-    	<?=$content ?>
+        <div class="cCrud-ajax">
+        <?= $content ?>
     </div>
         <div class="cCrud-overlay">
                 <div class="w-100 h-100 d-flex justify-content-center align-items-center">
@@ -18,3 +18,4 @@
                 </div>
         </div>
 </div>
+
