@@ -11,34 +11,6 @@ class cCrud extends BaseConfig
     public bool $manual_load = false; // permite desativar a saída automática de CSS e JS
 
     /**
-     * Bibliotecas CSS a serem carregadas via CDN.
-     *
-     * @var string[]
-     */
-    public array $css_libs = [
-        'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
-        'https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.min.css',
-        'https://cdnjs.cloudflare.com/ajax/libs/Jcrop/0.9.15/jquery.Jcrop.min.css',
-        'https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/alertify.min.css',
-        'https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/themes/bootstrap.min.css',
-    ];
-
-    /**
-     * Bibliotecas JavaScript a serem carregadas via CDN.
-     *
-     * @var string[]
-     */
-    public array $js_libs = [
-        'https://code.jquery.com/jquery-3.7.1.min.js',
-        'https://code.jquery.com/ui/1.13.2/jquery-ui.min.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/Jcrop/0.9.15/jquery.Jcrop.min.js',
-        'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js',
-        'https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js',
-        'https://maps.googleapis.com/maps/api/js',
-        'https://cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/alertify.min.js',
-    ];
-
-    /**
      * URI base utilizada pelo cCrud para processar requisições.
      *
      * @var string

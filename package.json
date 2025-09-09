@@ -1,17 +1,37 @@
 {
   "name": "ccrud",
   "version": "1.0.0",
-  "description": "Dependencies for cCrud front-end resources",
-  "private": true,
-  "dependencies": {
-    "alertifyjs": "^1.14.0",
-    "bootstrap": "^5.3.8",
-    "jquery": "^3.7.1",
-    "jquery-ui-dist": "^1.13.3",
-    "jcrop": "^3.0.1",
-    "google-maps": "^4.3.3",
-    "ckeditor4": "^4.25.1",
-    "select2": "^4.1.0-rc.0",
-    "jquery-mask-plugin": "^1.14.16"
+  "description": "Custom scripts and styles for cCrud front-end.",
+  "private": false,
+  "type": "module",
+  "main": "./public/ccrud.umd.cjs",
+  "module": "./public/ccrud.js",
+  "exports": {
+    ".": {
+      "import": "./public/ccrud.js",
+      "require": "./public/ccrud.umd.cjs"
+    },
+    "./public/ccrud.css": "./public/ccrud.css"
+  },
+  "files": [
+    "public",
+    "src"
+  ],
+  "scripts": {
+    "build": "vite build"
+  },
+  "peerDependencies": {
+    "@fortawesome/fontawesome-free": "^7.0.0",
+    "alertifyjs": "^1.13.1",
+    "bootstrap": "^5.3.0",
+    "ckeditor4": "^4.20.0",
+    "cropperjs": "^1.6.0",
+    "jquery": "^3.7.0",
+    "jquery-mask-plugin": "^1.14.16",
+    "jquery-ui-dist": "^1.13.2",
+    "select2": "^4.1.0-rc.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
   }
 }

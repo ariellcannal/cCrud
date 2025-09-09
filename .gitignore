@@ -3,6 +3,5 @@ auth.json
 /.buildpath
 /.project
 /.settings/
-/composer.lock
 /composer.phar
 node_modules/

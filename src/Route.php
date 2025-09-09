@@ -54,7 +54,7 @@ class Route
      */
     public function css(): ResponseInterface
     {
-        $content = file_get_contents(CCRUD_PATH . '/views/cCrud.css');
+        $content = file_get_contents(CCRUD_PATH . '/public/ccrud.css');
         return Services::response()->setContentType('text/css')->setBody($content);
     }
 
@@ -65,7 +65,7 @@ class Route
      */
     public function js(): ResponseInterface
     {
-        $content = file_get_contents(CCRUD_PATH . '/views/cCrud.js');
+        $content = file_get_contents(CCRUD_PATH . '/public/ccrud.js');
         return Services::response()->setContentType('application/javascript')->setBody($content);
     }
 }

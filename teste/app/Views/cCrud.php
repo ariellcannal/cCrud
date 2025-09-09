@@ -17,6 +17,6 @@ helper('html');
 <body>
     <?= $crud ?>
     <?= script_tag('app.js') ?>
-    <?= script_tag('https://maps.googleapis.com/maps/api/js?key=' . getenv('maps_api_key')) ?>
+    <?php //script_tag('https://maps.googleapis.com/maps/api/js?key=' . getenv('maps_api_key')) ?>
 </body>
 </html>

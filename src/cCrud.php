@@ -9663,10 +9663,6 @@ class cCrud
         self::$css_loaded = true;
 
         $out = '';
-        foreach ($config->css_libs as $lib) {
-            $out .= '<link href="' . $lib . '" rel="stylesheet" type="text/css" />';
-        }
-
         $out .= '<link href="/' . trim($config->request_uri, '/') . '/css" rel="stylesheet" type="text/css" />';
 
         return $out;
@@ -9695,10 +9691,7 @@ class cCrud
         self::$js_loaded = true;
 
         $out = '';
-        foreach ($config->js_libs as $lib) {
-            $out .= '<script src="' . $lib . '"></script>';
-        }
-
+        
         $out .= '<script src="/' . trim($config->request_uri, '/') . '/js"></script>';
 
         $settings = [
