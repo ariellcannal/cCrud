@@ -2,7 +2,13 @@
   "name": "teste",
   "version": "1.0.0",
   "private": true,
+  "scripts": {
+    "build": "vite build"
+  },
   "dependencies": {
     "ccrud": "github:ariellcannal/ccrud#dev"
+  },
+  "devDependencies": {
+    "vite": "^5.4.9"
   }
 }
