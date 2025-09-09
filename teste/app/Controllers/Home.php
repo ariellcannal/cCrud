@@ -38,10 +38,10 @@ class Home extends BaseController
             }
         }
 
-        $crud = new cCrud($model);
+        $ccrud = new cCrud($model);
 
         return view('cCrud', [
-            'crud' => $crud->render()
+            'ccrud' => $ccrud->render()
         ]);
     }
 
