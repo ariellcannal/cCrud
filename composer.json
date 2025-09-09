@@ -3,6 +3,7 @@
 	"description" : "cCrud",
 	"license" : "MIT",
 	"type" : "library",
+	"version" : "dev-main"
 	"require" : {
 		"php" : "^8.2",
 		"codeigniter4/translations" : "~4.5",
@@ -23,5 +24,15 @@
 		"optimize-autoloader" : true,
 		"preferred-install" : "dist",
 		"sort-packages" : true
-	}
+	},
+	"scripts": {
+        "post-update-cmd": [
+            "echo 'Executando npm install após composer update...'",
+            "npm install"
+        ],
+        "post-install-cmd": [
+            "echo 'Executando npm install após composer install...'",
+            "npm install"
+        ]
+    }
 }

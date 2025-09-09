@@ -18,7 +18,7 @@ class Home extends BaseController
      *
      * @return string
      */
-    public function index(): string
+    public function index()
     {
         $model = new CcrudTestModel();
 
@@ -40,7 +40,9 @@ class Home extends BaseController
 
         $crud = new cCrud($model);
 
-        return $crud->render();
+        return view('cCrud', [
+            'crud' => $crud->render()
+        ]);
     }
 
     /**
