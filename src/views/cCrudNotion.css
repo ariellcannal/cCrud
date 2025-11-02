@@ -1,0 +1,711 @@
+/**
+ * cCrud Notion-like Styles
+ * 
+ * Estilos inspirados no Notion para interface limpa e moderna
+ * 
+ * @version 2.0.0
+ */
+
+/* ========================================
+   Variáveis CSS
+   ======================================== */
+:root {
+    --ccrud-notion-bg: #ffffff;
+    --ccrud-notion-bg-hover: #f7f6f3;
+    --ccrud-notion-bg-selected: #e9e7e3;
+    --ccrud-notion-border: #e9e9e7;
+    --ccrud-notion-text: #37352f;
+    --ccrud-notion-text-muted: #9b9a97;
+    --ccrud-notion-primary: #2383e2;
+    --ccrud-notion-primary-hover: #1a6bb8;
+    --ccrud-notion-shadow: rgba(15, 15, 15, 0.05);
+    --ccrud-notion-shadow-hover: rgba(15, 15, 15, 0.1);
+    --ccrud-notion-radius: 3px;
+    --ccrud-notion-transition: all 0.15s ease;
+}
+
+/* ========================================
+   Container Principal
+   ======================================== */
+.ccrud-notion-container {
+    background: var(--ccrud-notion-bg);
+    color: var(--ccrud-notion-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* ========================================
+   Cabeçalho
+   ======================================== */
+.ccrud-notion-header {
+    padding: 24px 0 16px;
+    border-bottom: 1px solid var(--ccrud-notion-border);
+    margin-bottom: 16px;
+}
+
+.ccrud-notion-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--ccrud-notion-text);
+    margin: 0 0 12px 0;
+    line-height: 1.2;
+}
+
+.ccrud-notion-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* ========================================
+   Botões
+   ======================================== */
+.ccrud-notion-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--ccrud-notion-text);
+    background: transparent;
+    border: 1px solid var(--ccrud-notion-border);
+    border-radius: var(--ccrud-notion-radius);
+    cursor: pointer;
+    transition: var(--ccrud-notion-transition);
+    white-space: nowrap;
+}
+
+.ccrud-notion-btn:hover {
+    background: var(--ccrud-notion-bg-hover);
+    border-color: var(--ccrud-notion-text-muted);
+}
+
+.ccrud-notion-btn:active {
+    background: var(--ccrud-notion-bg-selected);
+}
+
+.ccrud-notion-btn-primary {
+    color: #ffffff;
+    background: var(--ccrud-notion-primary);
+    border-color: var(--ccrud-notion-primary);
+}
+
+.ccrud-notion-btn-primary:hover {
+    background: var(--ccrud-notion-primary-hover);
+    border-color: var(--ccrud-notion-primary-hover);
+    color: #ffffff;
+}
+
+.ccrud-notion-btn-sm {
+    padding: 4px 8px;
+    font-size: 13px;
+}
+
+.ccrud-notion-btn-icon {
+    padding: 6px;
+    min-width: 32px;
+    justify-content: center;
+}
+
+/* ========================================
+   Tabela
+   ======================================== */
+.ccrud-notion-table-wrapper {
+    border: 1px solid var(--ccrud-notion-border);
+    border-radius: var(--ccrud-notion-radius);
+    overflow: hidden;
+    background: var(--ccrud-notion-bg);
+}
+
+.ccrud-notion-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 14px;
+}
+
+.ccrud-notion-table thead {
+    background: var(--ccrud-notion-bg-hover);
+}
+
+.ccrud-notion-table th {
+    padding: 8px 12px;
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--ccrud-notion-text-muted);
+    text-align: left;
+    border-bottom: 1px solid var(--ccrud-notion-border);
+    border-right: 1px solid var(--ccrud-notion-border);
+    position: relative;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.ccrud-notion-table th:last-child {
+    border-right: none;
+}
+
+.ccrud-notion-table th:hover {
+    background: var(--ccrud-notion-bg-selected);
+}
+
+.ccrud-notion-table th.sortable {
+    cursor: pointer;
+}
+
+.ccrud-notion-table th.sortable:hover {
+    color: var(--ccrud-notion-text);
+}
+
+.ccrud-notion-table th .sort-icon {
+    margin-left: 4px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.ccrud-notion-table th.sortable:hover .sort-icon,
+.ccrud-notion-table th.sorted .sort-icon {
+    opacity: 1;
+}
+
+.ccrud-notion-table tbody tr {
+    transition: background-color 0.1s ease;
+}
+
+.ccrud-notion-table tbody tr:hover {
+    background: var(--ccrud-notion-bg-hover);
+}
+
+.ccrud-notion-table tbody tr.selected {
+    background: var(--ccrud-notion-bg-selected);
+}
+
+.ccrud-notion-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--ccrud-notion-border);
+    border-right: 1px solid var(--ccrud-notion-border);
+    color: var(--ccrud-notion-text);
+    vertical-align: middle;
+}
+
+.ccrud-notion-table td:last-child {
+    border-right: none;
+}
+
+.ccrud-notion-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Células vazias */
+.ccrud-notion-table td:empty::before {
+    content: "—";
+    color: var(--ccrud-notion-text-muted);
+}
+
+/* ========================================
+   Redimensionamento de Colunas
+   ======================================== */
+.ccrud-resize-handle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 4px;
+    height: 100%;
+    cursor: col-resize;
+    user-select: none;
+    z-index: 1;
+}
+
+.ccrud-resize-handle:hover {
+    background: var(--ccrud-notion-primary);
+}
+
+body.ccrud-resizing {
+    cursor: col-resize;
+    user-select: none;
+}
+
+body.ccrud-resizing * {
+    cursor: col-resize !important;
+}
+
+/* ========================================
+   Drag and Drop de Colunas
+   ======================================== */
+.ccrud-notion-table th[draggable="true"] {
+    cursor: move;
+}
+
+.ccrud-notion-table th.ccrud-dragging {
+    opacity: 0.5;
+}
+
+.ccrud-notion-table th.ccrud-drag-over {
+    border-left: 3px solid var(--ccrud-notion-primary);
+}
+
+/* ========================================
+   Ações da Tabela
+   ======================================== */
+.ccrud-table-actions {
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
+}
+
+.ccrud-table-actions .ccrud-notion-btn {
+    padding: 4px 8px;
+    font-size: 13px;
+}
+
+/* ========================================
+   Busca
+   ======================================== */
+.ccrud-search-wrapper {
+    position: relative;
+    min-width: 200px;
+}
+
+.ccrud-search-input {
+    width: 100%;
+    padding: 6px 12px 6px 32px;
+    font-size: 14px;
+    border: 1px solid var(--ccrud-notion-border);
+    border-radius: var(--ccrud-notion-radius);
+    background: var(--ccrud-notion-bg);
+    color: var(--ccrud-notion-text);
+    transition: var(--ccrud-notion-transition);
+}
+
+.ccrud-search-input:focus {
+    outline: none;
+    border-color: var(--ccrud-notion-primary);
+    box-shadow: 0 0 0 2px rgba(35, 131, 226, 0.1);
+}
+
+.ccrud-search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ccrud-notion-text-muted);
+    pointer-events: none;
+}
+
+/* ========================================
+   Filtros
+   ======================================== */
+.ccrud-filters-panel {
+    background: var(--ccrud-notion-bg-hover);
+    border: 1px solid var(--ccrud-notion-border);
+    border-radius: var(--ccrud-notion-radius);
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+.ccrud-filters-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.ccrud-filters-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ccrud-notion-text);
+}
+
+.ccrud-filter-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: var(--ccrud-notion-bg);
+    border: 1px solid var(--ccrud-notion-border);
+    border-radius: var(--ccrud-notion-radius);
+    margin-bottom: 6px;
+}
+
+.ccrud-filter-item:last-child {
+    margin-bottom: 0;
+}
+
+.ccrud-filter-badge {
+    padding: 2px 6px;
+    font-size: 12px;
+    border-radius: 2px;
+    font-weight: 500;
+}
+
+.ccrud-filter-badge-operator {
+    background: #e9e7e3;
+    color: var(--ccrud-notion-text);
+}
+
+.ccrud-filter-badge-column {
+    background: #d3e5ef;
+    color: #0b6e99;
+}
+
+.ccrud-filter-badge-value {
+    background: #ede7dd;
+    color: #64473a;
+}
+
+/* ========================================
+   Visualizações Salvas
+   ======================================== */
+.ccrud-views-dropdown {
+    position: relative;
+}
+
+.ccrud-views-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 200px;
+    margin-top: 4px;
+    background: var(--ccrud-notion-bg);
+    border: 1px solid var(--ccrud-notion-border);
+    border-radius: var(--ccrud-notion-radius);
+    box-shadow: 0 4px 12px var(--ccrud-notion-shadow);
+    z-index: 1000;
+    display: none;
+}
+
+.ccrud-views-menu.show {
+    display: block;
+}
+
+.ccrud-view-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ccrud-view-item:hover {
+    background: var(--ccrud-notion-bg-hover);
+}
+
+.ccrud-view-item.active {
+    background: var(--ccrud-notion-bg-selected);
+    font-weight: 500;
+}
+
+/* ========================================
+   Offcanvas (Formulários)
+   ======================================== */
+.ccrud-offcanvas {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 100%;
+    max-width: 600px;
+    height: 100vh;
+    background: var(--ccrud-notion-bg);
+    box-shadow: -4px 0 12px var(--ccrud-notion-shadow-hover);
+    z-index: 1050;
+    transition: right 0.3s ease;
+    overflow-y: auto;
+}
+
+.ccrud-offcanvas.show {
+    right: 0;
+}
+
+.ccrud-offcanvas-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--ccrud-notion-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--ccrud-notion-bg);
+    z-index: 1;
+}
+
+.ccrud-offcanvas-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.ccrud-offcanvas-close {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    color: var(--ccrud-notion-text-muted);
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--ccrud-notion-radius);
+    transition: var(--ccrud-notion-transition);
+}
+
+.ccrud-offcanvas-close:hover {
+    background: var(--ccrud-notion-bg-hover);
+    color: var(--ccrud-notion-text);
+}
+
+.ccrud-offcanvas-body {
+    padding: 24px;
+}
+
+.ccrud-offcanvas-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--ccrud-notion-border);
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    position: sticky;
+    bottom: 0;
+    background: var(--ccrud-notion-bg);
+}
+
+.ccrud-offcanvas-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 1040;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.ccrud-offcanvas-backdrop.show {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* Responsivo: Offcanvas fullscreen em mobile */
+@media (max-width: 767px) {
+    .ccrud-offcanvas {
+        max-width: 100%;
+    }
+}
+
+/* ========================================
+   Formulários
+   ======================================== */
+.ccrud-form-group {
+    margin-bottom: 20px;
+}
+
+.ccrud-form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ccrud-notion-text);
+    margin-bottom: 6px;
+}
+
+.ccrud-form-label-required::after {
+    content: " *";
+    color: #e03e3e;
+}
+
+.ccrud-form-control {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 1px solid var(--ccrud-notion-border);
+    border-radius: var(--ccrud-notion-radius);
+    background: var(--ccrud-notion-bg);
+    color: var(--ccrud-notion-text);
+    transition: var(--ccrud-notion-transition);
+}
+
+.ccrud-form-control:focus {
+    outline: none;
+    border-color: var(--ccrud-notion-primary);
+    box-shadow: 0 0 0 2px rgba(35, 131, 226, 0.1);
+}
+
+.ccrud-form-control.is-invalid {
+    border-color: #e03e3e;
+}
+
+.ccrud-form-control.is-invalid:focus {
+    box-shadow: 0 0 0 2px rgba(224, 62, 62, 0.1);
+}
+
+.ccrud-form-help {
+    font-size: 12px;
+    color: var(--ccrud-notion-text-muted);
+    margin-top: 4px;
+}
+
+.ccrud-form-error {
+    font-size: 12px;
+    color: #e03e3e;
+    margin-top: 4px;
+}
+
+/* ========================================
+   Paginação
+   ======================================== */
+.ccrud-pagination {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 0;
+}
+
+.ccrud-pagination-btn {
+    padding: 6px 10px;
+    font-size: 13px;
+    border: 1px solid var(--ccrud-notion-border);
+    background: var(--ccrud-notion-bg);
+    color: var(--ccrud-notion-text);
+    border-radius: var(--ccrud-notion-radius);
+    cursor: pointer;
+    transition: var(--ccrud-notion-transition);
+}
+
+.ccrud-pagination-btn:hover:not(:disabled) {
+    background: var(--ccrud-notion-bg-hover);
+}
+
+.ccrud-pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.ccrud-pagination-btn.active {
+    background: var(--ccrud-notion-primary);
+    color: #ffffff;
+    border-color: var(--ccrud-notion-primary);
+}
+
+.ccrud-pagination-info {
+    font-size: 13px;
+    color: var(--ccrud-notion-text-muted);
+    margin: 0 8px;
+}
+
+/* ========================================
+   Checkbox e Radio
+   ======================================== */
+.ccrud-checkbox,
+.ccrud-radio {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.ccrud-checkbox input[type="checkbox"],
+.ccrud-radio input[type="radio"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* ========================================
+   Seletor de Colunas
+   ======================================== */
+.ccrud-column-selector {
+    position: relative;
+}
+
+.ccrud-column-selector-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    min-width: 220px;
+    margin-top: 4px;
+    background: var(--ccrud-notion-bg);
+    border: 1px solid var(--ccrud-notion-border);
+    border-radius: var(--ccrud-notion-radius);
+    box-shadow: 0 4px 12px var(--ccrud-notion-shadow);
+    z-index: 1000;
+    display: none;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.ccrud-column-selector-menu.show {
+    display: block;
+}
+
+.ccrud-column-selector-item {
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+}
+
+.ccrud-column-selector-item:hover {
+    background: var(--ccrud-notion-bg-hover);
+}
+
+/* ========================================
+   Loading
+   ======================================== */
+.ccrud-loading {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--ccrud-notion-border);
+    border-top-color: var(--ccrud-notion-primary);
+    border-radius: 50%;
+    animation: ccrud-spin 0.6s linear infinite;
+}
+
+@keyframes ccrud-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ========================================
+   Utilitários
+   ======================================== */
+.ccrud-text-muted {
+    color: var(--ccrud-notion-text-muted);
+}
+
+.ccrud-text-small {
+    font-size: 12px;
+}
+
+.ccrud-divider {
+    height: 1px;
+    background: var(--ccrud-notion-border);
+    margin: 16px 0;
+}
+
+.ccrud-empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--ccrud-notion-text-muted);
+}
+
+.ccrud-empty-state-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.3;
+}
+
+.ccrud-empty-state-text {
+    font-size: 14px;
+}
