@@ -3946,29 +3946,8 @@ class cCrud
         }
 		unset($postdata);
 		$this->previous_task = $this->task;
-		$before_task = $this->before; // Guarda o modo anterior (edit, create, etc.)
 		$this->task = $this->after;
 		$this->after = null;
-		
-		// DEBUG: Log para verificar valores
-		log_message('debug', '[cCrud] before_task: ' . var_export($before_task, true));
-		log_message('debug', '[cCrud] this->task: ' . var_export($this->task, true));
-		log_message('debug', '[cCrud] Condition check: ' . ($before_task === $this->task ? 'TRUE' : 'FALSE'));
-		
-		// Se o modo não mudou (ex: edit → edit), retorna apenas mensagem JSON
-		if ($before_task === $this->task && in_array($this->task, ['edit', 'view'])) {
-			$message = $this->primary_val ? self::lang('save_success') : self::lang('create_success');
-			return Services::response()
-				->setContentType('application/json')
-				->setBody(json_encode([
-					'success' => true,
-					'message' => $message,
-					'primary_key' => $this->primary_key,
-					'primary_val' => $this->primary_val,
-					'task' => $this->task
-				]));
-		}
-		
 		return $this->_run_task();
     }
 
