@@ -14,8 +14,8 @@
     document.body.appendChild(testElement);
     const fontFamily = window.getComputedStyle(testElement).getPropertyValue('font-family');
     document.body.removeChild(testElement);
-    // Verifica pela string da versão 7 na font-family
-    return fontFamily.includes('Font Awesome 7'); // <-- Linha atualizada
+    // Verifica pela string do Font Awesome na font-family (versão 6.x)
+    return fontFamily.includes('Font Awesome') || fontFamily.includes('FontAwesome');
   };
 
   const dependencies = [
@@ -27,7 +27,7 @@
     { name: 'AlertifyJS', check: () => window.alertify },
     { name: 'CKEditor 4', check: () => window.CKEDITOR },
     { name: 'Cropper.js', check: () => window.Cropper },
-    { name: 'Font Awesome 7', check: checkFontAwesome },
+    { name: 'Font Awesome', check: checkFontAwesome },
   ];
 
   console.log(`[${packageName}] Verificando dependências...`);

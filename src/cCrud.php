@@ -9663,6 +9663,13 @@ class cCrud
         self::$css_loaded = true;
 
         $out = '';
+        
+        // Carregar dependências externas via CDN
+        ob_start();
+        include CCRUD_PATH . '/views/dependencies.php';
+        $out .= ob_get_clean();
+        
+        // Carregar CSS do cCrud
         $out .= '<link href="/' . trim($config->request_uri, '/') . '/css" rel="stylesheet" type="text/css" />';
 
         return $out;
