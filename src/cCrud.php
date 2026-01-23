@@ -3650,9 +3650,19 @@ class cCrud
                         break;
                     case 'datetime':
                         if ($val !== '') {
-                            $timeObj = is_numeric($val)
-                                ? Time::createFromFormat('U', (string) $val)
-                                : Time::createFromFormat('d/m/Y H:i', $val);
+                            if (is_numeric($val)) {
+                                $timeObj = Time::createFromFormat('U', (string) $val);
+                            } else {
+                                // Detecta formato do datetime (Y-m-d H:i:s ou d/m/Y H:i)
+                                if (strpos($val, '-') !== false) {
+                                    // Formato ISO (Y-m-d H:i:s ou Y-m-d H:i)
+                                    $format = (substr_count($val, ':') === 2) ? 'Y-m-d H:i:s' : 'Y-m-d H:i';
+                                } else {
+                                    // Formato brasileiro (d/m/Y H:i:s ou d/m/Y H:i)
+                                    $format = (substr_count($val, ':') === 2) ? 'd/m/Y H:i:s' : 'd/m/Y H:i';
+                                }
+                                $timeObj = Time::createFromFormat($format, $val);
+                            }
                             $postdata[$key] = $timeObj->toDateTimeString();
                         } else {
                             $postdata[$key] = $this->field_null[$key] ? null : '0000-00-00 00:00:00';
@@ -3660,9 +3670,13 @@ class cCrud
                         break;
                     case 'date':
                         if ($val !== '') {
-                            $timeObj = is_numeric($val)
-                                ? Time::createFromFormat('U', (string) $val)
-                                : Time::createFromFormat('d/m/Y', $val);
+                            if (is_numeric($val)) {
+                                $timeObj = Time::createFromFormat('U', (string) $val);
+                            } else {
+                                // Detecta formato da data (Y-m-d ou d/m/Y)
+                                $format = (strpos($val, '-') !== false) ? 'Y-m-d' : 'd/m/Y';
+                                $timeObj = Time::createFromFormat($format, $val);
+                            }
                             $postdata[$key] = $timeObj->toDateString();
                         } else {
                             $postdata[$key] = $this->field_null[$key] ? null : '0000-00-00';
