@@ -709,22 +709,22 @@ class cCrud
             if (empty($postData['key'])) {
                 return Services::response()->setStatusCode(400)->setBody(self::lang('security_key_empty'));
             }
-            $key = $security->clean($postData['key']);
+            $key = $postData['key'];
             if (empty($postData['instance'])) {
                 return Services::response()->setStatusCode(400)->setBody(self::lang('instance_name_empty'));
             }
-            $inst_name = $security->clean($postData['instance']);
+            $inst_name = $postData['instance'];
             $is_get    = false;
         } elseif (is_array($getData) && isset($getData['instance'], $getData['key'], $getData['task']) && $getData['task'] == 'file') {
             self::initPrepare();
             if (empty($getData['key'])) {
                 return Services::response()->setStatusCode(400)->setBody(self::lang('security_key_empty'));
             }
-            $key = $security->clean($getData['key']);
+            $key = $getData['key'];
             if (empty($getData['instance'])) {
                 return Services::response()->setStatusCode(400)->setBody(self::lang('instance_name_empty'));
             }
-            $inst_name = $security->clean($getData['instance']);
+            $inst_name = $getData['instance'];
             $is_get    = true;
         } else {
             // DEBUG: Retornar informações detalhadas sobre o erro
@@ -2971,10 +2971,8 @@ class cCrud
         if (($field === 'postdata' || $field === 'unique') && $value) {
             $dataKeys = array_keys($value);
             foreach ($dataKeys as $k => $key) {
-                $dataKeys[$k] = $security ? $security->clean($this->fieldname_decode($key)) : $this->fieldname_decode($key);
-                if ($security) {
-                    $value[$key] = $security->clean($value[$key]);
-                }
+                $dataKeys[$k] = $this->fieldname_decode($key);
+                // Sanitização já feita pelo CI4 IncomingRequest
             }
             return array_combine($dataKeys, $value);
         }
@@ -2983,21 +2981,21 @@ class cCrud
             switch ($filter) {
                 case 'key':
                     $value = str_replace('`', '', $value);
-                    return $security ? $security->clean($value) : $value;
+                    return $value;
                 case 'int':
                     return (int) $value;
                 case 'trim':
                     $value = trim($value);
-                    return $security ? $security->clean($value) : $value;
+                    return $value;
                 case 'base64':
                     $decoded = $this->fieldname_decode($value);
-                    return $security ? $security->clean($decoded) : $decoded;
+                    return $decoded;
                 default:
-                    return $security ? $security->clean($value) : $value;
+                    return $value;
             }
         }
 
-        return $security ? $security->clean($value) : $value;
+        return $value;
     }
 
     /**
@@ -3025,18 +3023,18 @@ class cCrud
             switch ($filter) {
                 case 'key':
                     $value = str_replace('`', '', $value);
-                    return $security ? $security->clean($value) : $value;
+                    return $value;
                 case 'int':
                     return (int) $value;
                 case 'trim':
                     $value = trim($value);
-                    return $security ? $security->clean($value) : $value;
+                    return $value;
                 default:
-                    return $security ? $security->clean($value) : $value;
+                    return $value;
             }
         }
 
-        return $security ? $security->clean($value) : $value;
+        return $value;
     }
 
     protected function stripslashes_callback(&$item, $key)
@@ -12415,7 +12413,7 @@ class cCrud
         $where_arr = array();
         $request  = Services::request();
         $security = Services::security();
-        $q        = $security->clean($request->getPost('q'));
+        $q        = $request->getPost('q');
         $where_arr[] = $this->relation[$name]['rel_name'] . ' LIKE "%' . $q . '%"';
         if ($this->relation[$name]['rel_where']) {
             if (is_array($this->relation[$name]['rel_where'])) {
