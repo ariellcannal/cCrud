@@ -2700,7 +2700,7 @@ class cCrud
             $renderer = Services::renderer($viewPath);
             $contents .= $renderer->setData([
                 'cCrud'    => $this,
-                'content' => $content
+                'content' => $this->render_control_fields() . $content
             ])->render('container.php');
 
             if (! self::$js_loaded && ! $this->config->manual_load) {
