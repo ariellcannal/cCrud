@@ -1,7 +1,34 @@
+# --- Dependências do Composer ---
 /vendor/
-auth.json
-/.buildpath
-/.project
-/.settings/
-/composer.phar
-node_modules/
+/node_modules/
+composer.lock
+
+# --- Ambiente e Configurações Locais ---
+.env
+env
+private/
+
+# --- CodeIgniter 4: Arquivos Temporários e Logs ---
+/writable/cache/*
+/writable/debugbar/*
+/writable/logs/*
+/writable/session/*
+/writable/uploads/*
+!/writable/**/index.html
+!/writable/cache/.gitignore
+!/writable/logs/.gitignore
+!/writable/session/.gitignore
+!/writable/uploads/.gitignore
+
+# --- Testes e Builds ---
+/tests/_support/_generated
+/builds/
+phpunit.xml
+
+# --- IDE Eclipse (IMPORTANTE para você) ---
+.classpath
+.settings/
+
+# --- Sistema Operacional ---
+.DS_Store
+Thumbs.db

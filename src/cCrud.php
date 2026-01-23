@@ -8040,7 +8040,7 @@ class cCrud
                 imagesavealpha($dstHandle, true);
                 break;
         }
-        imagecopyresampled($dstHandle, $srcHandle, 0, 0, 0, 0, $destWidth, $destHeight, $srcWidth, $srcHeight);
+        @imagecopyresampled($dstHandle, $srcHandle, 0, 0, 0, 0, $destWidth, $destHeight, $srcWidth, $srcHeight);
         imagedestroy($srcHandle);
         if ($watermark) {
             list ($water_w, $water_h, $water_type) = getimagesize($watermark);

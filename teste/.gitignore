@@ -1,130 +1,35 @@
-#-------------------------
-# Operating Specific Junk Files
-#-------------------------
+# --- Dependências do Composer ---
+/vendor/
+composer.lock
 
-# OS X
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# OS X Thumbnails
-._*
-
-# Windows image file caches
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-
-# Recycle Bin used on file shares
-$RECYCLE.BIN/
-
-# Windows Installer files
-*.cab
-*.msi
-*.msm
-*.msp
-
-# Windows shortcuts
-*.lnk
-
-# Linux
-*~
-
-# KDE directory preferences
-.directory
-
-# Linux trash folder which might appear on any partition or disk
-.Trash-*
-
-#-------------------------
-# Environment Files
-#-------------------------
-# These should never be under version control,
-# as it poses a security risk.
+# --- Ambiente e Configurações Locais ---
 .env
-.vagrant
-Vagrantfile
+env
+private/
 
-#-------------------------
-# Temporary Files
-#-------------------------
-writable/cache/*
-!writable/cache/index.html
+# --- CodeIgniter 4: Arquivos Temporários e Logs ---
+/writable/cache/*
+/writable/debugbar/*
+/writable/logs/*
+/writable/session/*
+/writable/uploads/*
+!/writable/**/index.html
+!/writable/cache/.gitignore
+!/writable/logs/.gitignore
+!/writable/session/.gitignore
+!/writable/uploads/.gitignore
 
-writable/logs/*
-!writable/logs/index.html
+# --- Testes e Builds ---
+/tests/_support/_generated
+/builds/
+phpunit.xml
 
-writable/session/*
-!writable/session/index.html
+# --- IDE Eclipse (IMPORTANTE para você) ---
+.classpath
+.project
+.settings/
+.buildpath/
 
-writable/uploads/*
-!writable/uploads/index.html
-
-writable/debugbar/*
-!writable/debugbar/index.html
-
-php_errors.log
-
-#-------------------------
-# User Guide Temp Files
-#-------------------------
-user_guide_src/build/*
-user_guide_src/cilexer/build/*
-user_guide_src/cilexer/dist/*
-user_guide_src/cilexer/pycilexer.egg-info/*
-
-#-------------------------
-# Test Files
-#-------------------------
-tests/coverage*
-
-# Don't save phpunit under version control.
-phpunit
-
-#-------------------------
-# Composer
-#-------------------------
-vendor/
-
-#-------------------------
-# IDE / Development Files
-#-------------------------
-
-# Modules Testing
-_modules/*
-
-# phpenv local config
-.php-version
-
-# Jetbrains editors (PHPStorm, etc)
-.idea/
-*.iml
-
-# NetBeans
-/nbproject/
-/build/
-/nbbuild/
-/dist/
-/nbdist/
-/nbactions.xml
-/nb-configuration.xml
-/.nb-gradle/
-
-# Sublime Text
-*.tmlanguage.cache
-*.tmPreferences.cache
-*.stTheme.cache
-*.sublime-workspace
-*.sublime-project
-.phpintel
-/api/
-
-# Visual Studio Code
-.vscode/
-
-/results/
-/phpunit*.xml
-
-# Arquivos binarios
-public/favicon.ico
-/writable/
+# --- Sistema Operacional ---
+.DS_Store
+Thumbs.db
