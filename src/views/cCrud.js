@@ -36,27 +36,40 @@ var cCrud = {
 				cCrud.after_task = data.after;
 			},
 			success: function(response, textStatus, jqXHR) {
+				console.log('[cCrud] Response type:', typeof response);
+				console.log('[cCrud] Response preview:', response.substring ? response.substring(0, 100) : response);
+				
 				// Tenta parsear como JSON primeiro (mais robusto que verificar content-type)
+				var isJson = false;
+				var jsonResponse = null;
+				
 				try {
-					var jsonResponse = typeof response === 'string' ? JSON.parse(response) : response;
-					// Se parsear com sucesso E tiver a propriedade success, é uma resposta JSON do cCrud
-					if (jsonResponse && jsonResponse.hasOwnProperty('success')) {
-						if (jsonResponse.success) {
-							// Exibe mensagem de sucesso sem recarregar HTML
-							cCrud.show_message(container, jsonResponse.message, 'success');
-							// Atualiza primary key se for criação
-							if (jsonResponse.primary_val && jsonResponse.primary_key) {
-								$(container).find('input[name="' + jsonResponse.primary_key + '"]').val(jsonResponse.primary_val);
-							}
-						}
-						if (success_callback) {
-							success_callback(container);
-						}
-						return; // NÃO recarrega HTML!
-					}
+					jsonResponse = typeof response === 'string' ? JSON.parse(response) : response;
+					isJson = true;
+					console.log('[cCrud] JSON parsed successfully:', jsonResponse);
 				} catch (e) {
-					// Não é JSON, continua com processamento HTML normal
+					console.log('[cCrud] Not JSON, treating as HTML');
+					isJson = false;
 				}
+				
+				// Se parsear com sucesso E tiver a propriedade success, é uma resposta JSON do cCrud
+				if (isJson && jsonResponse && jsonResponse.hasOwnProperty('success')) {
+					console.log('[cCrud] JSON response detected, NOT reloading HTML');
+					if (jsonResponse.success) {
+						// Exibe mensagem de sucesso sem recarregar HTML
+						cCrud.show_message(container, jsonResponse.message, 'success');
+						// Atualiza primary key se for criação
+						if (jsonResponse.primary_val && jsonResponse.primary_key) {
+							$(container).find('input[name="' + jsonResponse.primary_key + '"]').val(jsonResponse.primary_val);
+						}
+					}
+					if (success_callback) {
+						success_callback(container);
+					}
+					return; // NÃO recarrega HTML!
+				}
+				
+				console.log('[cCrud] HTML response, reloading container');
 				
 				// Resposta HTML normal
 				if (!$('.cCrud_result_validation').lenght) {
