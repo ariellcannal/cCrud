@@ -1473,6 +1473,8 @@ var cCrud = {
 		 */
 		reinit_plugins: function(container) {
 			console.log('[cCrud] Reinitializing plugins for container:', container);
+			console.log('[cCrud] $.fn.datetimepicker available:', typeof $.fn.datetimepicker);
+			console.log('[cCrud] $.fn.select2 available:', typeof $.fn.select2);
 			console.log('[cCrud] Datepicker elements found:', $(container).find('.cCrud-datepicker').length);
 			console.log('[cCrud] Select2 elements found:', $('select:not(.cCrud-columns-select):not(.cCrud-searchdata):not(.not_select2):not(.cCrud-columnsList-select)', container).length);
 			
