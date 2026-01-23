@@ -336,6 +336,10 @@ var cCrud = {
 		/*
 		 * https://github.com/Eonasdan/bootstrap-datetimepicker/
 		 */
+		if (!$.fn.datetimepicker) {
+			console.error('[cCrud] jQuery UI Timepicker Addon não está carregado');
+			return;
+		}
 		if ($(container).find('.cCrud-datepicker-from').data("DateTimePicker") == undefined && $(container).find('.cCrud-datepicker-to').data("DateTimePicker") == undefined) {
 			from = $(container).find('.cCrud-datepicker-from').datetimepicker();
 			to = $(container).find('.cCrud-datepicker-to').datetimepicker();
@@ -345,23 +349,27 @@ var cCrud = {
 						format: cCrud_config.moment_time_format,
 						useCurrent: false
 					});
+					break;
 				case 'datetime':
 				case 'timestamp':
 					element.datetimepicker({
 						format: cCrud_config.moment_date_format + ' ' + cCrud_config.moment_time_format,
 						useCurrent: false
 					});
+					break;
 				case 'date':
 					element.datetimepicker({
 						format: cCrud_config.moment_date_format,
 						useCurrent: false
 					});
+					break;
 				case 'year':
 					element.datetimepicker({
 						viewMode: 'years',
 						format: cCrud_config.moment_year_format,
 						useCurrent: false
 					});
+					break;
 				default:
 					cCrud.link_datetime_fields(from, to);
 					break;
@@ -372,6 +380,10 @@ var cCrud = {
 		/*
 		 * https://github.com/Eonasdan/bootstrap-datetimepicker/
 		 */
+		if (!$.fn.datetimepicker) {
+			console.error('[cCrud] jQuery UI Timepicker Addon não está carregado');
+			return;
+		}
 		$(container).find(".cCrud-datepicker").each(function() {
 			if ($(this).data("DateTimePicker") == undefined) {
 				var element = $(this);
@@ -382,23 +394,27 @@ var cCrud = {
 							format: cCrud_config.moment_time_format,
 							useCurrent: false
 						});
+						break;
 					case 'datetime':
 					case 'timestamp':
 						element.datetimepicker({
 							format: cCrud_config.moment_date_format + ' ' + cCrud_config.moment_time_format,
 							useCurrent: false
 						});
+						break;
 					case 'date':
 						element.datetimepicker({
 							format: cCrud_config.moment_date_format,
 							useCurrent: false
 						});
+						break;
 					case 'year':
 						element.datetimepicker({
 							viewMode: 'years',
 							format: cCrud_config.moment_year_format,
 							useCurrent: false
 						});
+						break;
 					default:
 						var range_start = element.data("rangestart");
 						var range_end = element.data("rangeend");
