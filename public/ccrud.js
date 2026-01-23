@@ -1,18 +1,23 @@
-(function() {
+window.addEventListener("load", function() {
   const e = "Pacote cCrud", a = [
     { name: "jQuery", check: () => window.jQuery },
     { name: "Bootstrap 5", check: () => window.bootstrap },
     { name: "jQuery UI", check: () => window.jQuery && window.jQuery.ui },
+    { name: "jQuery UI Timepicker", check: () => window.jQuery && window.jQuery.fn.datetimepicker },
     { name: "Select2", check: () => window.jQuery && window.jQuery.fn.select2 },
     { name: "jQuery Mask", check: () => window.jQuery && window.jQuery.fn.mask },
     { name: "AlertifyJS", check: () => window.alertify },
     { name: "CKEditor 4", check: () => window.CKEDITOR },
     { name: "Cropper.js", check: () => window.Cropper },
-    { name: "Font Awesome 7", check: () => {
-      const d = document.createElement("i");
-      d.className = "fa-solid", d.style.display = "none", document.body.appendChild(d);
-      const c = window.getComputedStyle(d).getPropertyValue("font-family");
-      return document.body.removeChild(d), c.includes("Font Awesome 7");
+    { name: "Font Awesome", check: () => {
+      if (Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some(
+        (l) => l.href.includes("font-awesome") || l.href.includes("fontawesome")
+      ))
+        return !0;
+      const c = document.createElement("i");
+      c.className = "fa fa-check", c.style.display = "none", document.body.appendChild(c);
+      const u = window.getComputedStyle(c).getPropertyValue("font-family");
+      return document.body.removeChild(c), u.includes("Font Awesome") || u.includes("FontAwesome");
     } }
   ];
   console.log(`[${e}] Verificando dependências...`);
@@ -29,7 +34,7 @@
   }), n ? console.log(`[${e}] Todas as dependências foram carregadas com sucesso.`) : console.error(
     `[${e}] Uma ou mais dependências não foram carregadas. O pacote pode não funcionar como esperado.`
   );
-})();
+});
 var cCrud = {
   config: function(e) {
     return cCrud_config[e] !== void 0 ? cCrud_config[e] : e;
@@ -60,7 +65,7 @@ var cCrud = {
         var d = n;
         cCrud.check_message(d), cCrud.exception || (cCrud.close_modal == !0 && ($("#cCrud-modal-window").modal("hide"), cCrud.parent_container && (e = cCrud.parent_container, cCrud.parent_container = null), cCrud.close_modal = !1), $(e).html(n), a && a(e));
       },
-      error: function(n, d, c) {
+      error: function(n, d, o) {
         cCrud.show_error(cCrud.lang("undefined_error")), console.log(n.statusText), console.log(n.responseText);
       },
       complete: function(n) {
@@ -107,7 +112,7 @@ var cCrud = {
       complete: function() {
         cCrud.hide_progress(e);
       },
-      error: function(n, d, c) {
+      error: function(n, d, o) {
         console.log(d), console.log(n.responseText);
       },
       cache: !1
@@ -132,20 +137,20 @@ var cCrud = {
     var n = a.task == "save";
     n && ($(".is-invalid", e).removeClass("is-invalid"), $(document).trigger("cCrudbeforevalidate", [e])), $('.cCrud-input:not([type="checkbox"],[type="radio"],[disabled])', e).each(function() {
       if (cCrud.check_container(this, e)) {
-        var o = cCrud.prepare_val(this);
-        a.postdata[$(this).attr("name")] = o;
-        var u = $(this).data("required"), f = $(this).data("pattern"), s = $(this).data("plugin"), p = $(this).data("validar");
-        n && u && !cCrud.validation_required(o, u) ? cCrud.field_invalid(this) : n && f && s != "formatter" && !cCrud.validation_pattern(o, f) ? cCrud.field_invalid(this) : n && p == "cnpj" && !cCrud.validation_cnpj(o) ? cCrud.field_invalid(this) : n && p == "url" && !cCrud.validation_url(o) && cCrud.field_invalid(this);
+        var c = cCrud.prepare_val(this);
+        a.postdata[$(this).attr("name")] = c;
+        var u = $(this).data("required"), l = $(this).data("pattern"), s = $(this).data("plugin"), p = $(this).data("validar");
+        n && u && !cCrud.validation_required(c, u) ? cCrud.field_invalid(this) : n && l && s != "formatter" && !cCrud.validation_pattern(c, l) ? cCrud.field_invalid(this) : n && p == "cnpj" && !cCrud.validation_cnpj(c) ? cCrud.field_invalid(this) : n && p == "url" && !cCrud.validation_url(c) && cCrud.field_invalid(this);
       }
     });
-    var d = !1, c = !1;
+    var d = !1, o = !1;
     return $(e).find('.cCrud-input[group-required="true"]:not([type="checkbox"],[type="radio"],[disabled])').each(function() {
       if (cCrud.check_container(this, e)) {
-        c = !0;
-        var o = cCrud.prepare_val(this);
-        a.postdata[$(this).attr("name")] = o, $(this).data("pattern"), cCrud.validation_required(o, 1) && (d = !0);
+        o = !0;
+        var c = cCrud.prepare_val(this);
+        a.postdata[$(this).attr("name")] = c, $(this).data("pattern"), cCrud.validation_required(c, 1) && (d = !0);
       }
-    }), c && !d && $(e).find('.cCrud-input[group-required="true"]:not([type="checkbox"],[type="radio"],[disabled])').each(function() {
+    }), o && !d && $(e).find('.cCrud-input[group-required="true"]:not([type="checkbox"],[type="radio"],[disabled])').each(function() {
       cCrud.check_container(this, e) && cCrud.field_invalid(this);
     }), $(e).find('.cCrud-input[data-type="checkboxes"]:not([disabled])').each(function() {
       a.postdata[$(this).attr("name")] === void 0 && (a.postdata[$(this).attr("name")] = ""), cCrud.check_container(this, e) && $(this).prop("checked") && (a.postdata[$(this).attr("name")] ? a.postdata[$(this).attr("name")] += "," + cCrud.prepare_val(this) : a.postdata[$(this).attr("name")] = cCrud.prepare_val(this));
@@ -313,10 +318,10 @@ var cCrud = {
         cCrud: t
       },
       url: cCrud.config("url"),
-      success: function(c) {
-        cCrud.hide_progress(a), $(n).replaceWith(c), $(document).trigger("cCrudafterupload", [a, t, status]);
-        var o = $(c).find("img.cCrud-crop");
-        $(o).length && cCrud.show_crop_window(o, a);
+      success: function(o) {
+        cCrud.hide_progress(a), $(n).replaceWith(o), $(document).trigger("cCrudafterupload", [a, t, status]);
+        var c = $(o).find("img.cCrud-crop");
+        $(c).length && cCrud.show_crop_window(c, a);
       },
       error: function() {
         cCrud.hide_progress(a), cCrud.show_error(cCrud.lang("undefined_error"));
@@ -356,17 +361,17 @@ var cCrud = {
         }
       },
       close: function(n, d) {
-        var c = cCrud.list_data(t, {
+        var o = cCrud.list_data(t, {
           task: "crop_image"
         });
         $(a).find(".xrud-crop-data").each(function() {
-          c[$(this).attr("name")] = $(this).val();
-        }), c.w = 0, c.h = 0, cCrud.show_progress(t), $.ajax({
+          o[$(this).attr("name")] = $(this).val();
+        }), o.w = 0, o.h = 0, cCrud.show_progress(t), $.ajax({
           data: {
-            cCrud: c
+            cCrud: o
           },
-          success: function(o) {
-            cCrud.hide_progress(t), $(a).replaceWith(o);
+          success: function(c) {
+            cCrud.hide_progress(t), $(a).replaceWith(c);
           },
           error: function() {
             cCrud.hide_progress(t), cCrud.show_error(cCrud.lang("undefined_error"));
@@ -378,16 +383,16 @@ var cCrud = {
         }), $(this).dialog("destroy"), $(".cCrud-crop").remove();
       },
       open: function(n, d) {
-        cCrud.load_image(e.attr("src"), function(c) {
-          var o = parseInt($(e).data("width")), u = parseInt($(e).data("height")), f = parseFloat($(e).data("ratio")), s = {};
-          s.boxWidth = o, s.boxHeight = u, u > 500 && (s.boxHeight = 500, s.boxWidth = Math.round(o * 500 / u)), s.boxWidth > 550 && (s.boxWidth = 550, s.boxHeight = Math.round(u * 550 / o));
-          var p = Math.round(($(window).width() - $(".ui-dialog.ui-widget").width()) / 2), l = Math.round(($(window).height() - $(".ui-dialog.ui-widget").height()) / 2);
+        cCrud.load_image(e.attr("src"), function(o) {
+          var c = parseInt($(e).data("width")), u = parseInt($(e).data("height")), l = parseFloat($(e).data("ratio")), s = {};
+          s.boxWidth = c, s.boxHeight = u, u > 500 && (s.boxHeight = 500, s.boxWidth = Math.round(c * 500 / u)), s.boxWidth > 550 && (s.boxWidth = 550, s.boxHeight = Math.round(u * 550 / c));
+          var p = Math.round(($(window).width() - $(".ui-dialog.ui-widget").width()) / 2), f = Math.round(($(window).height() - $(".ui-dialog.ui-widget").height()) / 2);
           $(".ui-dialog.ui-widget").css({
             position: "fixed",
             left: p + "px",
-            top: l + "px"
-          }), s.minSize = [50, 50], f && (s.aspectRatio = f), s.onChange = cCrud.get_coordinates, s.keySupport = !1, s.trueSize = [o, u];
-          var m = o / 4, C = u / 4, h = m * 3, g = C * 3;
+            top: f + "px"
+          }), s.minSize = [50, 50], l && (s.aspectRatio = l), s.onChange = cCrud.get_coordinates, s.keySupport = !1, s.trueSize = [c, u];
+          var m = c / 4, C = u / 4, h = m * 3, g = C * 3;
           s.setSelect = [m, C, h, g], s.allowSelect = !1, $(".ui-dialog img.cCrud-crop").Jcrop(s);
         });
       }
@@ -510,15 +515,15 @@ var cCrud = {
   depend_query: function(e, t, a) {
     if (!cCrud.block_query[e.name + t]) {
       cCrud.block_query[e.name + t] = 1;
-      var n = $(a).find('.cCrud-input[name="' + e.name + '"]'), d = n.parent(), c = n.val();
+      var n = $(a).find('.cCrud-input[name="' + e.name + '"]'), d = n.parent(), o = n.val();
       $(d).trigger("cCrudbeforedepend", [a, e]), $.ajax({
         data: {
           cCrud: e
         },
         type: "post",
         url: cCrud.config("url"),
-        success: function(o) {
-          n.select2("destroy").remove(), d.css("visibility", "hidden").append(o), n = $(d).find('.cCrud-input[name="' + e.name + '"]'), c !== null && n.val(c), $(d).trigger("cCrudafterdepend", [a, e]), window.setTimeout(function() {
+        success: function(c) {
+          n.select2("destroy").remove(), d.css("visibility", "hidden").append(c), n = $(d).find('.cCrud-input[name="' + e.name + '"]'), o !== null && n.val(o), $(d).trigger("cCrudafterdepend", [a, e]), window.setTimeout(function() {
             cCrud.jr_request($(a).find('.cCrud-input[name="' + e.name + '"]')), cCrud.block_query[e.name + t] = 0;
           }, 400), n.select2(), $(d).css("visibility", "visible");
         },
@@ -541,26 +546,26 @@ var cCrud = {
       zoom: a,
       center: t,
       mapTypeId: google.maps.MapTypeId[n]
-    }, c = new google.maps.Map($(e)[0], d);
-    return c;
+    }, o = new google.maps.Map($(e)[0], d);
+    return o;
   },
   place_marker: function(e, t, a, n, d) {
-    var c = new google.maps.Marker({
+    var o = new google.maps.Marker({
       position: t,
       map: e,
       animation: google.maps.Animation.DROP,
       draggable: !!a
     });
-    return n && google.maps.event.addListener(c, "click", function() {
-      var o = this, u = new google.maps.InfoWindow({
+    return n && google.maps.event.addListener(o, "click", function() {
+      var c = this, u = new google.maps.InfoWindow({
         maxWidth: 320
       });
-      u.setContent('<p class="cCrud-infowinow">' + n + "</p>"), u.open(e, o);
-    }), a && $(d).length && (google.maps.event.addListener(c, "dragend", function() {
+      u.setContent('<p class="cCrud-infowinow">' + n + "</p>"), u.open(e, c);
+    }), a && $(d).length && (google.maps.event.addListener(o, "dragend", function() {
       $(d).val(this.getPosition().lat() + "," + this.getPosition().lng());
-    }), google.maps.event.addListener(e, "click", function(o) {
-      c.setPosition(o.latLng), $(d).val(c.getPosition().lat() + "," + c.getPosition().lng());
-    })), c;
+    }), google.maps.event.addListener(e, "click", function(c) {
+      o.setPosition(c.latLng), $(d).val(o.getPosition().lat() + "," + o.getPosition().lng());
+    })), o;
   },
   move_marker: function(e, t, a, n, d) {
     return t ? t.setPosition(a) : this.place_marker(e, a, n, d), e.setCenter(a), t;
@@ -577,13 +582,13 @@ var cCrud = {
   },
   geocode: function(e, t, a) {
     var n = new google.maps.Geocoder();
-    n.geocode(e, function(d, c) {
-      var o = {};
-      if (c == google.maps.GeocoderStatus.OK) {
+    n.geocode(e, function(d, o) {
+      var c = {};
+      if (o == google.maps.GeocoderStatus.OK) {
         for (var u = 0; u < d.length; u++)
-          if (d[u].formatted_address && (o[u] = {}, o[u].lat = d[u].geometry.location.lat(), o[u].lng = d[u].geometry.location.lng(), o[u].address = d[u].formatted_address, a))
-            return a(o[u]);
-        t && t(o);
+          if (d[u].formatted_address && (c[u] = {}, c[u].lat = d[u].geometry.location.lat(), c[u].lng = d[u].geometry.location.lng(), c[u].address = d[u].formatted_address, a))
+            return a(c[u]);
+        t && t(c);
       }
     });
   },
@@ -591,30 +596,30 @@ var cCrud = {
   marker_instances: [],
   map_init: function(e) {
     cCrud.map_instances = [], $(e).find(".cCrud-map").each(function() {
-      var t = this, a = $(t).parent().children('input[data-type="point"]'), n = $(t).parent().children(".cCrud-map-search"), d = cCrud.parse_latlng($(a).val()), c = cCrud.create_map(t, d, $(t).data("zoom"), "ROADMAP"), o = cCrud.place_marker(c, d, $(t).data("draggable"), $(t).data("text"), a);
+      var t = this, a = $(t).parent().children('input[data-type="point"]'), n = $(t).parent().children(".cCrud-map-search"), d = cCrud.parse_latlng($(a).val()), o = cCrud.create_map(t, d, $(t).data("zoom"), "ROADMAP"), c = cCrud.place_marker(o, d, $(t).data("draggable"), $(t).data("text"), a);
       $(a).on("keyup", function() {
         var u = cCrud.parse_latlng($(a).val());
-        return cCrud.move_marker(c, o, u, $(t).data("draggable"), $(t).data("text")), !1;
+        return cCrud.move_marker(o, c, u, $(t).data("draggable"), $(t).data("text")), !1;
       }), $(n).length && $(n).on("keyup", function() {
         var u = $.trim($(n).val());
-        return u && cCrud.find_point(u, function(f) {
-          cCrud.map_dropdown(n, f, c, o, a, t);
+        return u && cCrud.find_point(u, function(l) {
+          cCrud.map_dropdown(n, l, o, c, a, t);
         }), !1;
-      }), cCrud.map_instances.push(c), cCrud.marker_instances.push(o);
+      }), cCrud.map_instances.push(o), cCrud.marker_instances.push(c);
     });
   },
-  map_dropdown: function(e, t, a, n, d, c) {
-    var o = $(e).outerWidth(), u = $(e).outerHeight(), f = $(e).offset();
+  map_dropdown: function(e, t, a, n, d, o) {
+    var c = $(e).outerWidth(), u = $(e).outerHeight(), l = $(e).offset();
     if ($(e).prev(".cCrud-map-dropdown").remove(), t) {
       var s = '<ul class="cCrud-map-dropdown">';
       $.map(t, function(p) {
         s += '<li data-val="' + p.lat + "," + p.lng + '">' + p.address + "</li>";
-      }), s += "</ul>", $(e).before(s), $(e).prev(".cCrud-map-dropdown").offset(f).css({
+      }), s += "</ul>", $(e).before(s), $(e).prev(".cCrud-map-dropdown").offset(l).css({
         marginTop: u + "px",
-        minWidth: o + "px"
+        minWidth: c + "px"
       }).children("li").on("click", function() {
         var p = cCrud.parse_latlng($(this).data("val"));
-        return $(e).val($(this).text()), n = cCrud.move_marker(a, n, p, $(c).data("draggable"), $(c).data("text")), $(d).val(n.getPosition().lat() + "," + n.getPosition().lng()), $(this).parent("ul").remove(), !1;
+        return $(e).val($(this).text()), n = cCrud.move_marker(a, n, p, $(o).data("draggable"), $(o).data("text")), $(d).val(n.getPosition().lat() + "," + n.getPosition().lng()), $(this).parent("ul").remove(), !1;
       });
     }
   },
@@ -756,14 +761,14 @@ var cCrud = {
       },
       success: function(n) {
         for (var d in n) {
-          var c = $('.cCrud-input[name="' + d + '"]', t);
-          c.data("select2") ? c.select2("destroy").replaceWith(n[d]) : c.replaceWith(n[d]);
+          var o = $('.cCrud-input[name="' + d + '"]', t);
+          o.data("select2") ? o.select2("destroy").replaceWith(n[d]) : o.replaceWith(n[d]);
         }
       },
       complete: function() {
         cCrud.hide_progress(t), $(document).trigger("cCrudafterjoinrelation", [e.closest(".form-horizontal"), a, status]);
       },
-      error: function(n, d, c) {
+      error: function(n, d, o) {
       },
       cache: !1
     });
@@ -776,24 +781,24 @@ var cCrud = {
           width: "100%"
         }, $(this).data());
         if ($(this).hasClass("select2-ajax")) {
-          var n = $(this).closest(".cCrud-ajax"), d = $(this).data("depend"), c = cCrud.list_controls_data(n);
-          c.dependval = $('.cCrud-input[name="' + d + '"]').val(), c.name = $(this).data("relationajax"), c.task = "relation_search", $.extend(a, {
+          var n = $(this).closest(".cCrud-ajax"), d = $(this).data("depend"), o = cCrud.list_controls_data(n);
+          o.dependval = $('.cCrud-input[name="' + d + '"]').val(), o.name = $(this).data("relationajax"), o.task = "relation_search", $.extend(a, {
             ajax: {
               url: cCrud.config("url") + "/cCrud",
               dataType: "json",
               delay: 250,
               type: "POST",
-              beforeSend: function(o, u) {
+              beforeSend: function(c, u) {
               },
-              data: function(o) {
+              data: function(c) {
                 return {
-                  q: o.term,
-                  cCrud: c
+                  q: c.term,
+                  cCrud: o
                 };
               },
-              processResults: function(o, u) {
+              processResults: function(c, u) {
                 return {
-                  results: o.items
+                  results: c.items
                 };
               },
               cache: !1
@@ -929,12 +934,12 @@ $.extend({
     return window.ActiveXObject && (typeof t == "boolean" ? n += ' src="javascript:false"' : typeof t == "string" && (n += ' src="' + t + '"')), n += " />", $(n).appendTo(document.body), $("#" + a).get(0);
   },
   createUploadForm: function(e, t, a) {
-    var n = "jUploadForm" + e, d = "jUploadFile" + e, c = $('<form  action="" method="POST" name="' + n + '" id="' + n + '" enctype="multipart/form-data"></form>');
+    var n = "jUploadForm" + e, d = "jUploadFile" + e, o = $('<form  action="" method="POST" name="' + n + '" id="' + n + '" enctype="multipart/form-data"></form>');
     if (a)
-      for (var o in a.cCrud)
-        a.cCrud[o] == "postdata" || $('<input type="hidden" name="cCrud[' + o + ']" value="' + a.cCrud[o] + '" />').appendTo(c);
-    var u = $("#" + t), f = $(u).clone();
-    return $(u).attr("id", d), $(u).before(f), $(u).appendTo(c), $(c).css("position", "absolute"), $(c).css("top", "-1200px"), $(c).css("left", "-1200px"), $(c).appendTo("body"), c;
+      for (var c in a.cCrud)
+        a.cCrud[c] == "postdata" || $('<input type="hidden" name="cCrud[' + c + ']" value="' + a.cCrud[c] + '" />').appendTo(o);
+    var u = $("#" + t), l = $(u).clone();
+    return $(u).attr("id", d), $(u).before(l), $(u).appendTo(o), $(o).css("position", "absolute"), $(o).css("top", "-1200px"), $(o).css("left", "-1200px"), $(o).appendTo("body"), o;
   },
   ajaxFileUpload: function(e) {
     e = $.extend({}, $.ajaxSettings, e);
@@ -942,44 +947,44 @@ $.extend({
     $.createUploadIframe(t, e.secureuri);
     var n = "jUploadFrame" + t, d = "jUploadForm" + t;
     e.global && !$.active++ && $.event.trigger("ajaxStart");
-    var c = !1, o = {};
-    e.global && $.event.trigger("ajaxSend", [o, e]);
+    var o = !1, c = {};
+    e.global && $.event.trigger("ajaxSend", [c, e]);
     var u = function(p) {
-      var l = document.getElementById(n);
+      var f = document.getElementById(n);
       try {
-        l.contentWindow ? (o.responseText = l.contentWindow.document.body ? l.contentWindow.document.body.innerHTML : null, o.responseXML = l.contentWindow.document.XMLDocument ? l.contentWindow.document.XMLDocument : l.contentWindow.document) : l.contentDocument && (o.responseText = l.contentDocument.document.body ? l.contentDocument.document.body.innerHTML : null, o.responseXML = l.contentDocument.document.XMLDocument ? l.contentDocument.document.XMLDocument : l.contentDocument.document);
+        f.contentWindow ? (c.responseText = f.contentWindow.document.body ? f.contentWindow.document.body.innerHTML : null, c.responseXML = f.contentWindow.document.XMLDocument ? f.contentWindow.document.XMLDocument : f.contentWindow.document) : f.contentDocument && (c.responseText = f.contentDocument.document.body ? f.contentDocument.document.body.innerHTML : null, c.responseXML = f.contentDocument.document.XMLDocument ? f.contentDocument.document.XMLDocument : f.contentDocument.document);
       } catch {
       }
-      if (o || p == "timeout") {
-        c = !0;
+      if (c || p == "timeout") {
+        o = !0;
         var m;
         try {
           if (m = p != "timeout" ? "success" : "error", m != "error") {
-            var C = $.uploadHttpData(o, e.dataType);
-            e.success && e.success(C, m), e.global && $.event.trigger("ajaxSuccess", [o, e]);
+            var C = $.uploadHttpData(c, e.dataType);
+            e.success && e.success(C, m), e.global && $.event.trigger("ajaxSuccess", [c, e]);
           }
         } catch {
           m = "error";
         }
-        e.global && $.event.trigger("ajaxComplete", [o, e]), e.global && !--$.active && $.event.trigger("ajaxStop"), e.complete && e.complete(o, m), $(l).unbind(), setTimeout(function() {
+        e.global && $.event.trigger("ajaxComplete", [c, e]), e.global && !--$.active && $.event.trigger("ajaxStop"), e.complete && e.complete(c, m), $(f).unbind(), setTimeout(function() {
           try {
-            $(l).remove(), $(a).remove();
+            $(f).remove(), $(a).remove();
           } catch {
           }
-        }, 100), o = null;
+        }, 100), c = null;
       }
     };
     e.timeout > 0 && setTimeout(function() {
-      c || u("timeout");
+      o || u("timeout");
     }, e.timeout);
     try {
       var a = $("#" + d);
       $(a).attr("action", e.url), $(a).attr("method", "POST"), $(a).attr("target", n), a.encoding ? $(a).attr("encoding", "multipart/form-data") : $(a).attr("enctype", "multipart/form-data"), $(a).submit();
     } catch {
     }
-    var f = 0, s = navigator.userAgent.toLowerCase();
+    var l = 0, s = navigator.userAgent.toLowerCase();
     return s.indexOf("opera") != -1 ? $("#" + n).load(function() {
-      f++, f == 2 && u();
+      l++, l == 2 && u();
     }) : $("#" + n).on("load", u), {
       abort: function() {
       }
