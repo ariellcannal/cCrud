@@ -12,6 +12,7 @@ helper('html');
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>cCrud</title>
+    <?php \cCrud\cCrud::renderDependencies(); ?>
 </head>
 <body>
     <?= $ccrud ?>

@@ -2420,28 +2420,39 @@ class cCrud
     }
 
     /**
-     * Carrega automaticamente as dependências externas do cCrud.
-     * Injeta scripts e CSS necessários se ainda não foram carregados.
-     * Apenas em requisições não-AJAX (primeira carga da página).
+     * Renderiza as dependências externas do cCrud (método estático público).
+     * Deve ser chamado no <head> ou antes do conteúdo do cCrud na view.
+     * 
+     * Exemplo de uso na view:
+     * <code>
+     * <?php \cCrud\cCrud::renderDependencies(); ?>
+     * </code>
+     *
+     * @return void
      */
-    protected function _load_dependencies()
+    public static function renderDependencies()
     {
         if (self::$dependencies_loaded) {
             return;
         }
         self::$dependencies_loaded = true;
 
-        // Não carrega em requisições AJAX (scripts não são executados via AJAX)
-        $request = Services::request();
-        if ($request->isAJAX()) {
-            return;
-        }
-
         // Inclui o arquivo de dependências
         $dependenciesPath = CCRUD_PATH . '/views/dependencies.php';
         if (file_exists($dependenciesPath)) {
             require_once $dependenciesPath;
         }
+    }
+
+    /**
+     * Carrega automaticamente as dependências externas do cCrud.
+     * Injeta scripts e CSS necessários se ainda não foram carregados.
+     * Apenas em requisições não-AJAX (primeira carga da página).
+     */
+    protected function _load_dependencies()
+    {
+        // Chama o método estático
+        self::renderDependencies();
     }
 
     /**
