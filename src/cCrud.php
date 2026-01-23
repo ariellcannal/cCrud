@@ -33,6 +33,8 @@ class cCrud
 
     protected static $js_loaded = false;
 
+    protected static $dependencies_loaded = false;
+
     protected static $classes = array();
 
 
@@ -2418,10 +2420,29 @@ class cCrud
     }
 
     /**
+     * Carrega automaticamente as dependências externas do cCrud.
+     * Injeta scripts e CSS necessários se ainda não foram carregados.
+     */
+    protected function _load_dependencies()
+    {
+        if (self::$dependencies_loaded) {
+            return;
+        }
+        self::$dependencies_loaded = true;
+
+        // Inclui o arquivo de dependências
+        $dependenciesPath = CCRUD_PATH . '/views/dependencies.php';
+        if (file_exists($dependenciesPath)) {
+            require_once $dependenciesPath;
+        }
+    }
+
+    /**
      * public renderer, final instance method
      */
     public function render($task = false, $primary = false)
     {
+        $this->_load_dependencies();
         $this->benchmark_start();
         $this->_receive_post($task, $primary);
         $this->_regenerate_key();
