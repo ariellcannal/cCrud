@@ -880,7 +880,7 @@ var cCrud = {
     }), console.log("[cCrud] Plugins destroyed");
   },
   reinit_plugins: function(e) {
-    console.log("[cCrud] Reinitializing plugins for container:", e), console.log("[cCrud] $.fn.datetimepicker available:", typeof $.fn.datetimepicker), console.log("[cCrud] $.fn.select2 available:", typeof $.fn.select2), console.log("[cCrud] Datepicker elements found:", $(e).find(".cCrud-datepicker").length), console.log("[cCrud] Select2 elements found:", $("select:not(.cCrud-columns-select):not(.cCrud-searchdata):not(.not_select2):not(.cCrud-columnsList-select)", e).length), cCrud.init_datepicker(e), cCrud.init_select2(e), cCrud.init_mask(e), cCrud.init_columns_select(e), console.log("[cCrud] Plugins reinitialized");
+    console.log("[cCrud] Reinitializing plugins for container:", e), console.log("[cCrud] $ is:", typeof $), console.log("[cCrud] window.jQuery is:", typeof window.jQuery), console.log("[cCrud] $.fn.datetimepicker available:", typeof $.fn.datetimepicker), console.log("[cCrud] window.jQuery.fn.datetimepicker available:", typeof window.jQuery.fn.datetimepicker), console.log("[cCrud] $.fn.select2 available:", typeof $.fn.select2), console.log("[cCrud] window.jQuery.fn.select2 available:", typeof window.jQuery.fn.select2), console.log("[cCrud] Datepicker elements found:", $(e).find(".cCrud-datepicker").length), console.log("[cCrud] Select2 elements found:", $("select:not(.cCrud-columns-select):not(.cCrud-searchdata):not(.not_select2):not(.cCrud-columnsList-select)", e).length), cCrud.init_datepicker(e), cCrud.init_select2(e), cCrud.init_mask(e), cCrud.init_columns_select(e), console.log("[cCrud] Plugins reinitialized");
   }
 };
 $(document).on("cCrudinit", function() {
