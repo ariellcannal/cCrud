@@ -697,6 +697,12 @@ class cCrud
         $security = Services::security();
         $postData = $request->getPost('cCrud');
         $getData  = $request->getGet('cCrud');
+        
+        // DEBUG: Log dos dados recebidos
+        log_message('debug', '[cCrud] POST data: ' . json_encode($postData));
+        log_message('debug', '[cCrud] GET data: ' . json_encode($getData));
+        log_message('debug', '[cCrud] All POST: ' . json_encode($request->getPost()));
+        log_message('debug', '[cCrud] All GET: ' . json_encode($request->getGet()));
 
         if (is_array($postData) && isset($postData['instance'], $postData['key'], $postData['task'])) {
             self::initPrepare();
@@ -721,7 +727,18 @@ class cCrud
             $inst_name = $security->clean($getData['instance']);
             $is_get    = true;
         } else {
-            return Services::response()->setStatusCode(400)->setBody(self::lang('wrong_request'));
+            // DEBUG: Retornar informações detalhadas sobre o erro
+            $debugInfo = [
+                'error' => self::lang('wrong_request'),
+                'postData' => $postData,
+                'getData' => $getData,
+                'allPost' => $request->getPost(),
+                'allGet' => $request->getGet(),
+                'expected' => ['instance', 'key', 'task']
+            ];
+            return Services::response()
+                ->setStatusCode(400)
+                ->setJSON($debugInfo);
         }
         $session       = Services::session();
         $cCrud_session = $session->get('cCrud_session');
