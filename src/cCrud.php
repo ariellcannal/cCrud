@@ -2422,6 +2422,7 @@ class cCrud
     /**
      * Carrega automaticamente as dependências externas do cCrud.
      * Injeta scripts e CSS necessários se ainda não foram carregados.
+     * Apenas em requisições não-AJAX (primeira carga da página).
      */
     protected function _load_dependencies()
     {
@@ -2429,6 +2430,12 @@ class cCrud
             return;
         }
         self::$dependencies_loaded = true;
+
+        // Não carrega em requisições AJAX (scripts não são executados via AJAX)
+        $request = Services::request();
+        if ($request->isAJAX()) {
+            return;
+        }
 
         // Inclui o arquivo de dependências
         $dependenciesPath = CCRUD_PATH . '/views/dependencies.php';
