@@ -20,7 +20,7 @@ if ($cCrud->is_inner) {
         <div class="btn-group">
             <?php
             echo $cCrud->render_button('return', 'list', '', 'btn btn-outline-secondary');
-            require $_SERVER['DOCUMENT_ROOT'].'/application/views/cCrud_default/_blocos/buttons_links.php';
+            echo $cCrud->render_custom_buttons($mode);
             echo $cCrud->render_button('save_edit', 'save', ($cCrud->get_var('after_task')!="")?$cCrud->get_var('after_task'):'edit', 'btn btn-primary', '', 'create,edit');
             ?>
         </div>

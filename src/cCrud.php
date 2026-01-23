@@ -1564,17 +1564,37 @@ class cCrud
         return $this;
     }
 
-    public function custom_button($link = '', $label = '', $icon = '', $class = '', $tag = array())
+    /**
+     * Adiciona um botão customizado à toolbar.
+     *
+     * @param string       $link   URL ou ação do botão
+     * @param string       $label  Texto do botão
+     * @param string       $icon   Classe do ícone (ex: 'fa fa-download')
+     * @param string       $class  Classes CSS do botão
+     * @param array        $tag    Atributos HTML adicionais
+     * @param string|array $modes  Modos onde o botão será exibido (create, edit, view, list). Se vazio, exibe em todos.
+     *
+     * @return $this
+     */
+    public function custom_button($link = '', $label = '', $icon = '', $class = '', $tag = array(), $modes = '')
     {
         if (! $link || ! $label) {
             return "";
         } else {
+            // Converte string de modos separados por vírgula em array
+            if (is_string($modes) && $modes !== '') {
+                $modes = array_map('trim', explode(',', $modes));
+            } elseif ($modes === '') {
+                $modes = ['create', 'edit', 'view', 'list']; // Todos os modos
+            }
+            
             $this->custom_buttons[$label] = array(
                 'link' => $link,
                 'label' => $label,
                 'icon' => $icon,
                 'class' => $class,
-                'tag' => $tag
+                'tag' => $tag,
+                'modes' => (array) $modes
             );
         }
         return $this;
@@ -11348,12 +11368,27 @@ class cCrud
         return $out;
     }
 
-    protected function render_custom_buttons()
+    /**
+     * Renderiza botões customizados filtrados por modo.
+     *
+     * @param string $mode Modo atual (create, edit, view, list)
+     *
+     * @return string HTML dos botões
+     */
+    public function render_custom_buttons($mode = '')
     {
         $out = '';
         if (is_array($this->custom_buttons) && count($this->custom_buttons)) {
             foreach ($this->custom_buttons as $button) {
-                $out .= $this->render_button($button);
+                // Verifica se o botão deve ser exibido no modo atual
+                if (isset($button['modes']) && is_array($button['modes'])) {
+                    if ($mode === '' || in_array($mode, $button['modes'])) {
+                        $out .= $this->render_button($button);
+                    }
+                } else {
+                    // Se não tem modos definidos, exibe sempre (retrocompatibilidade)
+                    $out .= $this->render_button($button);
+                }
             }
         }
         return $out;
