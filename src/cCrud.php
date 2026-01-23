@@ -2965,7 +2965,7 @@ class cCrud
             return $default;
         }
 
-        $security = $this->config->auto_xss_filtering ? Services::security() : null;
+        // CI4 faz sanitização automaticamente no IncomingRequest
         $value    = $post[$field];
 
         if (($field === 'postdata' || $field === 'unique') && $value) {
@@ -3016,7 +3016,7 @@ class cCrud
             return $default;
         }
 
-        $security = $this->config->auto_xss_filtering ? Services::security() : null;
+        // CI4 faz sanitização automaticamente no IncomingRequest
         $value    = $get[$field];
 
         if ($filter) {
