@@ -8,13 +8,23 @@
 
   // Função para checar se o CSS do Font Awesome foi carregado
   const checkFontAwesome = () => {
+    // Verifica se há algum link com Font Awesome
+    const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+    const hasFontAwesomeLink = links.some(link => 
+      link.href.includes('font-awesome') || link.href.includes('fontawesome')
+    );
+    
+    if (hasFontAwesomeLink) {
+      return true;
+    }
+    
+    // Fallback: testa renderização
     const testElement = document.createElement('i');
-    testElement.className = 'fa-solid'; // Classe de teste
+    testElement.className = 'fa fa-check'; // Classe compatível com v5 e v6
     testElement.style.display = 'none';
     document.body.appendChild(testElement);
     const fontFamily = window.getComputedStyle(testElement).getPropertyValue('font-family');
     document.body.removeChild(testElement);
-    // Verifica pela string do Font Awesome na font-family (versão 6.x)
     return fontFamily.includes('Font Awesome') || fontFamily.includes('FontAwesome');
   };
 
@@ -22,6 +32,7 @@
     { name: 'jQuery', check: () => window.jQuery },
     { name: 'Bootstrap 5', check: () => window.bootstrap },
     { name: 'jQuery UI', check: () => window.jQuery && window.jQuery.ui },
+    { name: 'jQuery UI Timepicker', check: () => window.jQuery && window.jQuery.fn.datetimepicker },
     { name: 'Select2', check: () => window.jQuery && window.jQuery.fn.select2 },
     { name: 'jQuery Mask', check: () => window.jQuery && window.jQuery.fn.mask },
     { name: 'AlertifyJS', check: () => window.alertify },
