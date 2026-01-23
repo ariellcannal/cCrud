@@ -5757,7 +5757,7 @@ class cCrud
                             'name' => $field,
                             'value' => $this->result_row[$field]
                         );
-                        if ($this->exception_fields[$field]) {
+                        if (isset($this->exception_fields[$field])) {
                             $this->fields_output[$field]['exception'] = $this->exception_fields[$field]['exception'];
                         }
                         if (isset($this->column_pattern[$field]) && $mode == 'view') {
