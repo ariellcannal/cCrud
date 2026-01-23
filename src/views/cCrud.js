@@ -1714,10 +1714,13 @@ $(document).on("cCrudinit", function() {
 			//$(".cCrud-input").first().focus();
 		});
 	}
-});
-$(document).ready(function() {
-	cCrud.init();
-});
+	});
+	// Usar window.load ao invés de document.ready para garantir que
+	// todos os scripts externos (jQuery UI Timepicker, Select2, etc.) estejam carregados
+	$(window).on('load', function() {
+		console.log('[cCrud] Window loaded, initializing cCrud...');
+		cCrud.init();
+	});
 $(window).on("resize load cCrudslidetoggle", function() {
 	cCrud.check_fixed_buttons();
 });

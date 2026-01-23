@@ -937,8 +937,8 @@ $(document).on("cCrudinit", function() {
     cCrud.init_datepicker(this), cCrud.init_datepicker_range($(this).find(".cCrud-columns-select option:selected").data("type"), this), cCrud.depend_init(this), cCrud.map_init(this), cCrud.check_fixed_buttons(), cCrud.init_tooltips(this), cCrud.init_tabs(this), cCrud.check_message(this), cCrud.init_autosave(), cCrud.hide_progress(this), cCrud.init_nestable(this), cCrud.init_select2(this), cCrud.init_checkbox(this), cCrud.init_columns_select(this), cCrud.init_mask(this);
   }));
 });
-$(document).ready(function() {
-  cCrud.init();
+$(window).on("load", function() {
+  console.log("[cCrud] Window loaded, initializing cCrud..."), cCrud.init();
 });
 $(window).on("resize load cCrudslidetoggle", function() {
   cCrud.check_fixed_buttons();
