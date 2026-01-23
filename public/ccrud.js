@@ -1,35 +1,41 @@
-(function() {
+window.addEventListener("load", function() {
   const e = "Pacote cCrud", a = [
     { name: "jQuery", check: () => window.jQuery },
     { name: "Bootstrap 5", check: () => window.bootstrap },
     { name: "jQuery UI", check: () => window.jQuery && window.jQuery.ui },
+    { name: "jQuery UI Timepicker", check: () => window.jQuery && window.jQuery.fn.datetimepicker },
     { name: "Select2", check: () => window.jQuery && window.jQuery.fn.select2 },
+    { name: "SumoSelect", check: () => window.jQuery && window.jQuery.fn.SumoSelect },
     { name: "jQuery Mask", check: () => window.jQuery && window.jQuery.fn.mask },
     { name: "AlertifyJS", check: () => window.alertify },
     { name: "CKEditor 4", check: () => window.CKEDITOR },
     { name: "Cropper.js", check: () => window.Cropper },
-    { name: "Font Awesome 7", check: () => {
+    { name: "Font Awesome", check: () => {
+      if (Array.from(document.querySelectorAll('link[rel="stylesheet"]')).some(
+        (l) => l.href.includes("font-awesome") || l.href.includes("fontawesome")
+      ))
+        return !0;
       const d = document.createElement("i");
-      d.className = "fa-solid", d.style.display = "none", document.body.appendChild(d);
-      const c = window.getComputedStyle(d).getPropertyValue("font-family");
-      return document.body.removeChild(d), c.includes("Font Awesome 7");
+      d.className = "fa fa-check", d.style.display = "none", document.body.appendChild(d);
+      const u = window.getComputedStyle(d).getPropertyValue("font-family");
+      return document.body.removeChild(d), u.includes("Font Awesome") || u.includes("FontAwesome");
     } }
   ];
   console.log(`[${e}] Verificando dependências...`);
   let n = !0;
-  a.forEach((d) => {
+  a.forEach((c) => {
     try {
-      if (!d.check())
-        throw new Error(`Dependência não encontrada: ${d.name}`);
+      if (!c.check())
+        throw new Error(`Dependência não encontrada: ${c.name}`);
     } catch {
       n = !1, console.error(
-        `[${e}] ERRO: A biblioteca "${d.name}" não foi encontrada. Por favor, garanta que ela seja carregada na sua página ANTES do script do cCrud.`
+        `[${e}] ERRO: A biblioteca "${c.name}" não foi encontrada. Por favor, garanta que ela seja carregada na sua página ANTES do script do cCrud.`
       );
     }
   }), n ? console.log(`[${e}] Todas as dependências foram carregadas com sucesso.`) : console.error(
     `[${e}] Uma ou mais dependências não foram carregadas. O pacote pode não funcionar como esperado.`
   );
-})();
+});
 var cCrud = {
   config: function(e) {
     return cCrud_config[e] !== void 0 ? cCrud_config[e] : e;
@@ -47,7 +53,8 @@ var cCrud = {
     $.ajax({
       type: "post",
       url: cCrud.config("url"),
-      dataType: "html",
+      dataType: "text",
+      // text permite receber tanto HTML quanto JSON
       cache: !1,
       data: {
         cCrud: t
@@ -55,12 +62,12 @@ var cCrud = {
       beforeSend: function() {
         $(document).trigger("cCrudbeforerequest", [e, t]), cCrud.close_modal = t.close, cCrud.current_task = t.task, cCrud.current_focus = $("*:focus"), cCrud.after_task = t.after;
       },
-      success: function(n) {
+      success: function(n, c, o) {
         $(".cCrud_result_validation").lenght || $("body").append($("<div>").attr("class", "cCrud_result_validation"));
         var d = n;
-        cCrud.check_message(d), cCrud.exception || (cCrud.close_modal == !0 && ($("#cCrud-modal-window").modal("hide"), cCrud.parent_container && (e = cCrud.parent_container, cCrud.parent_container = null), cCrud.close_modal = !1), $(e).html(n), a && a(e));
+        cCrud.check_message(d), cCrud.exception || (cCrud.close_modal == !0 && ($("#cCrud-modal-window").modal("hide"), cCrud.parent_container && (e = cCrud.parent_container, cCrud.parent_container = null), cCrud.close_modal = !1), cCrud.destroy_plugins(e), $(e).html(n), cCrud.reinit_plugins(e), a && a(e));
       },
-      error: function(n, d, c) {
+      error: function(n, c, o) {
         cCrud.show_error(cCrud.lang("undefined_error")), console.log(n.statusText), console.log(n.responseText);
       },
       complete: function(n) {
@@ -87,8 +94,8 @@ var cCrud = {
     }), t += "</form></body></html>", t;
   },
   unique_check: function(e, t, a) {
-    t.unique = {}, t.task = "unique", $(e).find(".cCrud-input[data-unique]").length ? ($(e).find(".cCrud-input[data-unique]").each(function(n, d) {
-      t.unique[$(d).attr("name")] = $(d).val();
+    t.unique = {}, t.task = "unique", $(e).find(".cCrud-input[data-unique]").length ? ($(e).find(".cCrud-input[data-unique]").each(function(n, c) {
+      t.unique[$(c).attr("name")] = $(c).val();
     }), $.ajax({
       type: "post",
       url: cCrud.config("url"),
@@ -107,8 +114,8 @@ var cCrud = {
       complete: function() {
         cCrud.hide_progress(e);
       },
-      error: function(n, d, c) {
-        console.log(d), console.log(n.responseText);
+      error: function(n, c, o) {
+        console.log(c), console.log(n.responseText);
       },
       cache: !1
     })) : a && a(e);
@@ -132,20 +139,20 @@ var cCrud = {
     var n = a.task == "save";
     n && ($(".is-invalid", e).removeClass("is-invalid"), $(document).trigger("cCrudbeforevalidate", [e])), $('.cCrud-input:not([type="checkbox"],[type="radio"],[disabled])', e).each(function() {
       if (cCrud.check_container(this, e)) {
-        var o = cCrud.prepare_val(this);
-        a.postdata[$(this).attr("name")] = o;
-        var u = $(this).data("required"), f = $(this).data("pattern"), s = $(this).data("plugin"), p = $(this).data("validar");
-        n && u && !cCrud.validation_required(o, u) ? cCrud.field_invalid(this) : n && f && s != "formatter" && !cCrud.validation_pattern(o, f) ? cCrud.field_invalid(this) : n && p == "cnpj" && !cCrud.validation_cnpj(o) ? cCrud.field_invalid(this) : n && p == "url" && !cCrud.validation_url(o) && cCrud.field_invalid(this);
+        var d = cCrud.prepare_val(this);
+        a.postdata[$(this).attr("name")] = d;
+        var u = $(this).data("required"), l = $(this).data("pattern"), s = $(this).data("plugin"), p = $(this).data("validar");
+        n && u && !cCrud.validation_required(d, u) ? cCrud.field_invalid(this) : n && l && s != "formatter" && !cCrud.validation_pattern(d, l) ? cCrud.field_invalid(this) : n && p == "cnpj" && !cCrud.validation_cnpj(d) ? cCrud.field_invalid(this) : n && p == "url" && !cCrud.validation_url(d) && cCrud.field_invalid(this);
       }
     });
-    var d = !1, c = !1;
+    var c = !1, o = !1;
     return $(e).find('.cCrud-input[group-required="true"]:not([type="checkbox"],[type="radio"],[disabled])').each(function() {
       if (cCrud.check_container(this, e)) {
-        c = !0;
-        var o = cCrud.prepare_val(this);
-        a.postdata[$(this).attr("name")] = o, $(this).data("pattern"), cCrud.validation_required(o, 1) && (d = !0);
+        o = !0;
+        var d = cCrud.prepare_val(this);
+        a.postdata[$(this).attr("name")] = d, $(this).data("pattern"), cCrud.validation_required(d, 1) && (c = !0);
       }
-    }), c && !d && $(e).find('.cCrud-input[group-required="true"]:not([type="checkbox"],[type="radio"],[disabled])').each(function() {
+    }), o && !c && $(e).find('.cCrud-input[group-required="true"]:not([type="checkbox"],[type="radio"],[disabled])').each(function() {
       cCrud.check_container(this, e) && cCrud.field_invalid(this);
     }), $(e).find('.cCrud-input[data-type="checkboxes"]:not([disabled])').each(function() {
       a.postdata[$(this).attr("name")] === void 0 && (a.postdata[$(this).attr("name")] = ""), cCrud.check_container(this, e) && $(this).prop("checked") && (a.postdata[$(this).attr("name")] ? a.postdata[$(this).attr("name")] += "," + cCrud.prepare_val(this) : a.postdata[$(this).attr("name")] = cCrud.prepare_val(this));
@@ -192,87 +199,106 @@ var cCrud = {
       case "timestamp":
       case "date":
       case "time":
-        var d = "date";
+        var c = "date";
         break;
       case "bool":
-        var d = "bool";
+        var c = "bool";
         break;
       case "select":
       case "multiselect":
       case "radio":
       case "checkboxes":
-        var d = "dropdown";
+        var c = "dropdown";
         n = '[data-fieldname="' + a + '"]';
         break;
       default:
-        var d = "default";
+        var c = "default";
         break;
     }
-    $(t).find('.cCrud-searchdata[data-fieldtype="' + d + '"]' + n).show().addClass("cCrud-search-active"), d == "date" && cCrud.init_datepicker_range(e, t);
+    $(t).find('.cCrud-searchdata[data-fieldtype="' + c + '"]' + n).show().addClass("cCrud-search-active"), c == "date" && cCrud.init_datepicker_range(e, t);
   },
   init_datepicker_range: function(e, t) {
+    if (!$.fn.datetimepicker) {
+      console.error("[cCrud] jQuery UI Timepicker Addon não está carregado");
+      return;
+    }
     if ($(t).find(".cCrud-datepicker-from").data("DateTimePicker") == null && $(t).find(".cCrud-datepicker-to").data("DateTimePicker") == null)
       switch (from = $(t).find(".cCrud-datepicker-from").datetimepicker(), to = $(t).find(".cCrud-datepicker-to").datetimepicker(), e) {
         case "time":
           element.datetimepicker({
-            format: cCrud_config.moment_time_format,
+            format: cCrud_config.time_format,
             useCurrent: !1
           });
+          break;
         case "datetime":
         case "timestamp":
           element.datetimepicker({
-            format: cCrud_config.moment_date_format + " " + cCrud_config.moment_time_format,
+            format: cCrud_config.date_format + " " + cCrud_config.time_format,
             useCurrent: !1
           });
+          break;
         case "date":
           element.datetimepicker({
-            format: cCrud_config.moment_date_format,
+            format: cCrud_config.date_format,
             useCurrent: !1
           });
+          break;
         case "year":
           element.datetimepicker({
             viewMode: "years",
-            format: cCrud_config.moment_year_format,
+            format: "yyyy",
             useCurrent: !1
           });
+          break;
         default:
           cCrud.link_datetime_fields(from, to);
           break;
       }
   },
   init_datepicker: function(e) {
-    $(e).find(".cCrud-datepicker").each(function() {
-      if ($(this).data("DateTimePicker") == null) {
-        var t = $(this), a = $(this).data("type");
-        switch (a) {
+    if (console.log("[cCrud] init_datepicker called with container:", e), !$.fn.datetimepicker) {
+      console.error("[cCrud] jQuery UI Timepicker Addon não está carregado");
+      return;
+    }
+    var t = $(e).find(".cCrud-datepicker");
+    console.log("[cCrud] Found", t.length, "datepicker elements"), t.each(function(a) {
+      if (console.log("[cCrud] Processing datepicker element", a, ":", this), $(this).data("DateTimePicker") == null) {
+        console.log("[cCrud] Initializing datepicker", a, "type:", $(this).data("type"));
+        var n = $(this), c = $(this).data("type");
+        switch (c) {
           case "time":
-            t.datetimepicker({
-              format: cCrud_config.moment_time_format,
+            n.datetimepicker({
+              format: cCrud_config.time_format,
               useCurrent: !1
-            });
+            }), console.log("[cCrud] Time picker initialized");
+            break;
           case "datetime":
           case "timestamp":
-            t.datetimepicker({
-              format: cCrud_config.moment_date_format + " " + cCrud_config.moment_time_format,
+            n.datetimepicker({
+              format: cCrud_config.date_format + " " + cCrud_config.time_format,
               useCurrent: !1
-            });
+            }), console.log("[cCrud] Datetime picker initialized");
+            break;
           case "date":
-            t.datetimepicker({
-              format: cCrud_config.moment_date_format,
+            n.datetimepicker({
+              format: cCrud_config.date_format,
               useCurrent: !1
-            });
+            }), console.log("[cCrud] Date picker initialized");
+            break;
           case "year":
-            t.datetimepicker({
+            n.datetimepicker({
               viewMode: "years",
-              format: cCrud_config.moment_year_format,
+              format: "yyyy",
               useCurrent: !1
-            });
+            }), console.log("[cCrud] Year picker initialized");
+            break;
           default:
-            var n = t.data("rangestart"), d = t.data("rangeend");
-            cCrud.link_datetime_fields(n, d);
+            var o = n.data("rangestart"), d = n.data("rangeend");
+            cCrud.link_datetime_fields(o, d), console.log("[cCrud] Range picker linked");
             break;
         }
-      }
+      } else
+        console.log("[cCrud] Datepicker", a, "already initialized, skipping");
     });
   },
   link_datetime_fields: function(e, t) {
@@ -295,9 +321,9 @@ var cCrud = {
   upload_file: function(e, t, a) {
     var n = $(e).closest(".cCrud-upload-container");
     t.field = $(e).data("field"), t.oldfile = $(n).find(".cCrud-input").val(), t.task = "upload", t.mode = $(e).closest(".cCrud-ajax").find('.cCrud-data[name="task"]').val(), t.type = $(e).data("type");
-    var d = cCrud.get_extension($(e).val());
+    var c = cCrud.get_extension($(e).val());
     if (t.type == "image")
-      switch (d.toLowerCase()) {
+      switch (c.toLowerCase()) {
         case "jpg":
         case "jpeg":
         case "gif":
@@ -313,10 +339,10 @@ var cCrud = {
         cCrud: t
       },
       url: cCrud.config("url"),
-      success: function(c) {
-        cCrud.hide_progress(a), $(n).replaceWith(c), $(document).trigger("cCrudafterupload", [a, t, status]);
-        var o = $(c).find("img.cCrud-crop");
-        $(o).length && cCrud.show_crop_window(o, a);
+      success: function(o) {
+        cCrud.hide_progress(a), $(n).replaceWith(o), $(document).trigger("cCrudafterupload", [a, t, status]);
+        var d = $(o).find("img.cCrud-crop");
+        $(d).length && cCrud.show_crop_window(d, a);
       },
       error: function() {
         cCrud.hide_progress(a), cCrud.show_error(cCrud.lang("undefined_error"));
@@ -342,8 +368,8 @@ var cCrud = {
             data: {
               cCrud: n
             },
-            success: function(d) {
-              cCrud.hide_progress(t), $(a).replaceWith(d), $(document).trigger("cCrudaftercrop", [t, n]);
+            success: function(c) {
+              cCrud.hide_progress(t), $(a).replaceWith(c), $(document).trigger("cCrudaftercrop", [t, n]);
             },
             error: function() {
               cCrud.hide_progress(t), cCrud.show_error(cCrud.lang("undefined_error"));
@@ -355,18 +381,18 @@ var cCrud = {
           }), $(this).dialog("destroy"), $(".cCrud-crop").remove();
         }
       },
-      close: function(n, d) {
-        var c = cCrud.list_data(t, {
+      close: function(n, c) {
+        var o = cCrud.list_data(t, {
           task: "crop_image"
         });
         $(a).find(".xrud-crop-data").each(function() {
-          c[$(this).attr("name")] = $(this).val();
-        }), c.w = 0, c.h = 0, cCrud.show_progress(t), $.ajax({
+          o[$(this).attr("name")] = $(this).val();
+        }), o.w = 0, o.h = 0, cCrud.show_progress(t), $.ajax({
           data: {
-            cCrud: c
+            cCrud: o
           },
-          success: function(o) {
-            cCrud.hide_progress(t), $(a).replaceWith(o);
+          success: function(d) {
+            cCrud.hide_progress(t), $(a).replaceWith(d);
           },
           error: function() {
             cCrud.hide_progress(t), cCrud.show_error(cCrud.lang("undefined_error"));
@@ -377,18 +403,18 @@ var cCrud = {
           cache: !1
         }), $(this).dialog("destroy"), $(".cCrud-crop").remove();
       },
-      open: function(n, d) {
-        cCrud.load_image(e.attr("src"), function(c) {
-          var o = parseInt($(e).data("width")), u = parseInt($(e).data("height")), f = parseFloat($(e).data("ratio")), s = {};
-          s.boxWidth = o, s.boxHeight = u, u > 500 && (s.boxHeight = 500, s.boxWidth = Math.round(o * 500 / u)), s.boxWidth > 550 && (s.boxWidth = 550, s.boxHeight = Math.round(u * 550 / o));
-          var p = Math.round(($(window).width() - $(".ui-dialog.ui-widget").width()) / 2), l = Math.round(($(window).height() - $(".ui-dialog.ui-widget").height()) / 2);
+      open: function(n, c) {
+        cCrud.load_image(e.attr("src"), function(o) {
+          var d = parseInt($(e).data("width")), u = parseInt($(e).data("height")), l = parseFloat($(e).data("ratio")), s = {};
+          s.boxWidth = d, s.boxHeight = u, u > 500 && (s.boxHeight = 500, s.boxWidth = Math.round(d * 500 / u)), s.boxWidth > 550 && (s.boxWidth = 550, s.boxHeight = Math.round(u * 550 / d));
+          var p = Math.round(($(window).width() - $(".ui-dialog.ui-widget").width()) / 2), f = Math.round(($(window).height() - $(".ui-dialog.ui-widget").height()) / 2);
           $(".ui-dialog.ui-widget").css({
             position: "fixed",
             left: p + "px",
-            top: l + "px"
-          }), s.minSize = [50, 50], f && (s.aspectRatio = f), s.onChange = cCrud.get_coordinates, s.keySupport = !1, s.trueSize = [o, u];
-          var m = o / 4, C = u / 4, h = m * 3, g = C * 3;
-          s.setSelect = [m, C, h, g], s.allowSelect = !1, $(".ui-dialog img.cCrud-crop").Jcrop(s);
+            top: f + "px"
+          }), s.minSize = [50, 50], l && (s.aspectRatio = l), s.onChange = cCrud.get_coordinates, s.keySupport = !1, s.trueSize = [d, u];
+          var C = d / 4, m = u / 4, h = C * 3, g = m * 3;
+          s.setSelect = [C, m, h, g], s.allowSelect = !1, $(".ui-dialog img.cCrud-crop").Jcrop(s);
         });
       }
     });
@@ -407,8 +433,8 @@ var cCrud = {
       data: {
         cCrud: t
       },
-      success: function(d) {
-        cCrud.hide_progress(a), $(n).replaceWith(d);
+      success: function(c) {
+        cCrud.hide_progress(a), $(n).replaceWith(c);
       },
       type: "post",
       url: cCrud.config("url"),
@@ -465,21 +491,21 @@ var cCrud = {
       var n = e.which;
       if (n < 32 || e.ctrlKey || e.altKey)
         return !0;
-      var d = String.fromCharCode(n);
+      var c = String.fromCharCode(n);
       switch (a) {
         case "alpha":
-          return reg = /^([a-z])+$/i, reg.test(d);
+          return reg = /^([a-z])+$/i, reg.test(c);
         case "alpha_numeric":
-          return reg = /^([a-z0-9])+$/i, reg.test(d);
+          return reg = /^([a-z0-9])+$/i, reg.test(c);
         case "alpha_dash":
-          return reg = /^([-a-z0-9_-])+$/i, reg.test(d);
+          return reg = /^([-a-z0-9_-])+$/i, reg.test(c);
         case "numeric":
         case "integer":
         case "decimal":
         case "point":
-          return reg = /^[0-9\.\,\-+]+$/, reg.test(d);
+          return reg = /^[0-9\.\,\-+]+$/, reg.test(c);
         case "natural":
-          return reg = /^[0-9]+$/, reg.test(d);
+          return reg = /^[0-9]+$/, reg.test(c);
       }
     }
     return !0;
@@ -497,10 +523,10 @@ var cCrud = {
     $(e).off("change.depend");
     var t = {};
     $(e).find(".cCrud-input[data-depend]").each(function() {
-      var a = cCrud.get_container(this), n = cCrud.list_controls_data(a, this), d = $(this).data("depend");
-      n.task = "depend", n.name = $(this).attr("name"), n.value = $(this).val(), $(a).on("change.depend", '.cCrud-input[name="' + d + '"]', function() {
-        cCrud.check_container(this, a) && (n.dependval = $(this).val(), cCrud.depend_query(n, d, a));
-      }), d && (t[d] = d);
+      var a = cCrud.get_container(this), n = cCrud.list_controls_data(a, this), c = $(this).data("depend");
+      n.task = "depend", n.name = $(this).attr("name"), n.value = $(this).val(), $(a).on("change.depend", '.cCrud-input[name="' + c + '"]', function() {
+        cCrud.check_container(this, a) && (n.dependval = $(this).val(), cCrud.depend_query(n, c, a));
+      }), c && (t[c] = c);
     }), $.map(t, function(a, n) {
       window.setTimeout(function() {
         $(e).find('.cCrud-input[name="' + a + '"]:not([data-depend])').trigger("change.depend");
@@ -510,17 +536,17 @@ var cCrud = {
   depend_query: function(e, t, a) {
     if (!cCrud.block_query[e.name + t]) {
       cCrud.block_query[e.name + t] = 1;
-      var n = $(a).find('.cCrud-input[name="' + e.name + '"]'), d = n.parent(), c = n.val();
-      $(d).trigger("cCrudbeforedepend", [a, e]), $.ajax({
+      var n = $(a).find('.cCrud-input[name="' + e.name + '"]'), c = n.parent(), o = n.val();
+      $(c).trigger("cCrudbeforedepend", [a, e]), $.ajax({
         data: {
           cCrud: e
         },
         type: "post",
         url: cCrud.config("url"),
-        success: function(o) {
-          n.select2("destroy").remove(), d.css("visibility", "hidden").append(o), n = $(d).find('.cCrud-input[name="' + e.name + '"]'), c !== null && n.val(c), $(d).trigger("cCrudafterdepend", [a, e]), window.setTimeout(function() {
+        success: function(d) {
+          n.select2("destroy").remove(), c.css("visibility", "hidden").append(d), n = $(c).find('.cCrud-input[name="' + e.name + '"]'), o !== null && n.val(o), $(c).trigger("cCrudafterdepend", [a, e]), window.setTimeout(function() {
             cCrud.jr_request($(a).find('.cCrud-input[name="' + e.name + '"]')), cCrud.block_query[e.name + t] = 0;
-          }, 400), n.select2(), $(d).css("visibility", "visible");
+          }, 400), n.select2(), $(c).css("visibility", "visible");
         },
         cache: !1
       });
@@ -537,33 +563,33 @@ var cCrud = {
     return a;
   },
   create_map: function(e, t, a, n) {
-    var d = {
+    var c = {
       zoom: a,
       center: t,
       mapTypeId: google.maps.MapTypeId[n]
-    }, c = new google.maps.Map($(e)[0], d);
-    return c;
+    }, o = new google.maps.Map($(e)[0], c);
+    return o;
   },
-  place_marker: function(e, t, a, n, d) {
-    var c = new google.maps.Marker({
+  place_marker: function(e, t, a, n, c) {
+    var o = new google.maps.Marker({
       position: t,
       map: e,
       animation: google.maps.Animation.DROP,
       draggable: !!a
     });
-    return n && google.maps.event.addListener(c, "click", function() {
-      var o = this, u = new google.maps.InfoWindow({
+    return n && google.maps.event.addListener(o, "click", function() {
+      var d = this, u = new google.maps.InfoWindow({
         maxWidth: 320
       });
-      u.setContent('<p class="cCrud-infowinow">' + n + "</p>"), u.open(e, o);
-    }), a && $(d).length && (google.maps.event.addListener(c, "dragend", function() {
-      $(d).val(this.getPosition().lat() + "," + this.getPosition().lng());
-    }), google.maps.event.addListener(e, "click", function(o) {
-      c.setPosition(o.latLng), $(d).val(c.getPosition().lat() + "," + c.getPosition().lng());
-    })), c;
+      u.setContent('<p class="cCrud-infowinow">' + n + "</p>"), u.open(e, d);
+    }), a && $(c).length && (google.maps.event.addListener(o, "dragend", function() {
+      $(c).val(this.getPosition().lat() + "," + this.getPosition().lng());
+    }), google.maps.event.addListener(e, "click", function(d) {
+      o.setPosition(d.latLng), $(c).val(o.getPosition().lat() + "," + o.getPosition().lng());
+    })), o;
   },
-  move_marker: function(e, t, a, n, d) {
-    return t ? t.setPosition(a) : this.place_marker(e, a, n, d), e.setCenter(a), t;
+  move_marker: function(e, t, a, n, c) {
+    return t ? t.setPosition(a) : this.place_marker(e, a, n, c), e.setCenter(a), t;
   },
   find_point: function(e, t) {
     return this.geocode({
@@ -577,13 +603,13 @@ var cCrud = {
   },
   geocode: function(e, t, a) {
     var n = new google.maps.Geocoder();
-    n.geocode(e, function(d, c) {
-      var o = {};
-      if (c == google.maps.GeocoderStatus.OK) {
-        for (var u = 0; u < d.length; u++)
-          if (d[u].formatted_address && (o[u] = {}, o[u].lat = d[u].geometry.location.lat(), o[u].lng = d[u].geometry.location.lng(), o[u].address = d[u].formatted_address, a))
-            return a(o[u]);
-        t && t(o);
+    n.geocode(e, function(c, o) {
+      var d = {};
+      if (o == google.maps.GeocoderStatus.OK) {
+        for (var u = 0; u < c.length; u++)
+          if (c[u].formatted_address && (d[u] = {}, d[u].lat = c[u].geometry.location.lat(), d[u].lng = c[u].geometry.location.lng(), d[u].address = c[u].formatted_address, a))
+            return a(d[u]);
+        t && t(d);
       }
     });
   },
@@ -591,30 +617,30 @@ var cCrud = {
   marker_instances: [],
   map_init: function(e) {
     cCrud.map_instances = [], $(e).find(".cCrud-map").each(function() {
-      var t = this, a = $(t).parent().children('input[data-type="point"]'), n = $(t).parent().children(".cCrud-map-search"), d = cCrud.parse_latlng($(a).val()), c = cCrud.create_map(t, d, $(t).data("zoom"), "ROADMAP"), o = cCrud.place_marker(c, d, $(t).data("draggable"), $(t).data("text"), a);
+      var t = this, a = $(t).parent().children('input[data-type="point"]'), n = $(t).parent().children(".cCrud-map-search"), c = cCrud.parse_latlng($(a).val()), o = cCrud.create_map(t, c, $(t).data("zoom"), "ROADMAP"), d = cCrud.place_marker(o, c, $(t).data("draggable"), $(t).data("text"), a);
       $(a).on("keyup", function() {
         var u = cCrud.parse_latlng($(a).val());
-        return cCrud.move_marker(c, o, u, $(t).data("draggable"), $(t).data("text")), !1;
+        return cCrud.move_marker(o, d, u, $(t).data("draggable"), $(t).data("text")), !1;
       }), $(n).length && $(n).on("keyup", function() {
         var u = $.trim($(n).val());
-        return u && cCrud.find_point(u, function(f) {
-          cCrud.map_dropdown(n, f, c, o, a, t);
+        return u && cCrud.find_point(u, function(l) {
+          cCrud.map_dropdown(n, l, o, d, a, t);
         }), !1;
-      }), cCrud.map_instances.push(c), cCrud.marker_instances.push(o);
+      }), cCrud.map_instances.push(o), cCrud.marker_instances.push(d);
     });
   },
-  map_dropdown: function(e, t, a, n, d, c) {
-    var o = $(e).outerWidth(), u = $(e).outerHeight(), f = $(e).offset();
+  map_dropdown: function(e, t, a, n, c, o) {
+    var d = $(e).outerWidth(), u = $(e).outerHeight(), l = $(e).offset();
     if ($(e).prev(".cCrud-map-dropdown").remove(), t) {
       var s = '<ul class="cCrud-map-dropdown">';
       $.map(t, function(p) {
         s += '<li data-val="' + p.lat + "," + p.lng + '">' + p.address + "</li>";
-      }), s += "</ul>", $(e).before(s), $(e).prev(".cCrud-map-dropdown").offset(f).css({
+      }), s += "</ul>", $(e).before(s), $(e).prev(".cCrud-map-dropdown").offset(l).css({
         marginTop: u + "px",
-        minWidth: o + "px"
+        minWidth: d + "px"
       }).children("li").on("click", function() {
         var p = cCrud.parse_latlng($(this).data("val"));
-        return $(e).val($(this).text()), n = cCrud.move_marker(a, n, p, $(c).data("draggable"), $(c).data("text")), $(d).val(n.getPosition().lat() + "," + n.getPosition().lng()), $(this).parent("ul").remove(), !1;
+        return $(e).val($(this).text()), n = cCrud.move_marker(a, n, p, $(o).data("draggable"), $(o).data("text")), $(c).val(n.getPosition().lat() + "," + n.getPosition().lng()), $(this).parent("ul").remove(), !1;
       });
     }
   },
@@ -752,58 +778,63 @@ var cCrud = {
         cCrud: a
       },
       dataType: "json",
-      beforeSend: function(n, d) {
+      beforeSend: function(n, c) {
       },
       success: function(n) {
-        for (var d in n) {
-          var c = $('.cCrud-input[name="' + d + '"]', t);
-          c.data("select2") ? c.select2("destroy").replaceWith(n[d]) : c.replaceWith(n[d]);
+        for (var c in n) {
+          var o = $('.cCrud-input[name="' + c + '"]', t);
+          o.data("select2") ? o.select2("destroy").replaceWith(n[c]) : o.replaceWith(n[c]);
         }
       },
       complete: function() {
         cCrud.hide_progress(t), $(document).trigger("cCrudafterjoinrelation", [e.closest(".form-horizontal"), a, status]);
       },
-      error: function(n, d, c) {
+      error: function(n, c, o) {
       },
       cache: !1
     });
   },
   init_select2: function(e) {
-    if ($.fn.select2) {
-      var t = cCrud.get_container(e);
-      $("select:not(.cCrud-columns-select):not(.cCrud-searchdata):not(.not_select2):not(.cCrud-columnsList-select)", t).each(function() {
-        var a = $.extend({
-          width: "100%"
-        }, $(this).data());
-        if ($(this).hasClass("select2-ajax")) {
-          var n = $(this).closest(".cCrud-ajax"), d = $(this).data("depend"), c = cCrud.list_controls_data(n);
-          c.dependval = $('.cCrud-input[name="' + d + '"]').val(), c.name = $(this).data("relationajax"), c.task = "relation_search", $.extend(a, {
-            ajax: {
-              url: cCrud.config("url") + "/cCrud",
-              dataType: "json",
-              delay: 250,
-              type: "POST",
-              beforeSend: function(o, u) {
-              },
-              data: function(o) {
-                return {
-                  q: o.term,
-                  cCrud: c
-                };
-              },
-              processResults: function(o, u) {
-                return {
-                  results: o.items
-                };
-              },
-              cache: !1
-            },
-            minimumInputLength: 2
-          });
-        }
-        $(this).select2(a);
-      });
+    if (console.log("[cCrud] init_select2 called with e:", e), !$.fn.select2) {
+      console.error("[cCrud] Select2 plugin not loaded");
+      return;
     }
+    var t = cCrud.get_container(e);
+    console.log("[cCrud] Select2 container:", t);
+    var a = $("select:not(.cCrud-columns-select):not(.cCrud-searchdata):not(.not_select2):not(.cCrud-columnsList-select)", t);
+    console.log("[cCrud] Found", a.length, "select2 elements"), a.each(function(n) {
+      console.log("[cCrud] Processing select2 element", n, ":", this);
+      var c = $.extend({
+        width: "100%"
+      }, $(this).data());
+      if ($(this).hasClass("select2-ajax")) {
+        var o = $(this).closest(".cCrud-ajax"), d = $(this).data("depend"), u = cCrud.list_controls_data(o);
+        u.dependval = $('.cCrud-input[name="' + d + '"]').val(), u.name = $(this).data("relationajax"), u.task = "relation_search", $.extend(c, {
+          ajax: {
+            url: cCrud.config("url") + "/cCrud",
+            dataType: "json",
+            delay: 250,
+            type: "POST",
+            beforeSend: function(l, s) {
+            },
+            data: function(l) {
+              return {
+                q: l.term,
+                cCrud: u
+              };
+            },
+            processResults: function(l, s) {
+              return {
+                results: l.items
+              };
+            },
+            cache: !1
+          },
+          minimumInputLength: 2
+        });
+      }
+      console.log("[cCrud] Initializing select2 on element", n, "with options:", c), $(this).select2(c), console.log("[cCrud] Select2 initialized on element", n);
+    });
   },
   init_checkbox: function(e) {
   },
@@ -820,6 +851,44 @@ var cCrud = {
       okCancelInMulti: !0,
       selectAll: !0
     });
+  },
+  /**
+   * Reinicializa todos os plugins jQuery após atualização AJAX.
+   * Chamado automaticamente após cada requisição AJAX que atualiza o HTML.
+   */
+  destroy_plugins: function(e) {
+    console.log("[cCrud] Destroying plugins in container before HTML replacement"), $(e).find(".cCrud-datepicker").each(function() {
+      if ($(this).data("DateTimePicker") !== void 0)
+        try {
+          $(this).data("DateTimePicker").destroy(), console.log("[cCrud] Destroyed datepicker");
+        } catch (t) {
+          console.warn("[cCrud] Error destroying datepicker:", t);
+        }
+    }), $(e).find("select.select2-hidden-accessible").each(function() {
+      try {
+        $(this).select2("destroy"), console.log("[cCrud] Destroyed select2");
+      } catch (t) {
+        console.warn("[cCrud] Error destroying select2:", t);
+      }
+    }), $(e).find(".SumoSelect").each(function() {
+      try {
+        var t = $(this).prev("select");
+        t.length && t[0].sumo && (t[0].sumo.unload(), console.log("[cCrud] Destroyed SumoSelect"));
+      } catch (a) {
+        console.warn("[cCrud] Error destroying SumoSelect:", a);
+      }
+    }), console.log("[cCrud] Plugins destroyed");
+  },
+  reinit_plugins: function(e, t) {
+    t = t || 1, console.log("[cCrud] Reinitializing plugins for container (attempt " + t + "):", e);
+    var a = (typeof $.fn.datetimepicker < "u" || typeof $.fn.datepicker < "u") && typeof $.fn.select2 < "u";
+    if (!a && t < 5) {
+      console.warn("[cCrud] Plugins not ready yet, retrying in 100ms... (attempt " + t + "/5)"), setTimeout(function() {
+        cCrud.reinit_plugins(e, t + 1);
+      }, 100);
+      return;
+    }
+    a || console.error("[cCrud] Plugins still not available after 5 attempts. Initializing anyway..."), console.log("[cCrud] $.fn.datetimepicker available:", typeof $.fn.datetimepicker), console.log("[cCrud] $.fn.select2 available:", typeof $.fn.select2), console.log("[cCrud] Datepicker elements found:", $(e).find(".cCrud-datepicker").length), console.log("[cCrud] Select2 elements found:", $("select:not(.cCrud-columns-select):not(.cCrud-searchdata):not(.not_select2):not(.cCrud-columnsList-select)", e).length), cCrud.init_datepicker(e), cCrud.init_select2(e), cCrud.init_mask(e), cCrud.init_columns_select(e), console.log("[cCrud] Plugins reinitialized successfully");
   }
 };
 $(document).on("cCrudinit", function() {
@@ -876,8 +945,8 @@ $(document).on("cCrudinit", function() {
     cCrud.init_datepicker(this), cCrud.init_datepicker_range($(this).find(".cCrud-columns-select option:selected").data("type"), this), cCrud.depend_init(this), cCrud.map_init(this), cCrud.check_fixed_buttons(), cCrud.init_tooltips(this), cCrud.init_tabs(this), cCrud.check_message(this), cCrud.init_autosave(), cCrud.hide_progress(this), cCrud.init_nestable(this), cCrud.init_select2(this), cCrud.init_checkbox(this), cCrud.init_columns_select(this), cCrud.init_mask(this);
   }));
 });
-$(document).ready(function() {
-  cCrud.init();
+$(window).on("load", function() {
+  console.log("[cCrud] Window loaded, initializing cCrud..."), cCrud.init();
 });
 $(window).on("resize load cCrudslidetoggle", function() {
   cCrud.check_fixed_buttons();
@@ -913,8 +982,8 @@ $.extend({
       data: a,
       success: function(n) {
         e.document.open(), e.document.write(n), e.document.close(), $(t).find(".cCrud-data[name=key]:first").val($(e.document).find(".cCrud-data[name=key]:first").val());
-        var d = navigator.userAgent.toLowerCase();
-        d.indexOf("opera") != -1 ? $(e).load(function() {
+        var c = navigator.userAgent.toLowerCase();
+        c.indexOf("opera") != -1 ? $(e).load(function() {
           e.print();
         }) : $(e).ready(function() {
           e.print();
@@ -929,57 +998,57 @@ $.extend({
     return window.ActiveXObject && (typeof t == "boolean" ? n += ' src="javascript:false"' : typeof t == "string" && (n += ' src="' + t + '"')), n += " />", $(n).appendTo(document.body), $("#" + a).get(0);
   },
   createUploadForm: function(e, t, a) {
-    var n = "jUploadForm" + e, d = "jUploadFile" + e, c = $('<form  action="" method="POST" name="' + n + '" id="' + n + '" enctype="multipart/form-data"></form>');
+    var n = "jUploadForm" + e, c = "jUploadFile" + e, o = $('<form  action="" method="POST" name="' + n + '" id="' + n + '" enctype="multipart/form-data"></form>');
     if (a)
-      for (var o in a.cCrud)
-        a.cCrud[o] == "postdata" || $('<input type="hidden" name="cCrud[' + o + ']" value="' + a.cCrud[o] + '" />').appendTo(c);
-    var u = $("#" + t), f = $(u).clone();
-    return $(u).attr("id", d), $(u).before(f), $(u).appendTo(c), $(c).css("position", "absolute"), $(c).css("top", "-1200px"), $(c).css("left", "-1200px"), $(c).appendTo("body"), c;
+      for (var d in a.cCrud)
+        a.cCrud[d] == "postdata" || $('<input type="hidden" name="cCrud[' + d + ']" value="' + a.cCrud[d] + '" />').appendTo(o);
+    var u = $("#" + t), l = $(u).clone();
+    return $(u).attr("id", c), $(u).before(l), $(u).appendTo(o), $(o).css("position", "absolute"), $(o).css("top", "-1200px"), $(o).css("left", "-1200px"), $(o).appendTo("body"), o;
   },
   ajaxFileUpload: function(e) {
     e = $.extend({}, $.ajaxSettings, e);
     var t = (/* @__PURE__ */ new Date()).getTime(), a = $.createUploadForm(t, e.fileElementId, typeof e.data > "u" ? !1 : e.data);
     $.createUploadIframe(t, e.secureuri);
-    var n = "jUploadFrame" + t, d = "jUploadForm" + t;
+    var n = "jUploadFrame" + t, c = "jUploadForm" + t;
     e.global && !$.active++ && $.event.trigger("ajaxStart");
-    var c = !1, o = {};
-    e.global && $.event.trigger("ajaxSend", [o, e]);
+    var o = !1, d = {};
+    e.global && $.event.trigger("ajaxSend", [d, e]);
     var u = function(p) {
-      var l = document.getElementById(n);
+      var f = document.getElementById(n);
       try {
-        l.contentWindow ? (o.responseText = l.contentWindow.document.body ? l.contentWindow.document.body.innerHTML : null, o.responseXML = l.contentWindow.document.XMLDocument ? l.contentWindow.document.XMLDocument : l.contentWindow.document) : l.contentDocument && (o.responseText = l.contentDocument.document.body ? l.contentDocument.document.body.innerHTML : null, o.responseXML = l.contentDocument.document.XMLDocument ? l.contentDocument.document.XMLDocument : l.contentDocument.document);
+        f.contentWindow ? (d.responseText = f.contentWindow.document.body ? f.contentWindow.document.body.innerHTML : null, d.responseXML = f.contentWindow.document.XMLDocument ? f.contentWindow.document.XMLDocument : f.contentWindow.document) : f.contentDocument && (d.responseText = f.contentDocument.document.body ? f.contentDocument.document.body.innerHTML : null, d.responseXML = f.contentDocument.document.XMLDocument ? f.contentDocument.document.XMLDocument : f.contentDocument.document);
       } catch {
       }
-      if (o || p == "timeout") {
-        c = !0;
-        var m;
+      if (d || p == "timeout") {
+        o = !0;
+        var C;
         try {
-          if (m = p != "timeout" ? "success" : "error", m != "error") {
-            var C = $.uploadHttpData(o, e.dataType);
-            e.success && e.success(C, m), e.global && $.event.trigger("ajaxSuccess", [o, e]);
+          if (C = p != "timeout" ? "success" : "error", C != "error") {
+            var m = $.uploadHttpData(d, e.dataType);
+            e.success && e.success(m, C), e.global && $.event.trigger("ajaxSuccess", [d, e]);
           }
         } catch {
-          m = "error";
+          C = "error";
         }
-        e.global && $.event.trigger("ajaxComplete", [o, e]), e.global && !--$.active && $.event.trigger("ajaxStop"), e.complete && e.complete(o, m), $(l).unbind(), setTimeout(function() {
+        e.global && $.event.trigger("ajaxComplete", [d, e]), e.global && !--$.active && $.event.trigger("ajaxStop"), e.complete && e.complete(d, C), $(f).unbind(), setTimeout(function() {
           try {
-            $(l).remove(), $(a).remove();
+            $(f).remove(), $(a).remove();
           } catch {
           }
-        }, 100), o = null;
+        }, 100), d = null;
       }
     };
     e.timeout > 0 && setTimeout(function() {
-      c || u("timeout");
+      o || u("timeout");
     }, e.timeout);
     try {
-      var a = $("#" + d);
+      var a = $("#" + c);
       $(a).attr("action", e.url), $(a).attr("method", "POST"), $(a).attr("target", n), a.encoding ? $(a).attr("encoding", "multipart/form-data") : $(a).attr("enctype", "multipart/form-data"), $(a).submit();
     } catch {
     }
-    var f = 0, s = navigator.userAgent.toLowerCase();
+    var l = 0, s = navigator.userAgent.toLowerCase();
     return s.indexOf("opera") != -1 ? $("#" + n).load(function() {
-      f++, f == 2 && u();
+      l++, l == 2 && u();
     }) : $("#" + n).on("load", u), {
       abort: function() {
       }

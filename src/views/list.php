@@ -22,6 +22,7 @@ if ($cCrud->is_inner) {
             <?php echo $cCrud->render_search(); ?>
             <div class="btn-group" role="group">
                 <?php
+                    echo $cCrud->render_custom_buttons('list');
                     echo $cCrud->print_button();
                     echo $cCrud->csv_button();
                     echo $cCrud->refresh_button();

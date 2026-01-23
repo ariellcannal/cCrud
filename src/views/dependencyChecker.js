@@ -3,31 +3,43 @@
  * Verifica se as bibliotecas listadas em peerDependencies foram carregadas
  * pela aplicação consumidora antes da execução deste pacote.
  */
-(function() {
+window.addEventListener('load', function() {
   const packageName = 'Pacote cCrud';
 
   // Função para checar se o CSS do Font Awesome foi carregado
   const checkFontAwesome = () => {
+    // Verifica se há algum link com Font Awesome
+    const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+    const hasFontAwesomeLink = links.some(link => 
+      link.href.includes('font-awesome') || link.href.includes('fontawesome')
+    );
+    
+    if (hasFontAwesomeLink) {
+      return true;
+    }
+    
+    // Fallback: testa renderização
     const testElement = document.createElement('i');
-    testElement.className = 'fa-solid'; // Classe de teste
+    testElement.className = 'fa fa-check'; // Classe compatível com v5 e v6
     testElement.style.display = 'none';
     document.body.appendChild(testElement);
     const fontFamily = window.getComputedStyle(testElement).getPropertyValue('font-family');
     document.body.removeChild(testElement);
-    // Verifica pela string da versão 7 na font-family
-    return fontFamily.includes('Font Awesome 7'); // <-- Linha atualizada
+    return fontFamily.includes('Font Awesome') || fontFamily.includes('FontAwesome');
   };
 
   const dependencies = [
     { name: 'jQuery', check: () => window.jQuery },
     { name: 'Bootstrap 5', check: () => window.bootstrap },
     { name: 'jQuery UI', check: () => window.jQuery && window.jQuery.ui },
+    { name: 'jQuery UI Timepicker', check: () => window.jQuery && window.jQuery.fn.datetimepicker },
     { name: 'Select2', check: () => window.jQuery && window.jQuery.fn.select2 },
+    { name: 'SumoSelect', check: () => window.jQuery && window.jQuery.fn.SumoSelect },
     { name: 'jQuery Mask', check: () => window.jQuery && window.jQuery.fn.mask },
     { name: 'AlertifyJS', check: () => window.alertify },
     { name: 'CKEditor 4', check: () => window.CKEDITOR },
     { name: 'Cropper.js', check: () => window.Cropper },
-    { name: 'Font Awesome 7', check: checkFontAwesome },
+    { name: 'Font Awesome', check: checkFontAwesome },
   ];
 
   console.log(`[${packageName}] Verificando dependências...`);
@@ -54,4 +66,4 @@
         `[${packageName}] Uma ou mais dependências não foram carregadas. O pacote pode não funcionar como esperado.`
     );
   }
-})();
+});

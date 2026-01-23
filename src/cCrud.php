@@ -33,6 +33,8 @@ class cCrud
 
     protected static $js_loaded = false;
 
+    protected static $dependencies_loaded = false;
+
     protected static $classes = array();
 
 
@@ -51,6 +53,13 @@ class cCrud
      * @var Model|null
      */
     protected ?Model $model = null;
+
+    /**
+     * Nome da classe do Model (usado para recriação após serialização).
+     *
+     * @var string|null
+     */
+    protected ?string $modelClass = null;
 
     /**
      * Manipulador de sessões do CodeIgniter 4.
@@ -528,8 +537,9 @@ class cCrud
     {
         self::initPrepare();
 
-        $this->model  = $model;
-        $this->logger = $logger ?? Services::logger();
+        $this->model      = $model;
+        $this->modelClass = get_class($model);
+        $this->logger     = $logger ?? Services::logger();
 
         if (! $inst_name) {
             $inst_name = sha1(rand() . microtime());
@@ -697,36 +707,59 @@ class cCrud
         $security = Services::security();
         $postData = $request->getPost('cCrud');
         $getData  = $request->getGet('cCrud');
+        
+        // DEBUG: Log dos dados recebidos
+        log_message('debug', '[cCrud] POST data: ' . json_encode($postData));
+        log_message('debug', '[cCrud] GET data: ' . json_encode($getData));
+        log_message('debug', '[cCrud] All POST: ' . json_encode($request->getPost()));
+        log_message('debug', '[cCrud] All GET: ' . json_encode($request->getGet()));
 
         if (is_array($postData) && isset($postData['instance'], $postData['key'], $postData['task'])) {
             self::initPrepare();
             if (empty($postData['key'])) {
                 return Services::response()->setStatusCode(400)->setBody(self::lang('security_key_empty'));
             }
-            $key = $security->clean($postData['key']);
+            $key = $postData['key'];
             if (empty($postData['instance'])) {
                 return Services::response()->setStatusCode(400)->setBody(self::lang('instance_name_empty'));
             }
-            $inst_name = $security->clean($postData['instance']);
+            $inst_name = $postData['instance'];
             $is_get    = false;
         } elseif (is_array($getData) && isset($getData['instance'], $getData['key'], $getData['task']) && $getData['task'] == 'file') {
             self::initPrepare();
             if (empty($getData['key'])) {
                 return Services::response()->setStatusCode(400)->setBody(self::lang('security_key_empty'));
             }
-            $key = $security->clean($getData['key']);
+            $key = $getData['key'];
             if (empty($getData['instance'])) {
                 return Services::response()->setStatusCode(400)->setBody(self::lang('instance_name_empty'));
             }
-            $inst_name = $security->clean($getData['instance']);
+            $inst_name = $getData['instance'];
             $is_get    = true;
         } else {
-            return Services::response()->setStatusCode(400)->setBody(self::lang('wrong_request'));
+            // DEBUG: Retornar informações detalhadas sobre o erro
+            $debugInfo = [
+                'error' => self::lang('wrong_request'),
+                'postData' => $postData,
+                'getData' => $getData,
+                'allPost' => $request->getPost(),
+                'allGet' => $request->getGet(),
+                'expected' => ['instance', 'key', 'task']
+            ];
+            return Services::response()
+                ->setStatusCode(400)
+                ->setJSON($debugInfo);
         }
         $session       = Services::session();
         $cCrud_session = $session->get('cCrud_session');
 
-        $model = $cCrud_session[$inst_name]['model'] ?? null;
+        // Recupera o nome da classe do Model e recria uma nova instância com conexão fresca
+        $modelClass = $cCrud_session[$inst_name]['modelClass'] ?? null;
+        if (! $modelClass || ! class_exists($modelClass)) {
+            return Services::response()->setStatusCode(500)->setBody(self::lang('model_entity_required'));
+        }
+
+        $model = new $modelClass();
         if (! $model instanceof Model) {
             return Services::response()->setStatusCode(500)->setBody(self::lang('model_entity_required'));
         }
@@ -1533,17 +1566,37 @@ class cCrud
         return $this;
     }
 
-    public function custom_button($link = '', $label = '', $icon = '', $class = '', $tag = array())
+    /**
+     * Adiciona um botão customizado à toolbar.
+     *
+     * @param string       $link   URL ou ação do botão
+     * @param string       $label  Texto do botão
+     * @param string       $icon   Classe do ícone (ex: 'fa fa-download')
+     * @param string       $class  Classes CSS do botão
+     * @param array        $tag    Atributos HTML adicionais
+     * @param string|array $modes  Modos onde o botão será exibido (create, edit, view, list). Se vazio, exibe em todos.
+     *
+     * @return $this
+     */
+    public function custom_button($link = '', $label = '', $icon = '', $class = '', $tag = array(), $modes = '')
     {
         if (! $link || ! $label) {
             return "";
         } else {
+            // Converte string de modos separados por vírgula em array
+            if (is_string($modes) && $modes !== '') {
+                $modes = array_map('trim', explode(',', $modes));
+            } elseif ($modes === '') {
+                $modes = ['create', 'edit', 'view', 'list']; // Todos os modos
+            }
+            
             $this->custom_buttons[$label] = array(
                 'link' => $link,
                 'label' => $label,
                 'icon' => $icon,
                 'class' => $class,
-                'tag' => $tag
+                'tag' => $tag,
+                'modes' => (array) $modes
             );
         }
         return $this;
@@ -2367,10 +2420,61 @@ class cCrud
     }
 
     /**
+     * Renderiza as dependências externas do cCrud (método estático público).
+     * Deve ser chamado no <head> ou antes do conteúdo do cCrud na view.
+     * 
+     * Exemplo de uso na view:
+     * <code>
+     * <?php \cCrud\cCrud::renderDependencies(); ?>
+     * </code>
+     *
+     * @return void
+     */
+    public static function renderDependencies()
+    {
+        // Não injeta dependências em requisições AJAX
+        $request = \Config\Services::request();
+        if ($request->isAJAX()) {
+            echo "<!-- [cCrud] renderDependencies: Skipped (AJAX request) -->\n";
+            return;
+        }
+        
+        if (self::$dependencies_loaded) {
+            echo "<!-- [cCrud] renderDependencies: Skipped (already loaded) -->\n";
+            return;
+        }
+        self::$dependencies_loaded = true;
+
+        echo "<!-- [cCrud] renderDependencies: Loading dependencies from " . CCRUD_PATH . "/views/dependencies.php -->\n";
+        
+        // Inclui o arquivo de dependências
+        $dependenciesPath = CCRUD_PATH . '/views/dependencies.php';
+        if (file_exists($dependenciesPath)) {
+            echo "<!-- [cCrud] renderDependencies: File found, including... -->\n";
+            require_once $dependenciesPath;
+            echo "<!-- [cCrud] renderDependencies: Dependencies loaded successfully -->\n";
+        } else {
+            echo "<!-- [cCrud] renderDependencies: ERROR - File not found at $dependenciesPath -->\n";
+        }
+    }
+
+    /**
+     * Carrega automaticamente as dependências externas do cCrud.
+     * Injeta scripts e CSS necessários se ainda não foram carregados.
+     * Apenas em requisições não-AJAX (primeira carga da página).
+     */
+    protected function _load_dependencies()
+    {
+        // Chama o método estático
+        self::renderDependencies();
+    }
+
+    /**
      * public renderer, final instance method
      */
     public function render($task = false, $primary = false)
     {
+        $this->_load_dependencies();
         $this->benchmark_start();
         $this->_receive_post($task, $primary);
         $this->_regenerate_key();
@@ -2683,7 +2787,7 @@ class cCrud
             $renderer = Services::renderer($viewPath);
             $contents .= $renderer->setData([
                 'cCrud'    => $this,
-                'content' => $content
+                'content' => $this->render_control_fields() . $content
             ])->render('container.php');
 
             if (! self::$js_loaded && ! $this->config->manual_load) {
@@ -2948,16 +3052,14 @@ class cCrud
             return $default;
         }
 
-        $security = $this->config->auto_xss_filtering ? Services::security() : null;
+        // CI4 faz sanitização automaticamente no IncomingRequest
         $value    = $post[$field];
 
         if (($field === 'postdata' || $field === 'unique') && $value) {
             $dataKeys = array_keys($value);
             foreach ($dataKeys as $k => $key) {
-                $dataKeys[$k] = $security ? $security->clean($this->fieldname_decode($key)) : $this->fieldname_decode($key);
-                if ($security) {
-                    $value[$key] = $security->clean($value[$key]);
-                }
+                $dataKeys[$k] = $this->fieldname_decode($key);
+                // Sanitização já feita pelo CI4 IncomingRequest
             }
             return array_combine($dataKeys, $value);
         }
@@ -2966,21 +3068,21 @@ class cCrud
             switch ($filter) {
                 case 'key':
                     $value = str_replace('`', '', $value);
-                    return $security ? $security->clean($value) : $value;
+                    return $value;
                 case 'int':
                     return (int) $value;
                 case 'trim':
                     $value = trim($value);
-                    return $security ? $security->clean($value) : $value;
+                    return $value;
                 case 'base64':
                     $decoded = $this->fieldname_decode($value);
-                    return $security ? $security->clean($decoded) : $decoded;
+                    return $decoded;
                 default:
-                    return $security ? $security->clean($value) : $value;
+                    return $value;
             }
         }
 
-        return $security ? $security->clean($value) : $value;
+        return $value;
     }
 
     /**
@@ -3001,25 +3103,25 @@ class cCrud
             return $default;
         }
 
-        $security = $this->config->auto_xss_filtering ? Services::security() : null;
+        // CI4 faz sanitização automaticamente no IncomingRequest
         $value    = $get[$field];
 
         if ($filter) {
             switch ($filter) {
                 case 'key':
                     $value = str_replace('`', '', $value);
-                    return $security ? $security->clean($value) : $value;
+                    return $value;
                 case 'int':
                     return (int) $value;
                 case 'trim':
                     $value = trim($value);
-                    return $security ? $security->clean($value) : $value;
+                    return $value;
                 default:
-                    return $security ? $security->clean($value) : $value;
+                    return $value;
             }
         }
 
-        return $security ? $security->clean($value) : $value;
+        return $value;
     }
 
     protected function stripslashes_callback(&$item, $key)
@@ -3601,9 +3703,19 @@ class cCrud
                         break;
                     case 'datetime':
                         if ($val !== '') {
-                            $timeObj = is_numeric($val)
-                                ? Time::createFromFormat('U', (string) $val)
-                                : Time::createFromFormat('d/m/Y H:i', $val);
+                            if (is_numeric($val)) {
+                                $timeObj = Time::createFromFormat('U', (string) $val);
+                            } else {
+                                // Detecta formato do datetime (Y-m-d H:i:s ou d/m/Y H:i)
+                                if (strpos($val, '-') !== false) {
+                                    // Formato ISO (Y-m-d H:i:s ou Y-m-d H:i)
+                                    $format = (substr_count($val, ':') === 2) ? 'Y-m-d H:i:s' : 'Y-m-d H:i';
+                                } else {
+                                    // Formato brasileiro (d/m/Y H:i:s ou d/m/Y H:i)
+                                    $format = (substr_count($val, ':') === 2) ? 'd/m/Y H:i:s' : 'd/m/Y H:i';
+                                }
+                                $timeObj = Time::createFromFormat($format, $val);
+                            }
                             $postdata[$key] = $timeObj->toDateTimeString();
                         } else {
                             $postdata[$key] = $this->field_null[$key] ? null : '0000-00-00 00:00:00';
@@ -3611,9 +3723,13 @@ class cCrud
                         break;
                     case 'date':
                         if ($val !== '') {
-                            $timeObj = is_numeric($val)
-                                ? Time::createFromFormat('U', (string) $val)
-                                : Time::createFromFormat('d/m/Y', $val);
+                            if (is_numeric($val)) {
+                                $timeObj = Time::createFromFormat('U', (string) $val);
+                            } else {
+                                // Detecta formato da data (Y-m-d ou d/m/Y)
+                                $format = (strpos($val, '-') !== false) ? 'Y-m-d' : 'd/m/Y';
+                                $timeObj = Time::createFromFormat($format, $val);
+                            }
                             $postdata[$key] = $timeObj->toDateString();
                         } else {
                             $postdata[$key] = $this->field_null[$key] ? null : '0000-00-00';
@@ -3836,11 +3952,11 @@ class cCrud
                 }
             }
         }
-        unset($postdata);
-        $this->previous_task = $this->task;
-        $this->task = $this->after;
-        $this->after = null;
-        return $this->_run_task();
+		unset($postdata);
+		$this->previous_task = $this->task;
+		$this->task = $this->after;
+		$this->after = null;
+		return $this->_run_task();
     }
 
     protected function call_exception($postdata = array())
@@ -5728,7 +5844,7 @@ class cCrud
                             'name' => $field,
                             'value' => $this->result_row[$field]
                         );
-                        if ($this->exception_fields[$field]) {
+                        if (isset($this->exception_fields[$field])) {
                             $this->fields_output[$field]['exception'] = $this->exception_fields[$field]['exception'];
                         }
                         if (isset($this->column_pattern[$field]) && $mode == 'view') {
@@ -5748,7 +5864,14 @@ class cCrud
                 if (isset($this->result_row[$field])) {
                     $session       = $this->getSession();
                     $cCrud_session = $session->get('cCrud_session');
-                    $model         = $cCrud_session[$inst_name]['model'] ?? null;
+                    
+                    // Recupera o nome da classe do Model e recria uma nova instância com conexão fresca
+                    $modelClass = $cCrud_session[$inst_name]['modelClass'] ?? null;
+                    if (! $modelClass || ! class_exists($modelClass)) {
+                        throw new RuntimeException(self::lang('model_entity_required'));
+                    }
+                    
+                    $model = new $modelClass();
                     if (! $model instanceof Model) {
                         throw new RuntimeException(self::lang('model_entity_required'));
                     }
@@ -5989,6 +6112,8 @@ class cCrud
         // Armazena todos os atributos atuais da instância
         $vars = get_object_vars($this);
         unset($vars['session']); // Evita armazenar a instância de sessão
+        unset($vars['model']);   // Evita armazenar o Model (contém conexão mysqli não serializável)
+        unset($vars['logger']);  // Evita armazenar o logger
 
         $cCrud_session[$inst_name]            = $vars;
         $cCrud_session[$inst_name]['before'] = $this->find_prev_task();
@@ -6021,7 +6146,8 @@ class cCrud
 
         if (isset($cCrud_session[$inst_name])) {
             foreach ($cCrud_session[$inst_name] as $property => $value) {
-                if ($property !== 'session') {
+                // Não importa session, model e logger (são recriados no construtor)
+                if ($property !== 'session' && $property !== 'model' && $property !== 'logger') {
                     $this->{$property} = $value;
                 }
             }
@@ -9663,6 +9789,13 @@ class cCrud
         self::$css_loaded = true;
 
         $out = '';
+        
+        // Carregar dependências externas via CDN
+        ob_start();
+        include CCRUD_PATH . '/views/dependencies.php';
+        $out .= ob_get_clean();
+        
+        // Carregar CSS do cCrud
         $out .= '<link href="/' . trim($config->request_uri, '/') . '/css" rel="stylesheet" type="text/css" />';
 
         return $out;
@@ -11302,12 +11435,27 @@ class cCrud
         return $out;
     }
 
-    protected function render_custom_buttons()
+    /**
+     * Renderiza botões customizados filtrados por modo.
+     *
+     * @param string $mode Modo atual (create, edit, view, list)
+     *
+     * @return string HTML dos botões
+     */
+    public function render_custom_buttons($mode = '')
     {
         $out = '';
         if (is_array($this->custom_buttons) && count($this->custom_buttons)) {
             foreach ($this->custom_buttons as $button) {
-                $out .= $this->render_button($button);
+                // Verifica se o botão deve ser exibido no modo atual
+                if (isset($button['modes']) && is_array($button['modes'])) {
+                    if ($mode === '' || in_array($mode, $button['modes'])) {
+                        $out .= $this->render_button($button);
+                    }
+                } else {
+                    // Se não tem modos definidos, exibe sempre (retrocompatibilidade)
+                    $out .= $this->render_button($button);
+                }
             }
         }
         return $out;
@@ -12391,7 +12539,7 @@ class cCrud
         $where_arr = array();
         $request  = Services::request();
         $security = Services::security();
-        $q        = $security->clean($request->getPost('q'));
+        $q        = $request->getPost('q');
         $where_arr[] = $this->relation[$name]['rel_name'] . ' LIKE "%' . $q . '%"';
         if ($this->relation[$name]['rel_where']) {
             if (is_array($this->relation[$name]['rel_where'])) {

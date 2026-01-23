@@ -23,7 +23,7 @@ var cCrud = {
 		$.ajax({
 			type: "post",
 			url: cCrud.config('url'),
-			dataType: "html",
+			dataType: "text", // text permite receber tanto HTML quanto JSON
 			cache: false,
 			data: {
 				"cCrud": data
@@ -35,7 +35,8 @@ var cCrud = {
 				cCrud.current_focus = $("*:focus");
 				cCrud.after_task = data.after;
 			},
-			success: function(response) {
+			success: function(response, textStatus, jqXHR) {
+				// Resposta HTML normal
 				if (!$('.cCrud_result_validation').lenght) {
 					$('body').append($('<div>').attr('class', 'cCrud_result_validation'));
 				}
@@ -48,9 +49,13 @@ var cCrud = {
 							container = cCrud.parent_container;
 							cCrud.parent_container = null;
 						}
-						cCrud.close_modal = false;
-					}
-					$(container).html(response);
+					cCrud.close_modal = false;
+				}
+				// Destruir plugins antes de substituir HTML
+				cCrud.destroy_plugins(container);
+				$(container).html(response);
+				// Reinicializa plugins jQuery após atualização AJAX
+				cCrud.reinit_plugins(container);
 					if (success_callback) {
 						success_callback(container);
 					}
@@ -336,32 +341,40 @@ var cCrud = {
 		/*
 		 * https://github.com/Eonasdan/bootstrap-datetimepicker/
 		 */
+		if (!$.fn.datetimepicker) {
+			console.error('[cCrud] jQuery UI Timepicker Addon não está carregado');
+			return;
+		}
 		if ($(container).find('.cCrud-datepicker-from').data("DateTimePicker") == undefined && $(container).find('.cCrud-datepicker-to').data("DateTimePicker") == undefined) {
 			from = $(container).find('.cCrud-datepicker-from').datetimepicker();
 			to = $(container).find('.cCrud-datepicker-to').datetimepicker();
 			switch (type) {
 				case 'time':
 					element.datetimepicker({
-						format: cCrud_config.moment_time_format,
+						format: cCrud_config.time_format,
 						useCurrent: false
 					});
+					break;
 				case 'datetime':
 				case 'timestamp':
 					element.datetimepicker({
-						format: cCrud_config.moment_date_format + ' ' + cCrud_config.moment_time_format,
+						format: cCrud_config.date_format + ' ' + cCrud_config.time_format,
 						useCurrent: false
 					});
+					break;
 				case 'date':
 					element.datetimepicker({
-						format: cCrud_config.moment_date_format,
+						format: cCrud_config.date_format,
 						useCurrent: false
 					});
+					break;
 				case 'year':
 					element.datetimepicker({
 						viewMode: 'years',
-						format: cCrud_config.moment_year_format,
+						format: 'yyyy',
 						useCurrent: false
 					});
+					break;
 				default:
 					cCrud.link_datetime_fields(from, to);
 					break;
@@ -372,40 +385,60 @@ var cCrud = {
 		/*
 		 * https://github.com/Eonasdan/bootstrap-datetimepicker/
 		 */
-		$(container).find(".cCrud-datepicker").each(function() {
-			if ($(this).data("DateTimePicker") == undefined) {
-				var element = $(this);
-				var format_id = $(this).data("type");
-				switch (format_id) {
-					case 'time':
-						element.datetimepicker({
-							format: cCrud_config.moment_time_format,
-							useCurrent: false
-						});
-					case 'datetime':
-					case 'timestamp':
-						element.datetimepicker({
-							format: cCrud_config.moment_date_format + ' ' + cCrud_config.moment_time_format,
-							useCurrent: false
-						});
-					case 'date':
-						element.datetimepicker({
-							format: cCrud_config.moment_date_format,
-							useCurrent: false
-						});
-					case 'year':
-						element.datetimepicker({
-							viewMode: 'years',
-							format: cCrud_config.moment_year_format,
-							useCurrent: false
-						});
-					default:
-						var range_start = element.data("rangestart");
-						var range_end = element.data("rangeend");
-						cCrud.link_datetime_fields(range_start, range_end);
-						break;
+		console.log('[cCrud] init_datepicker called with container:', container);
+		if (!$.fn.datetimepicker) {
+			console.error('[cCrud] jQuery UI Timepicker Addon não está carregado');
+			return;
+		}
+		var elements = $(container).find(".cCrud-datepicker");
+		console.log('[cCrud] Found', elements.length, 'datepicker elements');
+		elements.each(function(index) {
+			console.log('[cCrud] Processing datepicker element', index, ':', this);
+				if ($(this).data("DateTimePicker") == undefined) {
+					console.log('[cCrud] Initializing datepicker', index, 'type:', $(this).data("type"));
+					var element = $(this);
+					var format_id = $(this).data("type");
+					switch (format_id) {
+						case 'time':
+							element.datetimepicker({
+								format: cCrud_config.time_format,
+								useCurrent: false
+							});
+							console.log('[cCrud] Time picker initialized');
+							break;
+						case 'datetime':
+						case 'timestamp':
+							element.datetimepicker({
+								format: cCrud_config.date_format + ' ' + cCrud_config.time_format,
+								useCurrent: false
+							});
+							console.log('[cCrud] Datetime picker initialized');
+							break;
+						case 'date':
+							element.datetimepicker({
+								format: cCrud_config.date_format,
+								useCurrent: false
+							});
+							console.log('[cCrud] Date picker initialized');
+							break;
+						case 'year':
+							element.datetimepicker({
+								viewMode: 'years',
+								format: 'yyyy',
+								useCurrent: false
+							});
+							console.log('[cCrud] Year picker initialized');
+							break;
+						default:
+							var range_start = element.data("rangestart");
+							var range_end = element.data("rangeend");
+							cCrud.link_datetime_fields(range_start, range_end);
+							console.log('[cCrud] Range picker linked');
+							break;
+					}
+				} else {
+					console.log('[cCrud] Datepicker', index, 'already initialized, skipping');
 				}
-			}
 		});
 	},
 	link_datetime_fields: function(field_from, field_to) {
@@ -1382,10 +1415,17 @@ var cCrud = {
 		});
 	},
 	init_select2: function(e) {
-		if (!$.fn.select2)
+		console.log('[cCrud] init_select2 called with e:', e);
+		if (!$.fn.select2) {
+			console.error('[cCrud] Select2 plugin not loaded');
 			return;
+		}
 		var container = cCrud.get_container(e);
-		$('select:not(.cCrud-columns-select):not(.cCrud-searchdata):not(.not_select2):not(.cCrud-columnsList-select)', container).each(function() {
+		console.log('[cCrud] Select2 container:', container);
+		var elements = $('select:not(.cCrud-columns-select):not(.cCrud-searchdata):not(.not_select2):not(.cCrud-columnsList-select)', container);
+		console.log('[cCrud] Found', elements.length, 'select2 elements');
+		elements.each(function(index) {
+			console.log('[cCrud] Processing select2 element', index, ':', this);
 			var options = $.extend({
 				width: '100%'
 			}, $(this).data());
@@ -1420,9 +1460,11 @@ var cCrud = {
 					},
 					minimumInputLength: 2
 				});
-			}
-			$(this).select2(options);
-		});
+				}
+				console.log('[cCrud] Initializing select2 on element', index, 'with options:', options);
+				$(this).select2(options);
+				console.log('[cCrud] Select2 initialized on element', index);
+			});
 	},
 	init_checkbox: function(container) {
 
@@ -1439,16 +1481,99 @@ var cCrud = {
 			}
 		});
 	},
-	init_columns_select: function(container) {
-		var data = cCrud.list_data(container);
-		if (data.task == 'list') {
-			$('.cCrud-columnsList-select', container).SumoSelect({
-				okCancelInMulti: true,
-				selectAll: true
-			});
+		init_columns_select: function(container) {
+			var data = cCrud.list_data(container);
+			if (data.task == 'list') {
+				$('.cCrud-columnsList-select', container).SumoSelect({
+					okCancelInMulti: true,
+					selectAll: true
+				});
+			}
+		},
+		/**
+		 * Reinicializa todos os plugins jQuery após atualização AJAX.
+		 * Chamado automaticamente após cada requisição AJAX que atualiza o HTML.
+		 */
+	destroy_plugins: function(container) {
+		console.log('[cCrud] Destroying plugins in container before HTML replacement');
+		
+		// Destruir datepickers
+		$(container).find('.cCrud-datepicker').each(function() {
+			if ($(this).data("DateTimePicker") !== undefined) {
+				try {
+					$(this).data("DateTimePicker").destroy();
+					console.log('[cCrud] Destroyed datepicker');
+				} catch(e) {
+					console.warn('[cCrud] Error destroying datepicker:', e);
+				}
+			}
+		});
+		
+		// Destruir select2
+		$(container).find('select.select2-hidden-accessible').each(function() {
+			try {
+				$(this).select2('destroy');
+				console.log('[cCrud] Destroyed select2');
+			} catch(e) {
+				console.warn('[cCrud] Error destroying select2:', e);
+			}
+		});
+		
+		// Destruir SumoSelect
+		$(container).find('.SumoSelect').each(function() {
+			try {
+				var selectElement = $(this).prev('select');
+				if (selectElement.length && selectElement[0].sumo) {
+					selectElement[0].sumo.unload();
+					console.log('[cCrud] Destroyed SumoSelect');
+				}
+			} catch(e) {
+				console.warn('[cCrud] Error destroying SumoSelect:', e);
+			}
+		});
+		
+		console.log('[cCrud] Plugins destroyed');
+	},
+	reinit_plugins: function(container, attempt) {
+		attempt = attempt || 1;
+		console.log('[cCrud] Reinitializing plugins for container (attempt ' + attempt + '):', container);
+		
+		// Verificar se os plugins estão disponíveis
+		var pluginsReady = (typeof $.fn.datetimepicker !== 'undefined' || typeof $.fn.datepicker !== 'undefined') && 
+		                   typeof $.fn.select2 !== 'undefined';
+		
+		if (!pluginsReady && attempt < 5) {
+			console.warn('[cCrud] Plugins not ready yet, retrying in 100ms... (attempt ' + attempt + '/5)');
+			setTimeout(function() {
+				cCrud.reinit_plugins(container, attempt + 1);
+			}, 100);
+			return;
 		}
+		
+		if (!pluginsReady) {
+			console.error('[cCrud] Plugins still not available after 5 attempts. Initializing anyway...');
+		}
+		
+		console.log('[cCrud] $.fn.datetimepicker available:', typeof $.fn.datetimepicker);
+		console.log('[cCrud] $.fn.select2 available:', typeof $.fn.select2);
+		console.log('[cCrud] Datepicker elements found:', $(container).find('.cCrud-datepicker').length);
+		console.log('[cCrud] Select2 elements found:', $('select:not(.cCrud-columns-select):not(.cCrud-searchdata):not(.not_select2):not(.cCrud-columnsList-select)', container).length);
+		
+		// Reinicializa datepickers
+		cCrud.init_datepicker(container);
+		
+		// Reinicializa select2
+		cCrud.init_select2(container);
+		
+		// Reinicializa masks
+		cCrud.init_mask(container);
+		
+		// Reinicializa columns select (SumoSelect)
+		cCrud.init_columns_select(container);
+		
+		console.log('[cCrud] Plugins reinitialized successfully');
 	}
-};
+	};
 /** events */
 $(document).on("cCrudinit", function() {
 	if ($(".cCrud").length) {
@@ -1607,10 +1732,13 @@ $(document).on("cCrudinit", function() {
 			//$(".cCrud-input").first().focus();
 		});
 	}
-});
-$(document).ready(function() {
-	cCrud.init();
-});
+	});
+	// Usar window.load ao invés de document.ready para garantir que
+	// todos os scripts externos (jQuery UI Timepicker, Select2, etc.) estejam carregados
+	$(window).on('load', function() {
+		console.log('[cCrud] Window loaded, initializing cCrud...');
+		cCrud.init();
+	});
 $(window).on("resize load cCrudslidetoggle", function() {
 	cCrud.check_fixed_buttons();
 });
