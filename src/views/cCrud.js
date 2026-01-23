@@ -1472,6 +1472,10 @@ var cCrud = {
 		 * Chamado automaticamente após cada requisição AJAX que atualiza o HTML.
 		 */
 		reinit_plugins: function(container) {
+			console.log('[cCrud] Reinitializing plugins for container:', container);
+			console.log('[cCrud] Datepicker elements found:', $(container).find('.cCrud-datepicker').length);
+			console.log('[cCrud] Select2 elements found:', $('select:not(.cCrud-columns-select):not(.cCrud-searchdata):not(.not_select2):not(.cCrud-columnsList-select)', container).length);
+			
 			// Reinicializa datepickers
 			cCrud.init_datepicker(container);
 			
@@ -1483,6 +1487,8 @@ var cCrud = {
 			
 			// Reinicializa columns select (SumoSelect)
 			cCrud.init_columns_select(container);
+			
+			console.log('[cCrud] Plugins reinitialized');
 		}
 	};
 /** events */
