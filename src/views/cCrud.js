@@ -51,6 +51,8 @@ var cCrud = {
 						cCrud.close_modal = false;
 					}
 					$(container).html(response);
+					// Reinicializa plugins jQuery após atualização AJAX
+					cCrud.reinit_plugins(container);
 					if (success_callback) {
 						success_callback(container);
 					}
@@ -1455,16 +1457,33 @@ var cCrud = {
 			}
 		});
 	},
-	init_columns_select: function(container) {
-		var data = cCrud.list_data(container);
-		if (data.task == 'list') {
-			$('.cCrud-columnsList-select', container).SumoSelect({
-				okCancelInMulti: true,
-				selectAll: true
-			});
+		init_columns_select: function(container) {
+			var data = cCrud.list_data(container);
+			if (data.task == 'list') {
+				$('.cCrud-columnsList-select', container).SumoSelect({
+					okCancelInMulti: true,
+					selectAll: true
+				});
+			}
+		},
+		/**
+		 * Reinicializa todos os plugins jQuery após atualização AJAX.
+		 * Chamado automaticamente após cada requisição AJAX que atualiza o HTML.
+		 */
+		reinit_plugins: function(container) {
+			// Reinicializa datepickers
+			cCrud.init_datepicker(container);
+			
+			// Reinicializa select2
+			cCrud.init_select2(container);
+			
+			// Reinicializa masks
+			cCrud.init_mask(container);
+			
+			// Reinicializa columns select (SumoSelect)
+			cCrud.init_columns_select(container);
 		}
-	}
-};
+	};
 /** events */
 $(document).on("cCrudinit", function() {
 	if ($(".cCrud").length) {

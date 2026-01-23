@@ -64,7 +64,7 @@ var cCrud = {
       success: function(n) {
         $(".cCrud_result_validation").lenght || $("body").append($("<div>").attr("class", "cCrud_result_validation"));
         var d = n;
-        cCrud.check_message(d), cCrud.exception || (cCrud.close_modal == !0 && ($("#cCrud-modal-window").modal("hide"), cCrud.parent_container && (e = cCrud.parent_container, cCrud.parent_container = null), cCrud.close_modal = !1), $(e).html(n), a && a(e));
+        cCrud.check_message(d), cCrud.exception || (cCrud.close_modal == !0 && ($("#cCrud-modal-window").modal("hide"), cCrud.parent_container && (e = cCrud.parent_container, cCrud.parent_container = null), cCrud.close_modal = !1), $(e).html(n), cCrud.reinit_plugins(e), a && a(e));
       },
       error: function(n, d, o) {
         cCrud.show_error(cCrud.lang("undefined_error")), console.log(n.statusText), console.log(n.responseText);
@@ -842,6 +842,13 @@ var cCrud = {
       okCancelInMulti: !0,
       selectAll: !0
     });
+  },
+  /**
+   * Reinicializa todos os plugins jQuery após atualização AJAX.
+   * Chamado automaticamente após cada requisição AJAX que atualiza o HTML.
+   */
+  reinit_plugins: function(e) {
+    cCrud.init_datepicker(e), cCrud.init_select2(e), cCrud.init_mask(e), cCrud.init_columns_select(e);
   }
 };
 $(document).on("cCrudinit", function() {
