@@ -35,7 +35,30 @@ var cCrud = {
 				cCrud.current_focus = $("*:focus");
 				cCrud.after_task = data.after;
 			},
-			success: function(response) {
+			success: function(response, textStatus, jqXHR) {
+				// Verifica se a resposta é JSON (quando modo não muda)
+				var contentType = jqXHR.getResponseHeader('content-type') || '';
+				if (contentType.indexOf('application/json') !== -1) {
+					try {
+						var jsonResponse = typeof response === 'string' ? JSON.parse(response) : response;
+						if (jsonResponse.success) {
+							// Exibe mensagem de sucesso sem recarregar HTML
+							cCrud.show_message(container, jsonResponse.message, 'success');
+							// Atualiza primary key se for criação
+							if (jsonResponse.primary_val && jsonResponse.primary_key) {
+								$(container).find('input[name="' + jsonResponse.primary_key + '"]').val(jsonResponse.primary_val);
+							}
+							if (success_callback) {
+								success_callback(container);
+							}
+							return;
+						}
+					} catch (e) {
+						console.error('Erro ao parsear JSON:', e);
+					}
+				}
+				
+				// Resposta HTML normal
 				if (!$('.cCrud_result_validation').lenght) {
 					$('body').append($('<div>').attr('class', 'cCrud_result_validation'));
 				}
