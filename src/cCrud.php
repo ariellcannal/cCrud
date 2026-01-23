@@ -2432,6 +2432,12 @@ class cCrud
      */
     public static function renderDependencies()
     {
+        // Não injeta dependências em requisições AJAX
+        $request = \Config\Services::request();
+        if ($request->isAJAX()) {
+            return;
+        }
+        
         if (self::$dependencies_loaded) {
             return;
         }
