@@ -3,7 +3,7 @@
  * Verifica se as bibliotecas listadas em peerDependencies foram carregadas
  * pela aplicação consumidora antes da execução deste pacote.
  */
-(function() {
+window.addEventListener('load', function() {
   const packageName = 'Pacote cCrud';
 
   // Função para checar se o CSS do Font Awesome foi carregado
@@ -65,4 +65,4 @@
         `[${packageName}] Uma ou mais dependências não foram carregadas. O pacote pode não funcionar como esperado.`
     );
   }
-})();
+});
