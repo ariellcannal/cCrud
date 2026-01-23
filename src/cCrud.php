@@ -3944,6 +3944,11 @@ class cCrud
 		$this->task = $this->after;
 		$this->after = null;
 		
+		// DEBUG: Log para verificar valores
+		log_message('debug', '[cCrud] before_task: ' . var_export($before_task, true));
+		log_message('debug', '[cCrud] this->task: ' . var_export($this->task, true));
+		log_message('debug', '[cCrud] Condition check: ' . ($before_task === $this->task ? 'TRUE' : 'FALSE'));
+		
 		// Se o modo não mudou (ex: edit → edit), retorna apenas mensagem JSON
 		if ($before_task === $this->task && in_array($this->task, ['edit', 'view'])) {
 			$message = $this->primary_val ? self::lang('save_success') : self::lang('create_success');
