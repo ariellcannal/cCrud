@@ -49,11 +49,13 @@ var cCrud = {
 							container = cCrud.parent_container;
 							cCrud.parent_container = null;
 						}
-						cCrud.close_modal = false;
-					}
-					$(container).html(response);
-					// Reinicializa plugins jQuery após atualização AJAX
-					cCrud.reinit_plugins(container);
+					cCrud.close_modal = false;
+				}
+				// Destruir plugins antes de substituir HTML
+				cCrud.destroy_plugins(container);
+				$(container).html(response);
+				// Reinicializa plugins jQuery após atualização AJAX
+				cCrud.reinit_plugins(container);
 					if (success_callback) {
 						success_callback(container);
 					}
@@ -1492,27 +1494,67 @@ var cCrud = {
 		 * Reinicializa todos os plugins jQuery após atualização AJAX.
 		 * Chamado automaticamente após cada requisição AJAX que atualiza o HTML.
 		 */
-		reinit_plugins: function(container) {
-			console.log('[cCrud] Reinitializing plugins for container:', container);
-			console.log('[cCrud] $.fn.datetimepicker available:', typeof $.fn.datetimepicker);
-			console.log('[cCrud] $.fn.select2 available:', typeof $.fn.select2);
-			console.log('[cCrud] Datepicker elements found:', $(container).find('.cCrud-datepicker').length);
-			console.log('[cCrud] Select2 elements found:', $('select:not(.cCrud-columns-select):not(.cCrud-searchdata):not(.not_select2):not(.cCrud-columnsList-select)', container).length);
-			
-			// Reinicializa datepickers
-			cCrud.init_datepicker(container);
-			
-			// Reinicializa select2
-			cCrud.init_select2(container);
-			
-			// Reinicializa masks
-			cCrud.init_mask(container);
-			
-			// Reinicializa columns select (SumoSelect)
-			cCrud.init_columns_select(container);
-			
-			console.log('[cCrud] Plugins reinitialized');
-		}
+	destroy_plugins: function(container) {
+		console.log('[cCrud] Destroying plugins in container before HTML replacement');
+		
+		// Destruir datepickers
+		$(container).find('.cCrud-datepicker').each(function() {
+			if ($(this).data("DateTimePicker") !== undefined) {
+				try {
+					$(this).data("DateTimePicker").destroy();
+					console.log('[cCrud] Destroyed datepicker');
+				} catch(e) {
+					console.warn('[cCrud] Error destroying datepicker:', e);
+				}
+			}
+		});
+		
+		// Destruir select2
+		$(container).find('select.select2-hidden-accessible').each(function() {
+			try {
+				$(this).select2('destroy');
+				console.log('[cCrud] Destroyed select2');
+			} catch(e) {
+				console.warn('[cCrud] Error destroying select2:', e);
+			}
+		});
+		
+		// Destruir SumoSelect
+		$(container).find('.SumoSelect').each(function() {
+			try {
+				var selectElement = $(this).prev('select');
+				if (selectElement.length && selectElement[0].sumo) {
+					selectElement[0].sumo.unload();
+					console.log('[cCrud] Destroyed SumoSelect');
+				}
+			} catch(e) {
+				console.warn('[cCrud] Error destroying SumoSelect:', e);
+			}
+		});
+		
+		console.log('[cCrud] Plugins destroyed');
+	},
+	reinit_plugins: function(container) {
+		console.log('[cCrud] Reinitializing plugins for container:', container);
+		console.log('[cCrud] $.fn.datetimepicker available:', typeof $.fn.datetimepicker);
+		console.log('[cCrud] $.fn.select2 available:', typeof $.fn.select2);
+		console.log('[cCrud] Datepicker elements found:', $(container).find('.cCrud-datepicker').length);
+		console.log('[cCrud] Select2 elements found:', $('select:not(.cCrud-columns-select):not(.cCrud-searchdata):not(.not_select2):not(.cCrud-columnsList-select)', container).length);
+		
+		// Reinicializa datepickers
+		cCrud.init_datepicker(container);
+		
+		// Reinicializa select2
+		cCrud.init_select2(container);
+		
+		// Reinicializa masks
+		cCrud.init_mask(container);
+		
+		// Reinicializa columns select (SumoSelect)
+		cCrud.init_columns_select(container);
+		
+		console.log('[cCrud] Plugins reinitialized');
+	}
 	};
 /** events */
 $(document).on("cCrudinit", function() {

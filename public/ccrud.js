@@ -65,7 +65,7 @@ var cCrud = {
       success: function(n, c, o) {
         $(".cCrud_result_validation").lenght || $("body").append($("<div>").attr("class", "cCrud_result_validation"));
         var d = n;
-        cCrud.check_message(d), cCrud.exception || (cCrud.close_modal == !0 && ($("#cCrud-modal-window").modal("hide"), cCrud.parent_container && (e = cCrud.parent_container, cCrud.parent_container = null), cCrud.close_modal = !1), $(e).html(n), cCrud.reinit_plugins(e), a && a(e));
+        cCrud.check_message(d), cCrud.exception || (cCrud.close_modal == !0 && ($("#cCrud-modal-window").modal("hide"), cCrud.parent_container && (e = cCrud.parent_container, cCrud.parent_container = null), cCrud.close_modal = !1), cCrud.destroy_plugins(e), $(e).html(n), cCrud.reinit_plugins(e), a && a(e));
       },
       error: function(n, c, o) {
         cCrud.show_error(cCrud.lang("undefined_error")), console.log(n.statusText), console.log(n.responseText);
@@ -413,8 +413,8 @@ var cCrud = {
             left: p + "px",
             top: f + "px"
           }), s.minSize = [50, 50], l && (s.aspectRatio = l), s.onChange = cCrud.get_coordinates, s.keySupport = !1, s.trueSize = [d, u];
-          var m = d / 4, C = u / 4, h = m * 3, g = C * 3;
-          s.setSelect = [m, C, h, g], s.allowSelect = !1, $(".ui-dialog img.cCrud-crop").Jcrop(s);
+          var C = d / 4, m = u / 4, h = C * 3, g = m * 3;
+          s.setSelect = [C, m, h, g], s.allowSelect = !1, $(".ui-dialog img.cCrud-crop").Jcrop(s);
         });
       }
     });
@@ -856,6 +856,29 @@ var cCrud = {
    * Reinicializa todos os plugins jQuery após atualização AJAX.
    * Chamado automaticamente após cada requisição AJAX que atualiza o HTML.
    */
+  destroy_plugins: function(e) {
+    console.log("[cCrud] Destroying plugins in container before HTML replacement"), $(e).find(".cCrud-datepicker").each(function() {
+      if ($(this).data("DateTimePicker") !== void 0)
+        try {
+          $(this).data("DateTimePicker").destroy(), console.log("[cCrud] Destroyed datepicker");
+        } catch (t) {
+          console.warn("[cCrud] Error destroying datepicker:", t);
+        }
+    }), $(e).find("select.select2-hidden-accessible").each(function() {
+      try {
+        $(this).select2("destroy"), console.log("[cCrud] Destroyed select2");
+      } catch (t) {
+        console.warn("[cCrud] Error destroying select2:", t);
+      }
+    }), $(e).find(".SumoSelect").each(function() {
+      try {
+        var t = $(this).prev("select");
+        t.length && t[0].sumo && (t[0].sumo.unload(), console.log("[cCrud] Destroyed SumoSelect"));
+      } catch (a) {
+        console.warn("[cCrud] Error destroying SumoSelect:", a);
+      }
+    }), console.log("[cCrud] Plugins destroyed");
+  },
   reinit_plugins: function(e) {
     console.log("[cCrud] Reinitializing plugins for container:", e), console.log("[cCrud] $.fn.datetimepicker available:", typeof $.fn.datetimepicker), console.log("[cCrud] $.fn.select2 available:", typeof $.fn.select2), console.log("[cCrud] Datepicker elements found:", $(e).find(".cCrud-datepicker").length), console.log("[cCrud] Select2 elements found:", $("select:not(.cCrud-columns-select):not(.cCrud-searchdata):not(.not_select2):not(.cCrud-columnsList-select)", e).length), cCrud.init_datepicker(e), cCrud.init_select2(e), cCrud.init_mask(e), cCrud.init_columns_select(e), console.log("[cCrud] Plugins reinitialized");
   }
@@ -990,16 +1013,16 @@ $.extend({
       }
       if (d || p == "timeout") {
         o = !0;
-        var m;
+        var C;
         try {
-          if (m = p != "timeout" ? "success" : "error", m != "error") {
-            var C = $.uploadHttpData(d, e.dataType);
-            e.success && e.success(C, m), e.global && $.event.trigger("ajaxSuccess", [d, e]);
+          if (C = p != "timeout" ? "success" : "error", C != "error") {
+            var m = $.uploadHttpData(d, e.dataType);
+            e.success && e.success(m, C), e.global && $.event.trigger("ajaxSuccess", [d, e]);
           }
         } catch {
-          m = "error";
+          C = "error";
         }
-        e.global && $.event.trigger("ajaxComplete", [d, e]), e.global && !--$.active && $.event.trigger("ajaxStop"), e.complete && e.complete(d, m), $(f).unbind(), setTimeout(function() {
+        e.global && $.event.trigger("ajaxComplete", [d, e]), e.global && !--$.active && $.event.trigger("ajaxStop"), e.complete && e.complete(d, C), $(f).unbind(), setTimeout(function() {
           try {
             $(f).remove(), $(a).remove();
           } catch {
