@@ -36,11 +36,11 @@ var cCrud = {
 				cCrud.after_task = data.after;
 			},
 			success: function(response, textStatus, jqXHR) {
-				// Verifica se a resposta é JSON (quando modo não muda)
-				var contentType = jqXHR.getResponseHeader('content-type') || '';
-				if (contentType.indexOf('application/json') !== -1) {
-					try {
-						var jsonResponse = typeof response === 'string' ? JSON.parse(response) : response;
+				// Tenta parsear como JSON primeiro (mais robusto que verificar content-type)
+				try {
+					var jsonResponse = typeof response === 'string' ? JSON.parse(response) : response;
+					// Se parsear com sucesso E tiver a propriedade success, é uma resposta JSON do cCrud
+					if (jsonResponse && jsonResponse.hasOwnProperty('success')) {
 						if (jsonResponse.success) {
 							// Exibe mensagem de sucesso sem recarregar HTML
 							cCrud.show_message(container, jsonResponse.message, 'success');
@@ -48,14 +48,14 @@ var cCrud = {
 							if (jsonResponse.primary_val && jsonResponse.primary_key) {
 								$(container).find('input[name="' + jsonResponse.primary_key + '"]').val(jsonResponse.primary_val);
 							}
-							if (success_callback) {
-								success_callback(container);
-							}
-							return;
 						}
-					} catch (e) {
-						console.error('Erro ao parsear JSON:', e);
+						if (success_callback) {
+							success_callback(container);
+						}
+						return; // NÃO recarrega HTML!
 					}
+				} catch (e) {
+					// Não é JSON, continua com processamento HTML normal
 				}
 				
 				// Resposta HTML normal

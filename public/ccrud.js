@@ -63,20 +63,17 @@ var cCrud = {
         $(document).trigger("cCrudbeforerequest", [e, t]), cCrud.close_modal = t.close, cCrud.current_task = t.task, cCrud.current_focus = $("*:focus"), cCrud.after_task = t.after;
       },
       success: function(n, d, o) {
-        var c = o.getResponseHeader("content-type") || "";
-        if (c.indexOf("application/json") !== -1)
-          try {
-            var u = typeof n == "string" ? JSON.parse(n) : n;
-            if (u.success) {
-              cCrud.show_message(e, u.message, "success"), u.primary_val && u.primary_key && $(e).find('input[name="' + u.primary_key + '"]').val(u.primary_val), a && a(e);
-              return;
-            }
-          } catch (s) {
-            console.error("Erro ao parsear JSON:", s);
+        try {
+          var c = typeof n == "string" ? JSON.parse(n) : n;
+          if (c && c.hasOwnProperty("success")) {
+            c.success && (cCrud.show_message(e, c.message, "success"), c.primary_val && c.primary_key && $(e).find('input[name="' + c.primary_key + '"]').val(c.primary_val)), a && a(e);
+            return;
           }
+        } catch {
+        }
         $(".cCrud_result_validation").lenght || $("body").append($("<div>").attr("class", "cCrud_result_validation"));
-        var l = n;
-        cCrud.check_message(l), cCrud.exception || (cCrud.close_modal == !0 && ($("#cCrud-modal-window").modal("hide"), cCrud.parent_container && (e = cCrud.parent_container, cCrud.parent_container = null), cCrud.close_modal = !1), $(e).html(n), cCrud.reinit_plugins(e), a && a(e));
+        var u = n;
+        cCrud.check_message(u), cCrud.exception || (cCrud.close_modal == !0 && ($("#cCrud-modal-window").modal("hide"), cCrud.parent_container && (e = cCrud.parent_container, cCrud.parent_container = null), cCrud.close_modal = !1), $(e).html(n), cCrud.reinit_plugins(e), a && a(e));
       },
       error: function(n, d, o) {
         cCrud.show_error(cCrud.lang("undefined_error")), console.log(n.statusText), console.log(n.responseText);
