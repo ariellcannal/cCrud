@@ -383,48 +383,60 @@ var cCrud = {
 		/*
 		 * https://github.com/Eonasdan/bootstrap-datetimepicker/
 		 */
+		console.log('[cCrud] init_datepicker called with container:', container);
 		if (!$.fn.datetimepicker) {
 			console.error('[cCrud] jQuery UI Timepicker Addon não está carregado');
 			return;
 		}
-		$(container).find(".cCrud-datepicker").each(function() {
-			if ($(this).data("DateTimePicker") == undefined) {
-				var element = $(this);
-				var format_id = $(this).data("type");
-				switch (format_id) {
-					case 'time':
-						element.datetimepicker({
-							format: cCrud_config.time_format,
-							useCurrent: false
-						});
-						break;
-					case 'datetime':
-					case 'timestamp':
-						element.datetimepicker({
-							format: cCrud_config.date_format + ' ' + cCrud_config.time_format,
-							useCurrent: false
-						});
-						break;
-					case 'date':
-						element.datetimepicker({
-							format: cCrud_config.date_format,
-							useCurrent: false
-						});
-						break;
-					case 'year':
-						element.datetimepicker({
-							viewMode: 'years',
-							format: 'yyyy',
-							useCurrent: false
-						});
-						break;
-					default:
-						var range_start = element.data("rangestart");
-						var range_end = element.data("rangeend");
-						cCrud.link_datetime_fields(range_start, range_end);
-						break;
+		var elements = $(container).find(".cCrud-datepicker");
+		console.log('[cCrud] Found', elements.length, 'datepicker elements');
+		elements.each(function(index) {
+			console.log('[cCrud] Processing datepicker element', index, ':', this);
+				if ($(this).data("DateTimePicker") == undefined) {
+					console.log('[cCrud] Initializing datepicker', index, 'type:', $(this).data("type"));
+					var element = $(this);
+					var format_id = $(this).data("type");
+					switch (format_id) {
+						case 'time':
+							element.datetimepicker({
+								format: cCrud_config.time_format,
+								useCurrent: false
+							});
+							console.log('[cCrud] Time picker initialized');
+							break;
+						case 'datetime':
+						case 'timestamp':
+							element.datetimepicker({
+								format: cCrud_config.date_format + ' ' + cCrud_config.time_format,
+								useCurrent: false
+							});
+							console.log('[cCrud] Datetime picker initialized');
+							break;
+						case 'date':
+							element.datetimepicker({
+								format: cCrud_config.date_format,
+								useCurrent: false
+							});
+							console.log('[cCrud] Date picker initialized');
+							break;
+						case 'year':
+							element.datetimepicker({
+								viewMode: 'years',
+								format: 'yyyy',
+								useCurrent: false
+							});
+							console.log('[cCrud] Year picker initialized');
+							break;
+						default:
+							var range_start = element.data("rangestart");
+							var range_end = element.data("rangeend");
+							cCrud.link_datetime_fields(range_start, range_end);
+							console.log('[cCrud] Range picker linked');
+							break;
+					}
+				} else {
+					console.log('[cCrud] Datepicker', index, 'already initialized, skipping');
 				}
-			}
 		});
 	},
 	link_datetime_fields: function(field_from, field_to) {
@@ -1401,10 +1413,17 @@ var cCrud = {
 		});
 	},
 	init_select2: function(e) {
-		if (!$.fn.select2)
+		console.log('[cCrud] init_select2 called with e:', e);
+		if (!$.fn.select2) {
+			console.error('[cCrud] Select2 plugin not loaded');
 			return;
+		}
 		var container = cCrud.get_container(e);
-		$('select:not(.cCrud-columns-select):not(.cCrud-searchdata):not(.not_select2):not(.cCrud-columnsList-select)', container).each(function() {
+		console.log('[cCrud] Select2 container:', container);
+		var elements = $('select:not(.cCrud-columns-select):not(.cCrud-searchdata):not(.not_select2):not(.cCrud-columnsList-select)', container);
+		console.log('[cCrud] Found', elements.length, 'select2 elements');
+		elements.each(function(index) {
+			console.log('[cCrud] Processing select2 element', index, ':', this);
 			var options = $.extend({
 				width: '100%'
 			}, $(this).data());
@@ -1439,9 +1458,11 @@ var cCrud = {
 					},
 					minimumInputLength: 2
 				});
-			}
-			$(this).select2(options);
-		});
+				}
+				console.log('[cCrud] Initializing select2 on element', index, 'with options:', options);
+				$(this).select2(options);
+				console.log('[cCrud] Select2 initialized on element', index);
+			});
 	},
 	init_checkbox: function(container) {
 
