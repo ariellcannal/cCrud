@@ -5,6 +5,7 @@ window.addEventListener("load", function() {
     { name: "jQuery UI", check: () => window.jQuery && window.jQuery.ui },
     { name: "jQuery UI Timepicker", check: () => window.jQuery && window.jQuery.fn.datetimepicker },
     { name: "Select2", check: () => window.jQuery && window.jQuery.fn.select2 },
+    { name: "SumoSelect", check: () => window.jQuery && window.jQuery.fn.SumoSelect },
     { name: "jQuery Mask", check: () => window.jQuery && window.jQuery.fn.mask },
     { name: "AlertifyJS", check: () => window.alertify },
     { name: "CKEditor 4", check: () => window.CKEDITOR },

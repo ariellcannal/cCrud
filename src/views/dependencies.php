@@ -34,8 +34,8 @@ if (!defined('CCRUD_DEPENDENCIES_LOADED')) {
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <!-- SumoSelect 3.4.9 -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/jquery-sumoselect/3.4.9/sumoselect.min.css" rel="stylesheet" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-sumoselect/3.4.9/jquery.sumoselect.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/jquery.sumoselect/3.4.9/sumoselect.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.sumoselect/3.4.9/jquery.sumoselect.min.js"></script>
 
 <!-- jQuery Mask Plugin 1.14.16 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
