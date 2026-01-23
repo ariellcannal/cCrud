@@ -348,27 +348,27 @@ var cCrud = {
 			switch (type) {
 				case 'time':
 					element.datetimepicker({
-						format: cCrud_config.moment_time_format,
+						format: cCrud_config.time_format,
 						useCurrent: false
 					});
 					break;
 				case 'datetime':
 				case 'timestamp':
 					element.datetimepicker({
-						format: cCrud_config.moment_date_format + ' ' + cCrud_config.moment_time_format,
+						format: cCrud_config.date_format + ' ' + cCrud_config.time_format,
 						useCurrent: false
 					});
 					break;
 				case 'date':
 					element.datetimepicker({
-						format: cCrud_config.moment_date_format,
+						format: cCrud_config.date_format,
 						useCurrent: false
 					});
 					break;
 				case 'year':
 					element.datetimepicker({
 						viewMode: 'years',
-						format: cCrud_config.moment_year_format,
+						format: 'yyyy',
 						useCurrent: false
 					});
 					break;
@@ -393,27 +393,27 @@ var cCrud = {
 				switch (format_id) {
 					case 'time':
 						element.datetimepicker({
-							format: cCrud_config.moment_time_format,
+							format: cCrud_config.time_format,
 							useCurrent: false
 						});
 						break;
 					case 'datetime':
 					case 'timestamp':
 						element.datetimepicker({
-							format: cCrud_config.moment_date_format + ' ' + cCrud_config.moment_time_format,
+							format: cCrud_config.date_format + ' ' + cCrud_config.time_format,
 							useCurrent: false
 						});
 						break;
 					case 'date':
 						element.datetimepicker({
-							format: cCrud_config.moment_date_format,
+							format: cCrud_config.date_format,
 							useCurrent: false
 						});
 						break;
 					case 'year':
 						element.datetimepicker({
 							viewMode: 'years',
-							format: cCrud_config.moment_year_format,
+							format: 'yyyy',
 							useCurrent: false
 						});
 						break;

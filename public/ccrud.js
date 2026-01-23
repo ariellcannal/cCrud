@@ -225,27 +225,27 @@ var cCrud = {
       switch (from = $(t).find(".cCrud-datepicker-from").datetimepicker(), to = $(t).find(".cCrud-datepicker-to").datetimepicker(), e) {
         case "time":
           element.datetimepicker({
-            format: cCrud_config.moment_time_format,
+            format: cCrud_config.time_format,
             useCurrent: !1
           });
           break;
         case "datetime":
         case "timestamp":
           element.datetimepicker({
-            format: cCrud_config.moment_date_format + " " + cCrud_config.moment_time_format,
+            format: cCrud_config.date_format + " " + cCrud_config.time_format,
             useCurrent: !1
           });
           break;
         case "date":
           element.datetimepicker({
-            format: cCrud_config.moment_date_format,
+            format: cCrud_config.date_format,
             useCurrent: !1
           });
           break;
         case "year":
           element.datetimepicker({
             viewMode: "years",
-            format: cCrud_config.moment_year_format,
+            format: "yyyy",
             useCurrent: !1
           });
           break;
@@ -265,27 +265,27 @@ var cCrud = {
         switch (a) {
           case "time":
             t.datetimepicker({
-              format: cCrud_config.moment_time_format,
+              format: cCrud_config.time_format,
               useCurrent: !1
             });
             break;
           case "datetime":
           case "timestamp":
             t.datetimepicker({
-              format: cCrud_config.moment_date_format + " " + cCrud_config.moment_time_format,
+              format: cCrud_config.date_format + " " + cCrud_config.time_format,
               useCurrent: !1
             });
             break;
           case "date":
             t.datetimepicker({
-              format: cCrud_config.moment_date_format,
+              format: cCrud_config.date_format,
               useCurrent: !1
             });
             break;
           case "year":
             t.datetimepicker({
               viewMode: "years",
-              format: cCrud_config.moment_year_format,
+              format: "yyyy",
               useCurrent: !1
             });
             break;
