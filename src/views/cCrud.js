@@ -23,7 +23,7 @@ var cCrud = {
 		$.ajax({
 			type: "post",
 			url: cCrud.config('url'),
-			dataType: "html",
+			dataType: "text", // text permite receber tanto HTML quanto JSON
 			cache: false,
 			data: {
 				"cCrud": data
