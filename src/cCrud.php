@@ -2435,18 +2435,26 @@ class cCrud
         // Não injeta dependências em requisições AJAX
         $request = \Config\Services::request();
         if ($request->isAJAX()) {
+            echo "<!-- [cCrud] renderDependencies: Skipped (AJAX request) -->\n";
             return;
         }
         
         if (self::$dependencies_loaded) {
+            echo "<!-- [cCrud] renderDependencies: Skipped (already loaded) -->\n";
             return;
         }
         self::$dependencies_loaded = true;
 
+        echo "<!-- [cCrud] renderDependencies: Loading dependencies from " . CCRUD_PATH . "/views/dependencies.php -->\n";
+        
         // Inclui o arquivo de dependências
         $dependenciesPath = CCRUD_PATH . '/views/dependencies.php';
         if (file_exists($dependenciesPath)) {
+            echo "<!-- [cCrud] renderDependencies: File found, including... -->\n";
             require_once $dependenciesPath;
+            echo "<!-- [cCrud] renderDependencies: Dependencies loaded successfully -->\n";
+        } else {
+            echo "<!-- [cCrud] renderDependencies: ERROR - File not found at $dependenciesPath -->\n";
         }
     }
 
