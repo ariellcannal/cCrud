@@ -53,6 +53,13 @@ class cCrud
     protected ?Model $model = null;
 
     /**
+     * Nome da classe do Model (usado para recriação após serialização).
+     *
+     * @var string|null
+     */
+    protected ?string $modelClass = null;
+
+    /**
      * Manipulador de sessões do CodeIgniter 4.
      *
      * @var Session|null
@@ -528,8 +535,9 @@ class cCrud
     {
         self::initPrepare();
 
-        $this->model  = $model;
-        $this->logger = $logger ?? Services::logger();
+        $this->model      = $model;
+        $this->modelClass = get_class($model);
+        $this->logger     = $logger ?? Services::logger();
 
         if (! $inst_name) {
             $inst_name = sha1(rand() . microtime());
@@ -743,7 +751,13 @@ class cCrud
         $session       = Services::session();
         $cCrud_session = $session->get('cCrud_session');
 
-        $model = $cCrud_session[$inst_name]['model'] ?? null;
+        // Recupera o nome da classe do Model e recria uma nova instância com conexão fresca
+        $modelClass = $cCrud_session[$inst_name]['modelClass'] ?? null;
+        if (! $modelClass || ! class_exists($modelClass)) {
+            return Services::response()->setStatusCode(500)->setBody(self::lang('model_entity_required'));
+        }
+
+        $model = new $modelClass();
         if (! $model instanceof Model) {
             return Services::response()->setStatusCode(500)->setBody(self::lang('model_entity_required'));
         }
@@ -5763,7 +5777,14 @@ class cCrud
                 if (isset($this->result_row[$field])) {
                     $session       = $this->getSession();
                     $cCrud_session = $session->get('cCrud_session');
-                    $model         = $cCrud_session[$inst_name]['model'] ?? null;
+                    
+                    // Recupera o nome da classe do Model e recria uma nova instância com conexão fresca
+                    $modelClass = $cCrud_session[$inst_name]['modelClass'] ?? null;
+                    if (! $modelClass || ! class_exists($modelClass)) {
+                        throw new RuntimeException(self::lang('model_entity_required'));
+                    }
+                    
+                    $model = new $modelClass();
                     if (! $model instanceof Model) {
                         throw new RuntimeException(self::lang('model_entity_required'));
                     }
@@ -6004,6 +6025,8 @@ class cCrud
         // Armazena todos os atributos atuais da instância
         $vars = get_object_vars($this);
         unset($vars['session']); // Evita armazenar a instância de sessão
+        unset($vars['model']);   // Evita armazenar o Model (contém conexão mysqli não serializável)
+        unset($vars['logger']);  // Evita armazenar o logger
 
         $cCrud_session[$inst_name]            = $vars;
         $cCrud_session[$inst_name]['before'] = $this->find_prev_task();
@@ -6036,7 +6059,8 @@ class cCrud
 
         if (isset($cCrud_session[$inst_name])) {
             foreach ($cCrud_session[$inst_name] as $property => $value) {
-                if ($property !== 'session') {
+                // Não importa session, model e logger (são recriados no construtor)
+                if ($property !== 'session' && $property !== 'model' && $property !== 'logger') {
                     $this->{$property} = $value;
                 }
             }
